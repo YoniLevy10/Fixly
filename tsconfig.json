@@ -14,9 +14,13 @@
     "jsx": "preserve",
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/shared/*": ["./shared/*"],
+      "@/config/*": ["./config/*"],
+      "@/styles/*": ["./styles/*"]
     },
     "plugins": [{ "name": "next" }]
   },
