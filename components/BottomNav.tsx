@@ -1,3 +1,29 @@
+import Link from 'next/link'
+import { routes } from '@/lib/routes'
+
+const navItems = [
+  {
+    label: 'Home',
+    icon: '🏠',
+    href: routes.home,
+  },
+  {
+    label: 'Orders',
+    icon: '📂',
+    href: routes.request('1'),
+  },
+  {
+    label: 'Pro',
+    icon: '🛠️',
+    href: routes.proDashboard,
+  },
+  {
+    label: 'Admin',
+    icon: '👤',
+    href: routes.admin,
+  },
+]
+
 export default function BottomNav() {
   return (
     <div
@@ -14,10 +40,19 @@ export default function BottomNav() {
         boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
       }}
     >
-      <div style={{ color: '#005BFF', fontWeight: 700 }}>🏠 Home</div>
-      <div style={{ color: '#9CA3AF' }}>📂 Orders</div>
-      <div style={{ color: '#9CA3AF' }}>❤️ Saved</div>
-      <div style={{ color: '#9CA3AF' }}>👤 Profile</div>
+      {navItems.map((item, index) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          style={{
+            textDecoration: 'none',
+            color: index === 0 ? '#005BFF' : '#9CA3AF',
+            fontWeight: index === 0 ? 700 : 500,
+          }}
+        >
+          {item.icon} {item.label}
+        </Link>
+      ))}
     </div>
   )
 }
