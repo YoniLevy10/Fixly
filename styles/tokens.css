@@ -1,0 +1,25 @@
+:root {
+  --color-background: #F5F7FB;
+  --color-surface: #FFFFFF;
+  --color-primary: #005BFF;
+  --color-text: #111827;
+  --color-muted: #6B7280;
+  --color-subtle: #9CA3AF;
+  --color-border: #E5E7EB;
+
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --shadow-nav: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-primary: 0 12px 24px rgba(0, 91, 255, 0.22);
+
+  --spacing-page: 24px;
+  --spacing-section: 28px;
+  --spacing-card: 20px;
+  --spacing-gap: 16px;
+  --spacing-bottom-nav-offset: 120px;
+}
