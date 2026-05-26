@@ -1,9 +1,10 @@
 import type { RequestStatus } from '@/types/request'
 
 const transitions: Record<RequestStatus, RequestStatus[]> = {
-  pending: ['accepted', 'cancelled'],
-  accepted: ['in_progress', 'cancelled'],
-  in_progress: ['completed', 'cancelled'],
+  pending: ['accepted'],
+  accepted: ['on_the_way'],
+  on_the_way: ['in_progress'],
+  in_progress: ['completed'],
   completed: [],
   cancelled: [],
 }
