@@ -10,7 +10,19 @@ export default async function RequestPage({
 }) {
   const { id } = await params
 
-  const request = requests.find((item) => item.id === id) || requests[0]
+  const request = requests.find((item) => item.id === id)
+
+  if (!request) {
+    return (
+      <main
+        style={{
+          padding: '24px',
+        }}
+      >
+        <h1>Request not found</h1>
+      </main>
+    )
+  }
 
   const timeline = [
     'Request submitted',
