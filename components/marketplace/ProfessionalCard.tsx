@@ -1,144 +1,76 @@
-import Button from '../ui/Button'
+import Link from 'next/link'
 
 type ProfessionalCardProps = {
+  id: string
   name: string
   category: string
   rating: number
-  jobsCompleted: number
+  reviewCount: number
   available?: boolean
+  avatar?: string
 }
 
 export default function ProfessionalCard({
+  id,
   name,
   category,
   rating,
-  jobsCompleted,
+  reviewCount,
   available = true,
+  avatar,
 }: ProfessionalCardProps) {
   return (
-    <div
-      style={{
-        background: 'white',
-        borderRadius: '32px',
-        padding: '22px',
-        boxShadow: '0 12px 32px rgba(0,0,0,0.05)',
-      }}
+    <Link
+      href={`/professional/${id}`}
+      className="flex flex-col items-center bg-card rounded-2xl p-4 shadow-card min-w-[140px] tap-highlight-none active:scale-[0.98] transition-transform"
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: '18px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            gap: '14px',
-          }}
-        >
-          <div
-            style={{
-              width: '68px',
-              height: '68px',
-              borderRadius: '24px',
-              background: '#EEF4FF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px',
-            }}
-          >
-            👨‍🔧
-          </div>
-
-          <div>
-            <div
-              style={{
-                fontSize: '20px',
-                fontWeight: 800,
-                marginBottom: '6px',
-                letterSpacing: '-0.03em',
-              }}
-            >
-              {name}
-            </div>
-
-            <div
-              style={{
-                color: '#6B7280',
-                marginBottom: '8px',
-              }}
-            >
-              {category}
-            </div>
-
-            <div
-              style={{
-                color: '#9CA3AF',
-                fontSize: '14px',
-              }}
-            >
-              {jobsCompleted} jobs completed
-            </div>
-          </div>
+      <div className="relative mb-3">
+        <div className="w-16 h-16 rounded-full bg-secondary overflow-hidden flex items-center justify-center">
+          {avatar ? (
+            <img src={avatar} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--muted-foreground))" strokeWidth="1.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          )}
         </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: '10px',
-          }}
-        >
-          <div
-            style={{
-              background: '#EEF4FF',
-              color: '#005BFF',
-              padding: '10px 14px',
-              borderRadius: '999px',
-              fontWeight: 800,
-              fontSize: '14px',
-            }}
-          >
-            ⭐ {rating}
+        {available && (
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+            זמין עכשיו
           </div>
-
-          <div
-            style={{
-              background: available ? '#DCFCE7' : '#F3F4F6',
-              color: available ? '#166534' : '#6B7280',
-              padding: '8px 12px',
-              borderRadius: '999px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            {available ? 'Available' : 'Busy'}
-          </div>
-        </div>
+        )}
       </div>
-
-      <div
-        style={{
-          display: 'flex',
-          gap: '12px',
-        }}
-      >
-        <div style={{ flex: 1 }}>
-          <Button variant="secondary">
-            Profile
-          </Button>
+      
+      <h3 className="text-sm font-bold text-card-foreground text-center mb-0.5">
+        {name}
+      </h3>
+      
+      <p className="text-xs text-muted-foreground text-center mb-2">
+        {category}
+      </p>
+      
+      <div className="flex items-center gap-1">
+        <div className="flex">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <svg
+              key={star}
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill={star <= Math.round(rating) ? '#F59E0B' : '#E5E7EB'}
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          ))}
         </div>
-
-        <div style={{ flex: 1 }}>
-          <Button>
-            Book Now
-          </Button>
-        </div>
+        <span className="text-xs font-semibold text-card-foreground">
+          {rating}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          ({reviewCount})
+        </span>
       </div>
-    </div>
+    </Link>
   )
 }

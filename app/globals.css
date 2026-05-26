@@ -2,11 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  background: #f5f7fb;
+@layer base {
+  :root {
+    --background: 245 247 251;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
+    --primary: 26 75 140;
+    --primary-foreground: 255 255 255;
+    --secondary: 238 244 255;
+    --secondary-foreground: 26 75 140;
+    --muted: 241 245 249;
+    --muted-foreground: 100 116 139;
+    --accent: 37 211 102;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 26 75 140;
+    --radius: 1.25rem;
+  }
 }
 
-body {
-  margin: 0;
-  color: #0f172a;
+@layer base {
+  * {
+    border-color: rgb(var(--border));
+  }
+  
+  body {
+    background-color: rgb(var(--background));
+    color: rgb(var(--foreground));
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  input, textarea, select, button {
+    font-size: 16px;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  }
+  
+  .tap-highlight-none {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
