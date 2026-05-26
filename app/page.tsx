@@ -1,3 +1,8 @@
+import BottomNav from '@/components/BottomNav'
+import Button from '@/components/ui/Button'
+import Card from '@/components/ui/Card'
+import { professionals } from '@/lib/mock-data'
+
 const categories = [
   { name: 'Electrician', icon: '⚡' },
   { name: 'Plumber', icon: '🔧' },
@@ -5,21 +10,6 @@ const categories = [
   { name: 'Locksmith', icon: '🔐' },
   { name: 'Painting', icon: '🎨' },
   { name: 'Appliance Repair', icon: '🛠️' },
-]
-
-const professionals = [
-  {
-    name: 'Daniel Electric',
-    job: 'Electrician',
-    rating: '4.9',
-    jobs: '120 jobs completed',
-  },
-  {
-    name: 'Clean House IL',
-    job: 'Cleaning',
-    rating: '4.8',
-    jobs: '87 jobs completed',
-  },
 ]
 
 export default function HomePage() {
@@ -106,16 +96,7 @@ export default function HomePage() {
         }}
       >
         {categories.map((category) => (
-          <div
-            key={category.name}
-            style={{
-              background: 'white',
-              borderRadius: '28px',
-              padding: '24px 18px',
-              fontWeight: 600,
-              boxShadow: '0 10px 24px rgba(0,0,0,0.05)',
-            }}
-          >
+          <Card key={category.name}>
             <div
               style={{
                 fontSize: '32px',
@@ -125,8 +106,14 @@ export default function HomePage() {
               {category.icon}
             </div>
 
-            {category.name}
-          </div>
+            <div
+              style={{
+                fontWeight: 600,
+              }}
+            >
+              {category.name}
+            </div>
+          </Card>
         ))}
       </div>
 
@@ -168,15 +155,7 @@ export default function HomePage() {
         }}
       >
         {professionals.map((professional) => (
-          <div
-            key={professional.name}
-            style={{
-              background: 'white',
-              borderRadius: '28px',
-              padding: '20px',
-              boxShadow: '0 10px 24px rgba(0,0,0,0.05)',
-            }}
-          >
+          <Card key={professional.id}>
             <div
               style={{
                 display: 'flex',
@@ -202,7 +181,7 @@ export default function HomePage() {
                     marginBottom: '6px',
                   }}
                 >
-                  {professional.job}
+                  {professional.category}
                 </div>
 
                 <div
@@ -211,7 +190,7 @@ export default function HomePage() {
                     fontSize: '14px',
                   }}
                 >
-                  {professional.jobs}
+                  {professional.jobsCompleted} jobs completed
                 </div>
               </div>
 
@@ -228,43 +207,12 @@ export default function HomePage() {
               </div>
             </div>
 
-            <button
-              style={{
-                width: '100%',
-                border: 'none',
-                background: '#005BFF',
-                color: 'white',
-                padding: '16px',
-                borderRadius: '18px',
-                fontWeight: 700,
-                fontSize: '16px',
-              }}
-            >
-              Book Service
-            </button>
-          </div>
+            <Button>Book Service</Button>
+          </Card>
         ))}
       </div>
 
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          left: '20px',
-          right: '20px',
-          background: 'white',
-          borderRadius: '28px',
-          padding: '16px 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-        }}
-      >
-        <div style={{ color: '#005BFF', fontWeight: 700 }}>🏠 Home</div>
-        <div style={{ color: '#9CA3AF' }}>📂 Orders</div>
-        <div style={{ color: '#9CA3AF' }}>❤️ Saved</div>
-        <div style={{ color: '#9CA3AF' }}>👤 Profile</div>
-      </div>
+      <BottomNav />
     </main>
   )
 }
