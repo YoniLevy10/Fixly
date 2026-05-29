@@ -1,4 +1,3 @@
-import BottomNav from '@/components/BottomNav'
 import Card from '@/components/ui/Card'
 import { professionals, requests } from '@/lib/mock-data'
 
@@ -77,8 +76,6 @@ export default function AdminPage() {
           <div>✅ Professionals Available</div>
         </div>
       </Card>
-
-      <BottomNav />
     </main>
   )
 }

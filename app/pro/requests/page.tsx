@@ -1,4 +1,3 @@
-import BottomNav from '@/components/BottomNav'
 import PageContainer from '@/components/layout/PageContainer'
 import SectionHeader from '@/components/layout/SectionHeader'
 import RequestCard from '@/components/request/RequestCard'
@@ -39,8 +38,6 @@ export default function ProRequestsPage() {
           </div>
         ))}
       </div>
-
-      <BottomNav />
     </PageContainer>
   )
 }

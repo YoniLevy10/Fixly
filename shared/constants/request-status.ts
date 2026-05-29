@@ -20,12 +20,21 @@ export const REQUEST_STATUS = {
 } as const
 
 export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
-  pending: 'Pending',
-  accepted: 'Accepted',
-  on_the_way: 'On The Way',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
+  pending: 'ממתין לאישור',
+  accepted: 'אושר',
+  on_the_way: 'בדרך',
+  in_progress: 'בתהליך',
+  completed: 'הושלם',
+  cancelled: 'בוטל',
+}
+
+export const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  accepted: 'bg-blue-100 text-blue-800',
+  on_the_way: 'bg-indigo-100 text-indigo-800',
+  in_progress: 'bg-purple-100 text-purple-800',
+  completed: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
 }
 
 export const ACTIVE_REQUEST_STATUSES: RequestStatus[] = [

@@ -1,10 +1,13 @@
 export const routes = {
   home: '/',
+  professionals: '/professionals',
+  professional: (id: string) => `/professional/${id}`,
   newRequest: '/request/new',
-  request: (id: string) => `/request/${id}`,
-  category: (slug: string) => `/categories/${slug}`,
-  professional: (id: string) => `/professionals/${id}`,
+  myRequests: '/my-requests',
+  tracking: (id: string) => `/tracking/${id}`,
+  profile: '/profile',
   proDashboard: '/pro/dashboard',
   proRequests: '/pro/requests',
   admin: '/admin',
+  dashboard: '/dashboard',
 }

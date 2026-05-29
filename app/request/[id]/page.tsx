@@ -1,4 +1,3 @@
-import BottomNav from '@/components/BottomNav'
 import Card from '@/components/ui/Card'
 import StatusBadge from '@/components/StatusBadge'
 import { requests } from '@/lib/mock-data'
@@ -104,8 +103,6 @@ export default async function RequestPage({
           Assigned professional is currently handling your request.
         </div>
       </Card>
-
-      <BottomNav />
     </main>
   )
 }

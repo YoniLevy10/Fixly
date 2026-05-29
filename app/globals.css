@@ -1,12 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html {
-  background: #f5f7fb;
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 220 30% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
+    --primary: 218 57% 19%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 35 90% 55%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 50%;
+    --accent: 35 90% 55%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 218 57% 19%;
+    --radius: 0.75rem;
+    --success: 142 71% 45%;
+    --warning: 35 90% 55%;
+  }
 }
 
-body {
-  margin: 0;
-  color: #0f172a;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    direction: rtl;
+  }
+
+  body {
+    @apply bg-background text-foreground font-heebo antialiased;
+    margin: 0;
+    direction: rtl;
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@media (min-width: 1024px) {
+  body {
+    background: hsl(var(--background));
+  }
 }

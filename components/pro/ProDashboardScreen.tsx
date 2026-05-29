@@ -1,0 +1,331 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import {
+  CheckCircle,
+  XCircle,
+  BarChart3,
+  Settings,
+} from 'lucide-react'
+import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
+import Textarea from '@/components/ui/Textarea'
+import { useAuth } from '@/lib/auth/auth-provider'
+import {
+  updateRequestStatusApi,
+  useRequestsList,
+} from '@/shared/hooks/use-requests-api'
+import type { MockRequest } from '@/mock/requests'
+import type { RequestStatus } from '@/shared/constants/request-status'
+import { cn } from '@/lib/utils/cn'
+
+type TabKey = 'pending' | 'active' | 'done' | 'stats'
+
+export default function ProDashboardScreen() {
+  const { user, signInAsDemoPro } = useAuth()
+  const proId = user.professionalId ?? '1'
+  const { requests, loading, refresh } = useRequestsList({ professionalId: proId })
+  const [selectedRequest, setSelectedRequest] = useState<MockRequest | null>(null)
+  const [cancellationReason, setCancellationReason] = useState('')
+  const [activeTab, setActiveTab] = useState<TabKey>('pending')
+
+  const stats = useMemo(
+    () => ({
+      pending: requests.filter((r) => r.status === 'pending').length,
+      active: requests.filter((r) =>
+        ['accepted', 'in_progress'].includes(r.status)
+      ).length,
+      completed: requests.filter((r) => r.status === 'completed').length,
+    }),
+    [requests]
+  )
+
+  const filtered = requests.filter((r) => {
+    if (activeTab === 'pending') return r.status === 'pending'
+    if (activeTab === 'active')
+      return ['accepted', 'in_progress'].includes(r.status)
+    if (activeTab === 'done')
+      return ['completed', 'cancelled'].includes(r.status)
+    return true
+  })
+
+  const monthlyData = useMemo(() => {
+    const acc: { month: string; count: number }[] = []
+    requests.forEach((r) => {
+      const month = new Date(r.createdAt).toLocaleDateString('he-IL', {
+        month: 'short',
+      })
+      const existing = acc.find((x) => x.month === month)
+      if (existing) existing.count++
+      else acc.push({ month, count: 1 })
+    })
+    return acc.slice(-6)
+  }, [requests])
+
+  const updateStatus = async (
+    reqId: string,
+    newStatus: RequestStatus,
+    extra?: { cancellationReason?: string }
+  ) => {
+    await updateRequestStatusApi(reqId, newStatus, extra)
+    await refresh()
+    setSelectedRequest(null)
+    setCancellationReason('')
+  }
+
+  const TABS: { key: TabKey; label: string; count: number | null }[] = [
+    { key: 'pending', label: 'ממתינות', count: stats.pending },
+    { key: 'active', label: 'פעילות', count: stats.active },
+    { key: 'done', label: 'הסטוריה', count: null },
+    { key: 'stats', label: 'סטטיסטיקות', count: null },
+  ]
+
+  if (user.role !== 'professional') {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <p className="text-lg font-bold mb-2">דשבורד מקצועי</p>
+        <p className="text-muted-foreground text-sm mb-6">
+          התחבר כבעל מקצוע כדי לנהל בקשות נכנסות
+        </p>
+        <button
+          type="button"
+          onClick={signInAsDemoPro}
+          className="bg-primary text-white px-6 py-3 rounded-xl font-bold"
+        >
+          התחבר כדמו (יוסי כהן)
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-6 lg:px-8">
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-black lg:text-3xl">דשבורד מקצועי</h1>
+        <button
+          type="button"
+          className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+          aria-label="הגדרות"
+        >
+          <Settings size={20} />
+        </button>
+      </div>
+      <p className="text-muted-foreground text-sm mb-6">שלום, {user.fullName}</p>
+
+      <div className="grid grid-cols-3 gap-3 mb-6 lg:gap-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 lg:p-4 text-center">
+          <p className="text-2xl font-black text-yellow-700">{stats.pending}</p>
+          <p className="text-xs text-yellow-600 mt-0.5">ממתינות</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 lg:p-4 text-center">
+          <p className="text-2xl font-black text-blue-700">{stats.active}</p>
+          <p className="text-xs text-blue-600 mt-0.5">פעילות</p>
+        </div>
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-3 lg:p-4 text-center">
+          <p className="text-2xl font-black text-green-700">{stats.completed}</p>
+          <p className="text-xs text-green-600 mt-0.5">הושלמו</p>
+        </div>
+      </div>
+
+      <div className="flex gap-1 bg-muted rounded-xl p-1 mb-5 overflow-x-auto">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              'flex-1 min-w-[72px] py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap px-2',
+              activeTab === tab.key
+                ? 'bg-white shadow text-foreground'
+                : 'text-muted-foreground'
+            )}
+          >
+            {tab.label}
+            {tab.count != null && tab.count > 0 && (
+              <span className="mr-1.5 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'stats' ? (
+        <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4">
+          <div className="bg-white rounded-2xl border border-border p-4">
+            <h3 className="font-bold mb-4 text-sm flex items-center gap-2">
+              <BarChart3 size={15} /> בקשות לפי חודש
+            </h3>
+            {monthlyData.length === 0 ? (
+              <p className="text-sm text-muted-foreground">אין נתונים עדיין</p>
+            ) : (
+              <div className="space-y-3">
+                {monthlyData.map((row) => {
+                  const max = Math.max(...monthlyData.map((d) => d.count), 1)
+                  return (
+                    <div key={row.month} className="flex items-center gap-3">
+                      <span className="text-xs w-12 text-muted-foreground">{row.month}</span>
+                      <div className="flex-1 bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary rounded-full h-2 transition-all"
+                          style={{ width: `${(row.count / max) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold w-6">{row.count}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <div className="bg-white rounded-2xl border border-border p-4">
+            <h3 className="font-bold mb-3 text-sm">פילוח לפי קטגוריה</h3>
+            {Object.entries(
+              requests.reduce<Record<string, number>>((acc, r) => {
+                acc[r.category] = (acc[r.category] || 0) + 1
+                return acc
+              }, {})
+            ).map(([cat, count]) => (
+              <div key={cat} className="flex items-center gap-2 mb-2">
+                <span className="text-sm flex-1">{cat}</span>
+                <div className="flex-1 bg-muted rounded-full h-2">
+                  <div
+                    className="bg-primary rounded-full h-2"
+                    style={{
+                      width: `${requests.length ? (count / requests.length) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-sm font-semibold w-6 text-right">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : loading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-7 h-7 border-4 border-muted border-t-primary rounded-full animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-4xl mb-3">📋</p>
+          <p className="font-semibold">אין בקשות כאן</p>
+        </div>
+      ) : (
+        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+          {filtered.map((req) => (
+            <button
+              key={req.id}
+              type="button"
+              className="w-full text-right bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
+              onClick={() => setSelectedRequest(req)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <RequestStatusBadge status={req.status} size="sm" />
+                <span className="text-xs text-muted-foreground">
+                  {new Date(req.createdAt).toLocaleDateString('he-IL')}
+                </span>
+              </div>
+              <p className="font-semibold text-sm">
+                {req.title ?? req.description.slice(0, 60)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {req.customerName} • {req.location}
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {selectedRequest && (
+        <div
+          className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/40 p-4"
+          onClick={() => setSelectedRequest(null)}
+          role="presentation"
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md p-5 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+          >
+            <h2 className="text-lg font-black mb-4 text-right">פרטי הבקשה</h2>
+            <div className="bg-muted rounded-xl p-4 space-y-2 mb-4">
+              <div className="flex justify-between">
+                <RequestStatusBadge status={selectedRequest.status} />
+                <span className="text-xs text-muted-foreground">
+                  {selectedRequest.category}
+                </span>
+              </div>
+              <p className="font-bold">{selectedRequest.title}</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedRequest.description}
+              </p>
+            </div>
+
+            <div className="space-y-1.5 text-sm mb-4">
+              <p>
+                <span className="font-medium">לקוח:</span> {selectedRequest.customerName}
+              </p>
+              {selectedRequest.customerPhone && (
+                <p>
+                  <span className="font-medium">טלפון:</span>{' '}
+                  {selectedRequest.customerPhone}
+                </p>
+              )}
+              {selectedRequest.location && (
+                <p>
+                  <span className="font-medium">כתובת:</span> {selectedRequest.location}
+                </p>
+              )}
+            </div>
+
+            {selectedRequest.status === 'pending' && (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => updateStatus(selectedRequest.id, 'accepted')}
+                  className="w-full bg-primary text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  <CheckCircle size={16} /> אשר בקשה
+                </button>
+                <Textarea
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  placeholder="סיבת דחייה (אופציונלי)"
+                  className="text-right h-16"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateStatus(selectedRequest.id, 'cancelled', {
+                      cancellationReason,
+                    })
+                  }
+                  className="w-full border border-destructive text-destructive py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"
+                >
+                  <XCircle size={16} /> דחה בקשה
+                </button>
+              </div>
+            )}
+            {selectedRequest.status === 'accepted' && (
+              <button
+                type="button"
+                onClick={() => updateStatus(selectedRequest.id, 'in_progress')}
+                className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold"
+              >
+                התחל עבודה
+              </button>
+            )}
+            {selectedRequest.status === 'in_progress' && (
+              <button
+                type="button"
+                onClick={() => updateStatus(selectedRequest.id, 'completed')}
+                className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+              >
+                <CheckCircle size={16} /> סמן כהושלם
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

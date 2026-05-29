@@ -1,0 +1,29 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+.env*.local
+
+# BASE44 import scratch (extracted zip)
+/_base44_import
+
+# Supabase CLI local link cache
+/supabase/.temp/
+
+# debug
+npm-debug.log*
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
