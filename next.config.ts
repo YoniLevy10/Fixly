@@ -3,6 +3,10 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  /** Demo data ON by default until you set NEXT_PUBLIC_FF_DEMO_DATA=false on Vercel */
+  env: {
+    NEXT_PUBLIC_FF_DEMO_DATA: process.env.NEXT_PUBLIC_FF_DEMO_DATA ?? 'true',
+  },
   async redirects() {
     return [
       { source: '/dashboard', destination: '/my-requests', permanent: false },
