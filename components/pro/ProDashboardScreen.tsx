@@ -9,11 +9,14 @@ import {
 } from 'lucide-react'
 import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
 import Textarea from '@/components/ui/Textarea'
-import { useAuth } from '@/lib/auth/auth-provider'
+import { useAuth, DEMO_PROFESSIONAL_ID } from '@/lib/auth/auth-provider'
+import { formatDate } from '@/lib/i18n/format-date'
+import { useLocale } from '@/lib/i18n/locale-provider'
 import {
   updateRequestStatusApi,
   useRequestsList,
 } from '@/shared/hooks/use-requests-api'
+import { useRequestsListRealtime } from '@/shared/hooks/use-request-realtime'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 import { cn } from '@/lib/utils/cn'
@@ -21,9 +24,13 @@ import { cn } from '@/lib/utils/cn'
 type TabKey = 'pending' | 'active' | 'done' | 'stats'
 
 export default function ProDashboardScreen() {
-  const { user, signInAsDemoPro } = useAuth()
-  const proId = user.professionalId ?? '1'
-  const { requests, loading, refresh } = useRequestsList({ professionalId: proId })
+  const { user, claimProfessionalProfile } = useAuth()
+  const { locale, t } = useLocale()
+  const { requests, loading, refresh } = useRequestsList({
+    scope: user.role === 'professional' ? 'pro' : undefined,
+  })
+
+  useRequestsListRealtime(refresh)
   const [selectedRequest, setSelectedRequest] = useState<MockRequest | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
@@ -51,15 +58,13 @@ export default function ProDashboardScreen() {
   const monthlyData = useMemo(() => {
     const acc: { month: string; count: number }[] = []
     requests.forEach((r) => {
-      const month = new Date(r.createdAt).toLocaleDateString('he-IL', {
-        month: 'short',
-      })
+      const month = formatDate(locale, r.createdAt, { month: 'short' })
       const existing = acc.find((x) => x.month === month)
       if (existing) existing.count++
       else acc.push({ month, count: 1 })
     })
     return acc.slice(-6)
-  }, [requests])
+  }, [requests, locale])
 
   const updateStatus = async (
     reqId: string,
@@ -72,26 +77,24 @@ export default function ProDashboardScreen() {
     setCancellationReason('')
   }
 
-  const TABS: { key: TabKey; label: string; count: number | null }[] = [
-    { key: 'pending', label: 'ממתינות', count: stats.pending },
-    { key: 'active', label: 'פעילות', count: stats.active },
-    { key: 'done', label: 'הסטוריה', count: null },
-    { key: 'stats', label: 'סטטיסטיקות', count: null },
+  const TABS: { key: TabKey; labelKey: string; count: number | null }[] = [
+    { key: 'pending', labelKey: 'pro.tabPending', count: stats.pending },
+    { key: 'active', labelKey: 'pro.tabActive', count: stats.active },
+    { key: 'done', labelKey: 'pro.tabDone', count: null },
+    { key: 'stats', labelKey: 'pro.tabStats', count: null },
   ]
 
   if (user.role !== 'professional') {
     return (
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
-        <p className="text-lg font-bold mb-2">דשבורד מקצועי</p>
-        <p className="text-muted-foreground text-sm mb-6">
-          התחבר כבעל מקצוע כדי לנהל בקשות נכנסות
-        </p>
+        <p className="text-lg font-bold mb-2">{t('pro.dashboard')}</p>
+        <p className="text-muted-foreground text-sm mb-6">{t('pro.claimHint')}</p>
         <button
           type="button"
-          onClick={signInAsDemoPro}
+          onClick={() => claimProfessionalProfile(DEMO_PROFESSIONAL_ID)}
           className="bg-primary text-white px-6 py-3 rounded-xl font-bold"
         >
-          התחבר כדמו (יוסי כהן)
+          {t('pro.claimDemo')}
         </button>
       </div>
     )
@@ -100,29 +103,31 @@ export default function ProDashboardScreen() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 lg:px-8">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-black lg:text-3xl">דשבורד מקצועי</h1>
+        <h1 className="text-2xl font-black lg:text-3xl">{t('pro.dashboard')}</h1>
         <button
           type="button"
           className="p-2 rounded-full hover:bg-muted text-muted-foreground"
-          aria-label="הגדרות"
+          aria-label={t('common.settings')}
         >
           <Settings size={20} />
         </button>
       </div>
-      <p className="text-muted-foreground text-sm mb-6">שלום, {user.fullName}</p>
+      <p className="text-muted-foreground text-sm mb-6">
+        {t('nav.hello')}, {user.fullName}
+      </p>
 
       <div className="grid grid-cols-3 gap-3 mb-6 lg:gap-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 lg:p-4 text-center">
           <p className="text-2xl font-black text-yellow-700">{stats.pending}</p>
-          <p className="text-xs text-yellow-600 mt-0.5">ממתינות</p>
+          <p className="text-xs text-yellow-600 mt-0.5">{t('pro.statPending')}</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 lg:p-4 text-center">
           <p className="text-2xl font-black text-blue-700">{stats.active}</p>
-          <p className="text-xs text-blue-600 mt-0.5">פעילות</p>
+          <p className="text-xs text-blue-600 mt-0.5">{t('pro.statActive')}</p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-2xl p-3 lg:p-4 text-center">
           <p className="text-2xl font-black text-green-700">{stats.completed}</p>
-          <p className="text-xs text-green-600 mt-0.5">הושלמו</p>
+          <p className="text-xs text-green-600 mt-0.5">{t('pro.statCompleted')}</p>
         </div>
       </div>
 
@@ -139,9 +144,9 @@ export default function ProDashboardScreen() {
                 : 'text-muted-foreground'
             )}
           >
-            {tab.label}
+            {t(tab.labelKey)}
             {tab.count != null && tab.count > 0 && (
-              <span className="mr-1.5 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+              <span className="ms-1.5 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
                 {tab.count}
               </span>
             )}
@@ -153,10 +158,10 @@ export default function ProDashboardScreen() {
         <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4">
           <div className="bg-white rounded-2xl border border-border p-4">
             <h3 className="font-bold mb-4 text-sm flex items-center gap-2">
-              <BarChart3 size={15} /> בקשות לפי חודש
+              <BarChart3 size={15} /> {t('pro.requestsByMonth')}
             </h3>
             {monthlyData.length === 0 ? (
-              <p className="text-sm text-muted-foreground">אין נתונים עדיין</p>
+              <p className="text-sm text-muted-foreground">{t('pro.noData')}</p>
             ) : (
               <div className="space-y-3">
                 {monthlyData.map((row) => {
@@ -178,7 +183,7 @@ export default function ProDashboardScreen() {
             )}
           </div>
           <div className="bg-white rounded-2xl border border-border p-4">
-            <h3 className="font-bold mb-3 text-sm">פילוח לפי קטגוריה</h3>
+            <h3 className="font-bold mb-3 text-sm">{t('pro.byCategory')}</h3>
             {Object.entries(
               requests.reduce<Record<string, number>>((acc, r) => {
                 acc[r.category] = (acc[r.category] || 0) + 1
@@ -195,7 +200,7 @@ export default function ProDashboardScreen() {
                     }}
                   />
                 </div>
-                <span className="text-sm font-semibold w-6 text-right">{count}</span>
+                <span className="text-sm font-semibold w-6 text-end">{count}</span>
               </div>
             ))}
           </div>
@@ -207,7 +212,7 @@ export default function ProDashboardScreen() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
           <p className="text-4xl mb-3">📋</p>
-          <p className="font-semibold">אין בקשות כאן</p>
+          <p className="font-semibold">{t('pro.noRequestsHere')}</p>
         </div>
       ) : (
         <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
@@ -215,13 +220,13 @@ export default function ProDashboardScreen() {
             <button
               key={req.id}
               type="button"
-              className="w-full text-right bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
+              className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
               onClick={() => setSelectedRequest(req)}
             >
               <div className="flex items-center justify-between mb-2">
                 <RequestStatusBadge status={req.status} size="sm" />
                 <span className="text-xs text-muted-foreground">
-                  {new Date(req.createdAt).toLocaleDateString('he-IL')}
+                  {formatDate(locale, req.createdAt)}
                 </span>
               </div>
               <p className="font-semibold text-sm">
@@ -246,7 +251,7 @@ export default function ProDashboardScreen() {
             onClick={(e) => e.stopPropagation()}
             role="dialog"
           >
-            <h2 className="text-lg font-black mb-4 text-right">פרטי הבקשה</h2>
+            <h2 className="text-lg font-black mb-4">{t('pro.requestDetails')}</h2>
             <div className="bg-muted rounded-xl p-4 space-y-2 mb-4">
               <div className="flex justify-between">
                 <RequestStatusBadge status={selectedRequest.status} />
@@ -262,17 +267,19 @@ export default function ProDashboardScreen() {
 
             <div className="space-y-1.5 text-sm mb-4">
               <p>
-                <span className="font-medium">לקוח:</span> {selectedRequest.customerName}
+                <span className="font-medium">{t('common.customer')}:</span>{' '}
+                {selectedRequest.customerName}
               </p>
               {selectedRequest.customerPhone && (
                 <p>
-                  <span className="font-medium">טלפון:</span>{' '}
+                  <span className="font-medium">{t('common.phone')}:</span>{' '}
                   {selectedRequest.customerPhone}
                 </p>
               )}
               {selectedRequest.location && (
                 <p>
-                  <span className="font-medium">כתובת:</span> {selectedRequest.location}
+                  <span className="font-medium">{t('common.address')}:</span>{' '}
+                  {selectedRequest.location}
                 </p>
               )}
             </div>
@@ -284,13 +291,13 @@ export default function ProDashboardScreen() {
                   onClick={() => updateStatus(selectedRequest.id, 'accepted')}
                   className="w-full bg-primary text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
                 >
-                  <CheckCircle size={16} /> אשר בקשה
+                  <CheckCircle size={16} /> {t('pro.approve')}
                 </button>
                 <Textarea
                   value={cancellationReason}
                   onChange={(e) => setCancellationReason(e.target.value)}
-                  placeholder="סיבת דחייה (אופציונלי)"
-                  className="text-right h-16"
+                  placeholder={t('pro.rejectReason')}
+                  className="h-16"
                 />
                 <button
                   type="button"
@@ -301,7 +308,7 @@ export default function ProDashboardScreen() {
                   }
                   className="w-full border border-destructive text-destructive py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"
                 >
-                  <XCircle size={16} /> דחה בקשה
+                  <XCircle size={16} /> {t('pro.reject')}
                 </button>
               </div>
             )}
@@ -311,7 +318,7 @@ export default function ProDashboardScreen() {
                 onClick={() => updateStatus(selectedRequest.id, 'in_progress')}
                 className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold"
               >
-                התחל עבודה
+                {t('pro.startWork')}
               </button>
             )}
             {selectedRequest.status === 'in_progress' && (
@@ -320,7 +327,7 @@ export default function ProDashboardScreen() {
                 onClick={() => updateStatus(selectedRequest.id, 'completed')}
                 className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
               >
-                <CheckCircle size={16} /> סמן כהושלם
+                <CheckCircle size={16} /> {t('pro.markCompleted')}
               </button>
             )}
           </div>

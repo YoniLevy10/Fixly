@@ -39,6 +39,7 @@
   ],
   "exclude": [
     "node_modules",
-    "_base44_import"
+    "_base44_import",
+    "ios"
   ]
 }

@@ -34,14 +34,19 @@
     @apply border-border;
   }
 
-  html {
+  html[dir='rtl'],
+  html[dir='rtl'] body {
     direction: rtl;
+  }
+
+  html[dir='ltr'],
+  html[dir='ltr'] body {
+    direction: ltr;
   }
 
   body {
     @apply bg-background text-foreground font-heebo antialiased;
     margin: 0;
-    direction: rtl;
   }
 }
 
@@ -56,6 +61,45 @@
 
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Capacitor / iOS App Store shell */
+html.native-app {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+html.native-app body {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+html.native-app .native-hide-desktop {
+  display: none !important;
+}
+
+html.native-app .native-shell-column {
+  margin-right: 0 !important;
+}
+
+html.native-app .native-bottom-nav {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+}
+
+html.native-app .native-content {
+  max-width: 100%;
+}
+
+html.native-app input,
+html.native-app textarea,
+html.native-app [contenteditable='true'] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 @media (min-width: 1024px) {

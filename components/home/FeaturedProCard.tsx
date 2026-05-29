@@ -1,13 +1,16 @@
+'use client'
+
 import Link from 'next/link'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
+import { useLocale } from '@/lib/i18n/locale-provider'
 
 type FeaturedProCardProps = {
   professional: Professional
 }
 
-export default function FeaturedProCard({ professional }: FeaturedProCardProps) {
-  const pro = professional
+export default function FeaturedProCard({ professional: pro }: FeaturedProCardProps) {
+  const { t } = useLocale()
 
   return (
     <div className="flex-shrink-0 w-40">
@@ -42,7 +45,7 @@ export default function FeaturedProCard({ professional }: FeaturedProCardProps) 
             <span
               className={`w-1.5 h-1.5 rounded-full ${pro.isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}
             />
-            {pro.isAvailable ? 'זמין עכשיו' : 'לא זמין'}
+            {pro.isAvailable ? t('common.availableNow') : t('common.unavailable')}
           </div>
         </div>
       </Link>

@@ -2,7 +2,11 @@ import type { Professional } from '@/types/professional'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
-type CategoryRel = { name: string } | { name: string }[] | null | undefined
+type CategoryRel =
+  | { name: string; name_he?: string | null }
+  | { name: string; name_he?: string | null }[]
+  | null
+  | undefined
 
 type ProfessionalRow = {
   id: string
@@ -39,8 +43,8 @@ type RequestRow = {
 
 function categoryName(rel?: CategoryRel): string {
   if (!rel) return ''
-  if (Array.isArray(rel)) return rel[0]?.name ?? ''
-  return rel.name ?? ''
+  const item = Array.isArray(rel) ? rel[0] : rel
+  return item?.name_he || item?.name || ''
 }
 
 function relTitle(

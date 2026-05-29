@@ -10,4 +10,6 @@ export const routes = {
   proRequests: '/pro/requests',
   admin: '/admin',
   dashboard: '/dashboard',
+  privacy: '/privacy',
+  terms: '/terms',
 }

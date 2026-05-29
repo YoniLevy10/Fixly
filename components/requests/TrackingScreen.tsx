@@ -2,26 +2,23 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ArrowRight,
   CheckCircle,
   Clock,
   Loader,
   Star,
 } from 'lucide-react'
-import { getProfessional } from '@/lib/data/professionals-service'
+import BackButton from '@/components/shared/BackButton'
+import { fetchProfessional } from '@/lib/data/fetch-professional'
+import type { Professional } from '@/types/professional'
 import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
 import { routes } from '@/lib/routes'
+import { useRequestRealtime } from '@/shared/hooks/use-request-realtime'
+import ReviewForm from '@/components/reviews/ReviewForm'
+import { useLocale } from '@/lib/i18n/locale-provider'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
-
-const STEPS: { key: RequestStatus; label: string; icon: typeof Clock }[] = [
-  { key: 'pending', label: 'ממתין לאישור', icon: Clock },
-  { key: 'accepted', label: 'אושר', icon: CheckCircle },
-  { key: 'in_progress', label: 'בתהליך', icon: Loader },
-  { key: 'completed', label: 'הושלם', icon: CheckCircle },
-]
 
 const STATUS_ORDER: RequestStatus[] = [
   'pending',
@@ -36,23 +33,41 @@ type TrackingScreenProps = {
 
 export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   const router = useRouter()
+  const { t } = useLocale()
   const [request, setRequest] = useState<MockRequest | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const steps = useMemo(
+    () =>
+      [
+        { key: 'pending' as const, labelKey: 'status.pending', icon: Clock },
+        { key: 'accepted' as const, labelKey: 'status.accepted', icon: CheckCircle },
+        { key: 'in_progress' as const, labelKey: 'status.in_progress', icon: Loader },
+        { key: 'completed' as const, labelKey: 'status.completed', icon: CheckCircle },
+      ] as const,
+    []
+  )
+
+  const loadRequest = useCallback(() => {
     fetch(`/api/requests/${requestId}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setRequest(data))
       .finally(() => setLoading(false))
   }, [requestId])
 
-  const [professional, setProfessional] = useState<Awaited<
-    ReturnType<typeof getProfessional>
-  >>(undefined)
+  useEffect(() => {
+    loadRequest()
+  }, [loadRequest])
+
+  useRequestRealtime(requestId, (updated) => setRequest(updated))
+
+  const [professional, setProfessional] = useState<Professional | undefined>(
+    undefined
+  )
 
   useEffect(() => {
     if (request?.professionalId) {
-      getProfessional(request.professionalId).then(setProfessional)
+      fetchProfessional(request.professionalId).then(setProfessional)
     }
   }, [request?.professionalId])
 
@@ -67,9 +82,9 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   if (!request) {
     return (
       <div className="text-center py-20 px-4">
-        <p>הבקשה לא נמצאה</p>
+        <p>{t('requests.notFound')}</p>
         <Link href={routes.myRequests} className="text-primary mt-4 inline-block">
-          חזרה לבקשות
+          {t('requests.backToRequests')}
         </Link>
       </div>
     )
@@ -84,15 +99,8 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   return (
     <div className="min-h-screen bg-gray-50 max-w-3xl mx-auto lg:max-w-4xl">
       <div className="bg-white px-4 py-4 lg:px-8 flex items-center gap-3 border-b border-gray-100 sticky top-0 z-10 lg:static lg:rounded-t-2xl lg:mt-6 lg:border lg:mx-8">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="p-2 rounded-full hover:bg-muted"
-          aria-label="חזרה"
-        >
-          <ArrowRight size={18} />
-        </button>
-        <h1 className="font-black text-lg flex-1 lg:text-xl">מעקב בקשה</h1>
+        <BackButton onClick={() => router.back()} />
+        <h1 className="font-black text-lg flex-1 lg:text-xl">{t('requests.trackingTitle')}</h1>
         <RequestStatusBadge status={request.status} size="sm" />
       </div>
 
@@ -135,9 +143,9 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
         <div>
           {!isCancelled && (
             <div className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h3 className="font-bold mb-5">סטטוס הבקשה</h3>
+              <h3 className="font-bold mb-5">{t('requests.statusTitle')}</h3>
               <div className="space-y-4">
-                {STEPS.map((step, index) => {
+                {steps.map((step, index) => {
                   const Icon = step.icon
                   const done = currentStepIndex > index
                   const active = currentStepIndex === index && !isCompleted
@@ -164,7 +172,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
                             : 'text-gray-400'
                         }`}
                       >
-                        {step.label}
+                        {t(step.labelKey)}
                       </span>
                     </div>
                   )
@@ -175,14 +183,20 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
 
           {isCancelled && (
             <div className="bg-red-50 text-red-800 rounded-2xl p-4 text-center text-sm font-medium mt-4">
-              הבקשה בוטלה
+              {t('requests.cancelled')}
             </div>
           )}
 
           {isCompleted && (
-            <div className="bg-green-50 text-green-800 rounded-2xl p-4 text-center text-sm mt-4">
-              הבקשה הושלמה בהצלחה 🎉
-            </div>
+            <>
+              <div className="bg-green-50 text-green-800 rounded-2xl p-4 text-center text-sm mt-4">
+                {t('requests.completed')}
+              </div>
+              <ReviewForm
+                requestId={request.id}
+                professionalId={request.professionalId}
+              />
+            </>
           )}
         </div>
       </div>

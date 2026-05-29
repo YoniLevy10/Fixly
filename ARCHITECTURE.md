@@ -23,6 +23,7 @@ Everything in the MVP revolves around:
 - TailwindCSS
 - Supabase
 - Vercel
+- Capacitor (iOS App Store shell) — `docs/MOBILE_APP_STORE.md`, `app-store/CHECKLIST.md`, `npm run mobile:check`
 
 ---
 

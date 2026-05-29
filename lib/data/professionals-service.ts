@@ -4,7 +4,7 @@ import {
   getFeaturedProfessionals,
   getProfessionalById,
 } from '@/mock/professionals'
-import { isSupabaseEnabled } from '@/lib/data/config'
+import { isSupabaseEnabled, shouldUseMockFallback } from '@/lib/data/config'
 import {
   supabaseGetFeaturedProfessionals,
   supabaseGetProfessionalById,
@@ -55,7 +55,10 @@ export async function listProfessionals(options?: {
     }
   }
 
-  return filterProfessionals(options ?? {})
+  if (shouldUseMockFallback()) {
+    return filterProfessionals(options ?? {})
+  }
+  return []
 }
 
 export async function getFeaturedProfessionalsList(): Promise<Professional[]> {
@@ -63,7 +66,8 @@ export async function getFeaturedProfessionalsList(): Promise<Professional[]> {
     const fromDb = await supabaseGetFeaturedProfessionals()
     if (fromDb?.length) return fromDb
   }
-  return getFeaturedProfessionals()
+  if (shouldUseMockFallback()) return getFeaturedProfessionals()
+  return []
 }
 
 export async function getProfessional(id: string): Promise<Professional | undefined> {
@@ -71,7 +75,8 @@ export async function getProfessional(id: string): Promise<Professional | undefi
     const fromDb = await supabaseGetProfessionalById(id)
     if (fromDb) return fromDb
   }
-  return getProfessionalById(id)
+  if (shouldUseMockFallback()) return getProfessionalById(id)
+  return undefined
 }
 
 export function listProfessionalsSync(): Professional[] {

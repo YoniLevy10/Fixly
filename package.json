@@ -5,9 +5,23 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "cap:sync": "npx cap sync",
+    "cap:sync:ios": "npx cap sync ios",
+    "cap:copy": "npx cap copy",
+    "cap:ios": "npx cap open ios",
+    "cap:sync:dev": "cross-env CAPACITOR_SERVER_URL=http://localhost:3000 npx cap sync ios",
+    "mobile:check": "node scripts/mobile-check.mjs",
+    "mobile:prepare": "npm run mobile:check && npm run cap:sync:ios"
   },
   "dependencies": {
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/ios": "^7.2.0",
+    "@capacitor/keyboard": "^7.0.1",
+    "@capacitor/splash-screen": "^7.0.1",
+    "@capacitor/status-bar": "^7.0.1",
+    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.57.4",
     "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
@@ -17,12 +31,14 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "@types/react": "^19.2.2",
+    "@capacitor/cli": "^7.2.0",
     "@types/node": "^24.10.1",
+    "cross-env": "^7.0.3",
+    "@types/react": "^19.2.2",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "postcss": "^8.5.6",
-    "autoprefixer": "^10.4.21"
+    "typescript": "^5.9.3"
   }
 }

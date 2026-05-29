@@ -19,15 +19,6 @@ export const REQUEST_STATUS = {
   CANCELLED: 'cancelled',
 } as const
 
-export const REQUEST_STATUS_LABELS: Record<RequestStatus, string> = {
-  pending: 'ממתין לאישור',
-  accepted: 'אושר',
-  on_the_way: 'בדרך',
-  in_progress: 'בתהליך',
-  completed: 'הושלם',
-  cancelled: 'בוטל',
-}
-
 export const REQUEST_STATUS_COLORS: Record<RequestStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
   accepted: 'bg-blue-100 text-blue-800',

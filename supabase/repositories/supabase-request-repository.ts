@@ -1,9 +1,16 @@
 import type { MarketplaceRequest } from '@/types/marketplace-request'
 import type { RequestRepository } from '@/lib/repositories/request-repository'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
+
+function requireSupabase() {
+  const supabase = getSupabaseClient()
+  if (!supabase) throw new Error('Supabase not configured')
+  return supabase
+}
 
 export const supabaseRequestRepository: RequestRepository = {
   async getAll() {
+    const supabase = requireSupabase()
     const { data, error } = await supabase
       .from('requests')
       .select('*')
@@ -27,6 +34,7 @@ export const supabaseRequestRepository: RequestRepository = {
   },
 
   async create(request) {
+    const supabase = requireSupabase()
     const { error } = await supabase.from('requests').insert({
       id: request.id,
       title: request.title,

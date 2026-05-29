@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { mapProfessionalRow } from '@/lib/data/supabase-mappers'
 import type { Professional } from '@/types/professional'
 
@@ -13,11 +13,11 @@ const PRO_SELECT = `
   city,
   available,
   profile_image,
-  service_categories ( name )
+  service_categories ( name, name_he, slug )
 `
 
 export async function supabaseListProfessionals(): Promise<Professional[] | null> {
-  const supabase = getSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
   const { data, error } = await supabase
@@ -36,7 +36,7 @@ export async function supabaseListProfessionals(): Promise<Professional[] | null
 export async function supabaseGetProfessionalById(
   id: string
 ): Promise<Professional | null> {
-  const supabase = getSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
   const { data, error } = await supabase

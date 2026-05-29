@@ -1,0 +1,20 @@
+{
+  "bundleId": "com.fixly.app",
+  "appName": "Fixly",
+  "subtitle": "תיקונים ואנשי מקצוע",
+  "primaryCategory": "LIFESTYLE",
+  "secondaryCategory": "UTILITIES",
+  "version": "0.1.0",
+  "build": "1",
+  "privacyPolicyUrl": "https://fixly.vercel.app/privacy",
+  "supportUrl": "https://fixly.vercel.app/profile",
+  "marketingUrl": "https://fixly.vercel.app",
+  "descriptionHe": "מצא איש מקצוע לתיקון הבית, שלח בקשה ועקוב אחר הסטטוס בזמן אמת.",
+  "descriptionEn": "Find home repair professionals, submit requests, and track status in real time.",
+  "keywords": ["תיקונים", "אינסטלטור", "חשמלאי", "בית", "שירות"],
+  "screenshotsRequired": {
+    "iphone67": "1290 x 2796 — minimum 3 screenshots",
+    "iphone65": "1284 x 2778 — optional legacy size"
+  },
+  "notes": "Fill URLs after production domain is final. Run npm run mobile:check before Archive."
+}

@@ -1,8 +1,10 @@
+'use client'
+
 import {
   REQUEST_STATUS_COLORS,
-  REQUEST_STATUS_LABELS,
   type RequestStatus,
 } from '@/shared/constants/request-status'
+import { useLocale } from '@/lib/i18n/locale-provider'
 import { cn } from '@/lib/utils/cn'
 
 type RequestStatusBadgeProps = {
@@ -14,7 +16,8 @@ export default function RequestStatusBadge({
   status,
   size = 'md',
 }: RequestStatusBadgeProps) {
-  const label = REQUEST_STATUS_LABELS[status] ?? status
+  const { t } = useLocale()
+  const label = t(`status.${status}`)
   const colorClass =
     REQUEST_STATUS_COLORS[status] ?? 'bg-muted text-muted-foreground'
 

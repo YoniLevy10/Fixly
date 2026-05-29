@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import BottomNav from '@/components/layout/BottomNav'
 import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
+import NativeAwareMain from '@/components/layout/NativeAwareMain'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -18,18 +19,10 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     <div className="min-h-screen bg-background">
       {!hideNav && <DesktopSidebar />}
 
-      <div className={hideNav ? '' : 'lg:mr-64'}>
+      <div className={hideNav ? '' : 'lg:mr-64 native-shell-column'}>
         {!hideNav && <DesktopHeader />}
 
-        <main
-          className={
-            hideNav
-              ? 'min-h-screen'
-              : 'min-h-screen pb-24 lg:pb-8 px-0 lg:px-8'
-          }
-        >
-          <div className="w-full mx-auto max-w-6xl">{children}</div>
-        </main>
+        <NativeAwareMain hideNav={hideNav}>{children}</NativeAwareMain>
       </div>
 
       {!hideNav && <BottomNav />}

@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { mapRequestRow } from '@/lib/data/supabase-mappers'
 import type { MockRequest, CreateRequestInput } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
@@ -16,14 +16,14 @@ const REQUEST_SELECT = `
   created_at,
   professionals ( title ),
   users ( full_name, phone ),
-  service_categories ( name )
+  service_categories ( name, name_he )
 `
 
 export async function supabaseListRequests(filters?: {
   customerId?: string
   professionalId?: string
 }): Promise<MockRequest[] | null> {
-  const supabase = getSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
   let query = supabase
@@ -50,7 +50,7 @@ export async function supabaseListRequests(filters?: {
 export async function supabaseGetRequestById(
   id: string
 ): Promise<MockRequest | null> {
-  const supabase = getSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
   const { data, error } = await supabase
@@ -66,24 +66,26 @@ export async function supabaseGetRequestById(
 export async function supabaseCreateRequest(
   input: CreateRequestInput
 ): Promise<MockRequest | null> {
-  const supabase = getSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
-  let categoryId: string | null = null
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return null
+
   const { data: pro } = await supabase
     .from('professionals')
     .select('category_id')
     .eq('id', input.professionalId)
     .maybeSingle()
 
-  categoryId = pro?.category_id ?? null
-
   const { data, error } = await supabase
     .from('requests')
     .insert({
-      customer_id: input.customerId,
+      customer_id: user.id,
       professional_id: input.professionalId,
-      category_id: categoryId,
+      category_id: pro?.category_id ?? null,
       title: input.title ?? input.description.slice(0, 80),
       description: input.description,
       address: input.location,
@@ -111,10 +113,9 @@ export async function supabaseCreateRequest(
 
 export async function supabaseUpdateRequest(
   id: string,
-  status: RequestStatus,
-  _extra?: Partial<MockRequest>
+  status: RequestStatus
 ): Promise<MockRequest | null> {
-  const supabase = getSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
   const { data, error } = await supabase

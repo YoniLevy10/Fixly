@@ -4,16 +4,18 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { mobileNav } from '@/components/layout/nav-config'
 import { routes } from '@/lib/routes'
+import { useLocale } from '@/lib/i18n/locale-provider'
 import { cn } from '@/lib/utils/cn'
 
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const { t } = useLocale()
 
   const renderItem = ({
     path,
     icon: Icon,
-    label,
+    labelKey,
     exact,
   }: (typeof mobileNav)[number]) => {
     const isActive = exact
@@ -37,14 +39,14 @@ export default function BottomNav() {
             isActive ? 'text-primary' : 'text-gray-400'
           )}
         >
-          {label}
+          {t(labelKey)}
         </span>
       </Link>
     )
   }
 
   return (
-    <nav className="lg:hidden fixed bottom-0 right-0 left-0 z-50 bg-white border-t border-gray-100 shadow-lg safe-area-pb">
+    <nav className="native-bottom-nav lg:hidden fixed bottom-0 right-0 left-0 z-50 bg-white border-t border-gray-100 shadow-lg safe-area-pb">
       <div className="flex items-center h-16 px-2 relative max-w-lg mx-auto">
         <div className="flex items-center justify-around flex-1">
           {mobileNav.slice(0, 2).map(renderItem)}
@@ -55,11 +57,13 @@ export default function BottomNav() {
             type="button"
             onClick={() => router.push(routes.newRequest)}
             className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/40 border-4 border-white active:scale-95 transition-transform"
-            aria-label="פרסם תקלה"
+            aria-label={t('common.publishIssue')}
           >
             <span className="text-2xl font-bold leading-none">+</span>
           </button>
-          <span className="text-xs text-gray-400 font-medium mt-0.5">פרסם תקלה</span>
+          <span className="text-xs text-gray-400 font-medium mt-0.5">
+            {t('common.publishIssue')}
+          </span>
         </div>
 
         <div className="flex items-center justify-around flex-1">

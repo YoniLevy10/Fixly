@@ -2,21 +2,27 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ClipboardList, ChevronLeft } from 'lucide-react'
+import { ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
 import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
 import { useAuth } from '@/lib/auth/auth-provider'
+import { formatDate } from '@/lib/i18n/format-date'
+import { useLocale } from '@/lib/i18n/locale-provider'
 import { useRequestsList } from '@/shared/hooks/use-requests-api'
+import { useRequestsListRealtime } from '@/shared/hooks/use-request-realtime'
 import { routes } from '@/lib/routes'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
 export default function MyRequestsScreen() {
   const router = useRouter()
-  const { user } = useAuth()
-  const { requests, loading } = useRequestsList({ customerId: user.id })
+  const { locale, dir, t } = useLocale()
+  const { requests, loading, refresh } = useRequestsList({ scope: 'mine' })
+  const Chevron = dir === 'rtl' ? ChevronLeft : ChevronRight
+
+  useRequestsListRealtime(refresh)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 lg:px-8">
-      <h1 className="text-2xl font-black mb-6 lg:text-3xl">הבקשות שלי</h1>
+      <h1 className="text-2xl font-black mb-6 lg:text-3xl">{t('requests.myTitle')}</h1>
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -25,15 +31,13 @@ export default function MyRequestsScreen() {
       ) : requests.length === 0 ? (
         <div className="text-center py-20">
           <ClipboardList size={48} className="mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-lg font-semibold mb-2">אין בקשות עדיין</h2>
-          <p className="text-muted-foreground mb-4">
-            חפש איש מקצוע ושלח את הבקשה הראשונה שלך
-          </p>
+          <h2 className="text-lg font-semibold mb-2">{t('requests.emptyTitle')}</h2>
+          <p className="text-muted-foreground mb-4">{t('requests.emptyHint')}</p>
           <Link
             href={routes.professionals}
             className="text-primary underline font-medium"
           >
-            חפש עכשיו
+            {t('requests.searchNow')}
           </Link>
         </div>
       ) : (
@@ -42,11 +46,11 @@ export default function MyRequestsScreen() {
             <button
               key={req.id}
               type="button"
-              className="w-full text-right bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
+              className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
               onClick={() => router.push(routes.tracking(req.id))}
             >
               <div className="flex items-center justify-between">
-                <ChevronLeft size={18} className="text-muted-foreground flex-shrink-0" />
+                <Chevron size={18} className="text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 justify-end">
                     <span className="text-xs text-muted-foreground">{req.category}</span>
@@ -56,8 +60,7 @@ export default function MyRequestsScreen() {
                     {req.title ?? req.description.slice(0, 50)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {req.professionalName} •{' '}
-                    {new Date(req.createdAt).toLocaleDateString('he-IL')}
+                    {req.professionalName} • {formatDate(locale, req.createdAt)}
                   </p>
                 </div>
               </div>

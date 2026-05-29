@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Clock, MessageCircle } from 'lucide-react'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
+import { useLocale } from '@/lib/i18n/locale-provider'
 
 type ProListCardProps = {
   professional: Professional
@@ -11,6 +12,7 @@ type ProListCardProps = {
 
 export default function ProListCard({ professional: pro }: ProListCardProps) {
   const router = useRouter()
+  const { t } = useLocale()
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
@@ -34,9 +36,12 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
               </div>
               <p className="text-xs text-gray-500">{pro.title ?? pro.category}</p>
             </div>
-            <div className="text-left">
-              <p className="font-black text-base">{pro.startingPrice}₪</p>
-              <p className="text-xs text-gray-400">הצעת מחיר</p>
+            <div className="text-end">
+              <p className="font-black text-base">
+                {pro.startingPrice}
+                {t('common.currency')}
+              </p>
+              <p className="text-xs text-gray-400">{t('common.quoteLabel')}</p>
             </div>
           </div>
           <div className="flex items-center gap-1 mt-1.5">
@@ -60,7 +65,7 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
               <span
                 className={`w-1.5 h-1.5 rounded-full ${pro.isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}
               />
-              {pro.isAvailable ? 'זמין עכשיו' : 'לא זמין'}
+              {pro.isAvailable ? t('common.availableNow') : t('common.unavailable')}
             </div>
             {pro.availableHours && (
               <div className="flex items-center gap-1 text-xs text-gray-400">
@@ -77,7 +82,7 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
           onClick={() => router.push(routes.professional(pro.id))}
           className="flex-1 border border-gray-200 text-gray-600 text-xs h-9 rounded-lg font-medium flex items-center justify-center gap-1"
         >
-          <MessageCircle size={14} /> פרופיל
+          <MessageCircle size={14} /> {t('common.profile')}
         </button>
         <button
           type="button"
@@ -86,7 +91,7 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
           }
           className="flex-1 bg-primary text-white text-xs h-9 rounded-lg font-bold"
         >
-          בחר
+          {t('common.select')}
         </button>
       </div>
     </div>

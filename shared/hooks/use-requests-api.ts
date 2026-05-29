@@ -4,23 +4,18 @@ import { useCallback, useEffect, useState } from 'react'
 import type { MockRequest, CreateRequestInput } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
-export function useRequestsList(params?: {
-  customerId?: string
-  professionalId?: string
-}) {
+export function useRequestsList(params?: { scope?: 'mine' | 'pro' }) {
   const [requests, setRequests] = useState<MockRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  const query = new URLSearchParams()
-  if (params?.customerId) query.set('customerId', params.customerId)
-  if (params?.professionalId) query.set('professionalId', params.professionalId)
 
   const refresh = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/requests?${query.toString()}`)
+      const query = new URLSearchParams()
+      if (params?.scope) query.set('scope', params.scope)
+      const res = await fetch(`/api/requests?${query}`)
       if (!res.ok) throw new Error('טעינה נכשלה')
       setRequests(await res.json())
     } catch (e) {
@@ -28,7 +23,7 @@ export function useRequestsList(params?: {
     } finally {
       setLoading(false)
     }
-  }, [params?.customerId, params?.professionalId])
+  }, [params?.scope])
 
   useEffect(() => {
     refresh()
@@ -37,7 +32,9 @@ export function useRequestsList(params?: {
   return { requests, loading, error, refresh }
 }
 
-export async function createRequestApi(input: CreateRequestInput): Promise<MockRequest> {
+export async function createRequestApi(
+  input: Omit<CreateRequestInput, 'customerId'> & { customerName: string }
+): Promise<MockRequest> {
   const res = await fetch('/api/requests', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

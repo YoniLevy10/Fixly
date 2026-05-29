@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowRight, MapPin, Camera, X } from 'lucide-react'
+import { MapPin, Camera, X } from 'lucide-react'
+import BackButton from '@/components/shared/BackButton'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Label from '@/components/ui/Label'
-import { getProfessional } from '@/lib/data/professionals-service'
+import { fetchProfessional } from '@/lib/data/fetch-professional'
 import type { Professional } from '@/types/professional'
 import { useAuth } from '@/lib/auth/auth-provider'
+import { useLocale } from '@/lib/i18n/locale-provider'
 import { createRequestApi } from '@/shared/hooks/use-requests-api'
+import { uploadRequestImage } from '@/lib/storage/upload-request-image'
 import { routes } from '@/lib/routes'
 
 type ImagePreview = { preview: string; file: File }
@@ -19,6 +22,7 @@ export default function NewRequestForm() {
   const searchParams = useSearchParams()
   const proId = searchParams.get('professional')
   const { user } = useAuth()
+  const { t } = useLocale()
 
   const [pro, setPro] = useState<Professional | null>(null)
   const [form, setForm] = useState({
@@ -35,7 +39,7 @@ export default function NewRequestForm() {
 
   useEffect(() => {
     if (proId) {
-      getProfessional(proId).then((p) => setPro(p ?? null))
+      fetchProfessional(proId).then((p) => setPro(p ?? null))
     }
   }, [proId])
 
@@ -54,7 +58,7 @@ export default function NewRequestForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!pro && !proId) {
-      setError('יש לבחור איש מקצוע לפני שליחת בקשה')
+      setError(t('requests.mustSelectPro'))
       return
     }
 
@@ -62,10 +66,13 @@ export default function NewRequestForm() {
     setError(null)
 
     try {
-      const imageUrls = images.map((img) => img.preview)
+      const imageUrls: string[] = []
+      for (const img of images) {
+        const url = await uploadRequestImage(img.file)
+        imageUrls.push(url ?? img.preview)
+      }
 
       await createRequestApi({
-        customerId: user.id,
         customerName: user.fullName,
         customerPhone: form.customerPhone,
         professionalId: pro?.id ?? proId!,
@@ -81,7 +88,7 @@ export default function NewRequestForm() {
 
       router.push(routes.myRequests)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשליחה')
+      setError(err instanceof Error ? err.message : t('requests.submitError'))
     } finally {
       setLoading(false)
     }
@@ -90,15 +97,8 @@ export default function NewRequestForm() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 lg:px-8">
       <div className="flex items-center gap-3 mb-6">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="p-2 rounded-full hover:bg-muted"
-          aria-label="חזרה"
-        >
-          <ArrowRight size={20} />
-        </button>
-        <h1 className="text-xl font-black lg:text-2xl">שלח בקשה</h1>
+        <BackButton onClick={() => router.back()} />
+        <h1 className="text-xl font-black lg:text-2xl">{t('requests.newTitle')}</h1>
       </div>
 
       {pro && (
@@ -120,13 +120,13 @@ export default function NewRequestForm() {
 
       {!pro && !proId && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 text-sm text-yellow-800">
-          לא נבחר איש מקצוע.{' '}
+          {t('requests.noProSelected')}{' '}
           <button
             type="button"
             className="underline font-medium"
             onClick={() => router.push(routes.professionals)}
           >
-            חפש איש מקצוע
+            {t('requests.findPro')}
           </button>
         </div>
       )}
@@ -138,22 +138,22 @@ export default function NewRequestForm() {
       <form onSubmit={handleSubmit} className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
         <div className="space-y-5 lg:col-span-2">
           <div>
-            <Label>כותרת הבקשה</Label>
+            <Label>{t('requests.requestTitle')}</Label>
             <Input
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="לדוגמה: תיקון ברז דולף"
-              className="mt-1.5 text-right"
+              placeholder={t('requests.titlePlaceholder')}
+              className="mt-1.5"
               required
             />
           </div>
           <div>
-            <Label>תיאור הבעיה</Label>
+            <Label>{t('requests.description')}</Label>
             <Textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              placeholder="תאר את הבעיה בפירוט..."
-              className="mt-1.5 text-right h-28"
+              placeholder={t('requests.descriptionPlaceholder')}
+              className="mt-1.5 h-28"
               required
             />
           </div>
@@ -161,7 +161,7 @@ export default function NewRequestForm() {
 
         <div className="lg:col-span-2">
           <Label className="flex items-center gap-1">
-            <Camera size={14} /> תמונות (אופציונלי)
+            <Camera size={14} /> {t('requests.photosOptional')}
           </Label>
           <div className="mt-1.5 flex gap-2 flex-wrap">
             {images.map((img, i) => (
@@ -175,7 +175,7 @@ export default function NewRequestForm() {
                 <button
                   type="button"
                   onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-destructive rounded-full text-white flex items-center justify-center"
+                  className="absolute -top-1.5 -end-1.5 w-5 h-5 bg-destructive rounded-full text-white flex items-center justify-center"
                 >
                   <X size={10} />
                 </button>
@@ -197,7 +197,7 @@ export default function NewRequestForm() {
         </div>
 
         <div>
-          <Label>תאריך מועדף</Label>
+          <Label>{t('requests.preferredDate')}</Label>
           <Input
             type="date"
             value={form.preferredDate}
@@ -206,7 +206,7 @@ export default function NewRequestForm() {
           />
         </div>
         <div>
-          <Label>שעה מועדפת</Label>
+          <Label>{t('requests.preferredTime')}</Label>
           <Input
             type="time"
             value={form.preferredTime}
@@ -217,22 +217,22 @@ export default function NewRequestForm() {
 
         <div>
           <Label className="flex items-center gap-1">
-            <MapPin size={14} /> כתובת
+            <MapPin size={14} /> {t('common.address')}
           </Label>
           <Input
             value={form.location}
             onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-            placeholder="רחוב, עיר"
-            className="mt-1.5 text-right"
+            placeholder={t('requests.locationPlaceholder')}
+            className="mt-1.5"
           />
         </div>
         <div>
-          <Label>טלפון ליצירת קשר</Label>
+          <Label>{t('requests.contactPhone')}</Label>
           <Input
             type="tel"
             value={form.customerPhone}
             onChange={(e) => setForm((f) => ({ ...f, customerPhone: e.target.value }))}
-            placeholder="050-0000000"
+            placeholder={t('requests.phonePlaceholder')}
             className="mt-1.5"
             dir="ltr"
           />
@@ -244,7 +244,7 @@ export default function NewRequestForm() {
             disabled={loading}
             className="w-full bg-secondary text-white font-bold py-3 text-base rounded-xl hover:opacity-90 disabled:opacity-60 transition-opacity"
           >
-            {loading ? 'שולח...' : 'שלח בקשה →'}
+            {loading ? t('common.sending') : `${t('requests.submit')} →`}
           </button>
         </div>
       </form>
