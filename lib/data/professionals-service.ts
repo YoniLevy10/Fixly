@@ -4,7 +4,7 @@ import {
   getFeaturedProfessionals,
   getProfessionalById,
 } from '@/mock/professionals'
-import { isSupabaseEnabled, shouldUseMockFallback } from '@/lib/data/config'
+import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import {
   supabaseGetFeaturedProfessionals,
   supabaseGetProfessionalById,
@@ -17,7 +17,11 @@ export async function listProfessionals(options?: {
   categorySlug?: string
   sortBy?: 'rating' | 'price' | 'jobs'
 }): Promise<Professional[]> {
-  if (isSupabaseEnabled()) {
+  if (resolveDataBackend() === 'mock') {
+    return filterProfessionals(options ?? {})
+  }
+
+  if (resolveDataBackend() === 'supabase') {
     const fromDb = await supabaseListProfessionals()
     if (fromDb?.length) {
       let list = fromDb
@@ -55,27 +59,32 @@ export async function listProfessionals(options?: {
     }
   }
 
-  if (shouldUseMockFallback()) {
-    return filterProfessionals(options ?? {})
-  }
   return []
 }
 
 export async function getFeaturedProfessionalsList(): Promise<Professional[]> {
-  if (isSupabaseEnabled()) {
+  if (resolveDataBackend() === 'mock') {
+    return getFeaturedProfessionals()
+  }
+
+  if (resolveDataBackend() === 'supabase') {
     const fromDb = await supabaseGetFeaturedProfessionals()
     if (fromDb?.length) return fromDb
   }
-  if (shouldUseMockFallback()) return getFeaturedProfessionals()
+
   return []
 }
 
 export async function getProfessional(id: string): Promise<Professional | undefined> {
-  if (isSupabaseEnabled()) {
+  if (resolveDataBackend() === 'mock') {
+    return getProfessionalById(id)
+  }
+
+  if (resolveDataBackend() === 'supabase') {
     const fromDb = await supabaseGetProfessionalById(id)
     if (fromDb) return fromDb
   }
-  if (shouldUseMockFallback()) return getProfessionalById(id)
+
   return undefined
 }
 

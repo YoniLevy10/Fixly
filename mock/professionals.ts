@@ -167,9 +167,13 @@ const LEGACY_PROFESSIONALS: Professional[] = [
   },
 ]
 
-export const PROFESSIONALS: Professional[] = isDemoDataMode()
-  ? getDemoDataset().professionals
-  : LEGACY_PROFESSIONALS
+/** Lazy — reads demo flag at call time (not only at module import). */
+export function getProfessionals(): Professional[] {
+  return isDemoDataMode() ? getDemoDataset().professionals : LEGACY_PROFESSIONALS
+}
+
+/** @deprecated Use getProfessionals() */
+export const PROFESSIONALS: Professional[] = getProfessionals()
 
 const SLUG_TO_CATEGORY: Record<string, string[]> = {
   plumbing: ['אינסטלציה', 'אינסטלטור'],
@@ -185,15 +189,15 @@ const SLUG_TO_CATEGORY: Record<string, string[]> = {
 }
 
 export function getFeaturedProfessionals(): Professional[] {
-  return PROFESSIONALS.filter((p) => p.isApproved && p.isFeatured)
+  return getProfessionals().filter((p) => p.isApproved && p.isFeatured)
 }
 
 export function getApprovedProfessionals(): Professional[] {
-  return PROFESSIONALS.filter((p) => p.isApproved)
+  return getProfessionals().filter((p) => p.isApproved)
 }
 
 export function getProfessionalById(id: string): Professional | undefined {
-  return PROFESSIONALS.find((p) => p.id === id)
+  return getProfessionals().find((p) => p.id === id)
 }
 
 export function filterProfessionals(options: {

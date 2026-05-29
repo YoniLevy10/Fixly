@@ -9,7 +9,8 @@ export const featureFlags = {
   seasonalCategories: process.env.NEXT_PUBLIC_FF_SEASONAL !== 'false',
   analytics: process.env.NEXT_PUBLIC_FF_ANALYTICS === 'true',
   pushNotifications:
-    process.env.NEXT_PUBLIC_FF_DEMO_DATA === 'true' ||
+    process.env.NEXT_PUBLIC_FF_DEMO_DATA?.trim().toLowerCase() === 'true' ||
+    process.env.NEXT_PUBLIC_FF_DEMO_DATA?.trim() === '1' ||
     process.env.NEXT_PUBLIC_FF_PUSH === 'true',
   monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false',
   googleOAuth: process.env.NEXT_PUBLIC_FF_GOOGLE_OAUTH !== 'false',

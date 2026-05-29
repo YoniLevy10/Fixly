@@ -1,19 +1,26 @@
-import {
-  MOCK_REQUESTS,
-  type MockRequest,
-  type CreateRequestInput,
-} from '@/mock/requests'
+import { getMockRequests, type MockRequest, type CreateRequestInput } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
-let store: MockRequest[] = [...MOCK_REQUESTS]
+let store: MockRequest[] = [...getMockRequests()]
+
+/** Reload full demo seed when flag is on but store was initialized before it. */
+function ensureDemoStore() {
+  if (!isDemoDataMode()) return
+  if (store.length < 50) {
+    store = [...getMockRequests()]
+  }
+}
 
 export function listRequests(): MockRequest[] {
+  ensureDemoStore()
   return [...store].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 }
 
 export function getRequestById(id: string): MockRequest | undefined {
+  ensureDemoStore()
   return store.find((r) => r.id === id)
 }
 
@@ -80,5 +87,5 @@ export function updateRequestStatus(
 
 /** Reset store (tests) */
 export function resetRequestStore(): void {
-  store = [...MOCK_REQUESTS]
+  store = [...getMockRequests()]
 }

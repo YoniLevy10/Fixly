@@ -34,12 +34,15 @@ const LEGACY_REVIEWS: Review[] = [
   },
 ]
 
-export const MOCK_REVIEWS: Review[] = isDemoDataMode()
-  ? getDemoDataset().reviews
-  : LEGACY_REVIEWS
+export function getMockReviews(): Review[] {
+  return isDemoDataMode() ? getDemoDataset().reviews : LEGACY_REVIEWS
+}
+
+/** @deprecated Prefer getMockReviews() */
+export const MOCK_REVIEWS: Review[] = getMockReviews()
 
 export function getReviewsByProfessionalId(professionalId: string): Review[] {
-  return MOCK_REVIEWS.filter((r) => r.professionalId === professionalId).sort(
+  return getMockReviews().filter((r) => r.professionalId === professionalId).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
 }

@@ -30,6 +30,11 @@ export type CreateRequestInput = Omit<
   'id' | 'createdAt' | 'status'
 >
 
-import { DEMO_REQUESTS } from '@/mock/demo-requests'
+import { getDemoRequests } from '@/mock/demo-requests'
 
-export const MOCK_REQUESTS: MockRequest[] = DEMO_REQUESTS
+export function getMockRequests(): MockRequest[] {
+  return getDemoRequests()
+}
+
+/** @deprecated Prefer getMockRequests() */
+export const MOCK_REQUESTS: MockRequest[] = getDemoRequests()
