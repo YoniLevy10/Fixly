@@ -14,6 +14,7 @@ import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
+import DemoPlatformStats from '@/components/demo/DemoPlatformStats'
 
 export default function HomeScreen() {
   const { user } = useAuth()
@@ -129,6 +130,8 @@ export default function HomeScreen() {
           </span>
         </div>
       </div>
+
+      <DemoPlatformStats />
 
       <div className="px-4 lg:px-8">
         {featureFlags.quickRequest && (

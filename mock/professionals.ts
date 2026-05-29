@@ -1,7 +1,9 @@
 import type { Professional } from '@/types/professional'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
+import { getDemoDataset } from '@/mock/demo-seed'
 
-/** Ported from BASE44 mockData.js — Hebrew professionals seed */
-export const PROFESSIONALS: Professional[] = [
+/** Ported from BASE44 mockData.js — Hebrew professionals seed (non-demo) */
+const LEGACY_PROFESSIONALS: Professional[] = [
   {
     id: '1',
     name: 'יוסי כהן',
@@ -165,6 +167,10 @@ export const PROFESSIONALS: Professional[] = [
   },
 ]
 
+export const PROFESSIONALS: Professional[] = isDemoDataMode()
+  ? getDemoDataset().professionals
+  : LEGACY_PROFESSIONALS
+
 const SLUG_TO_CATEGORY: Record<string, string[]> = {
   plumbing: ['אינסטלציה', 'אינסטלטור'],
   electricity: ['חשמל', 'חשמלאי'],
@@ -173,7 +179,7 @@ const SLUG_TO_CATEGORY: Record<string, string[]> = {
   carpentry: ['נגרות'],
   painting: ['צביעה', 'צבעי'],
   gardening: ['גינון'],
-  locksmith: ['מנעולן'],
+  locksmith: ['מנעולן', 'מנעולנות'],
   tiling: ['ריצוף'],
   moving: ['הובלות'],
 }

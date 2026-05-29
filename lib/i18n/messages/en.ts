@@ -122,7 +122,11 @@ export const en: MessageTree = {
     pushArrivedBody: '{name} is near your address',
   },
   demo: {
-    banner: 'Demo mode — sample data only · Allow notifications for the Wolt-style experience',
+    banner: 'Investor demo — simulated data · 58+ pros · 120+ requests',
+    statsPros: 'Professionals',
+    statsActive: 'Active requests',
+    statsJobs: 'Jobs completed',
+    statsRating: 'Avg. rating',
   },
   status: {
     pending: 'Pending approval',

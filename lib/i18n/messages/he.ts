@@ -122,7 +122,11 @@ export const he: MessageTree = {
     pushArrivedBody: '{name} בקרבת הכתובת',
   },
   demo: {
-    banner: 'מצב הדגמה — נתונים לדוגמה בלבד · הפעל התראות בדפדפן לחוויית Wolt',
+    banner: 'מצב הדגמה להצגה למשקיעים — נתונים מדומים · 58+ אנשי מקצוע · 120+ בקשות',
+    statsPros: 'אנשי מקצוע',
+    statsActive: 'בקשות פעילות',
+    statsJobs: 'עבודות שהושלמו',
+    statsRating: 'דירוג ממוצע',
   },
   status: {
     pending: 'ממתין לאישור',
