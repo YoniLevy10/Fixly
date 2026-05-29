@@ -19,10 +19,13 @@ const REQUEST_SELECT = `
   service_categories ( name, name_he )
 `
 
-export async function supabaseListRequests(filters?: {
-  customerId?: string
-  professionalId?: string
-}): Promise<MockRequest[] | null> {
+export async function supabaseListRequests(
+  filters?: {
+    customerId?: string
+    professionalId?: string
+  },
+  pagination?: { limit: number; offset: number }
+): Promise<MockRequest[] | null> {
   const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
@@ -36,6 +39,12 @@ export async function supabaseListRequests(filters?: {
   }
   if (filters?.professionalId) {
     query = query.eq('professional_id', filters.professionalId)
+  }
+  if (pagination) {
+    query = query.range(
+      pagination.offset,
+      pagination.offset + pagination.limit - 1
+    )
   }
 
   const { data, error } = await query
@@ -113,14 +122,20 @@ export async function supabaseCreateRequest(
 
 export async function supabaseUpdateRequest(
   id: string,
-  status: RequestStatus
+  status: RequestStatus,
+  extra?: { quotedAmount?: number }
 ): Promise<MockRequest | null> {
   const supabase = await createServerSupabaseClient()
   if (!supabase) return null
 
+  const patch: Record<string, unknown> = { status }
+  if (extra?.quotedAmount != null) {
+    patch.quoted_amount = extra.quotedAmount
+  }
+
   const { data, error } = await supabase
     .from('requests')
-    .update({ status })
+    .update(patch)
     .eq('id', id)
     .select(REQUEST_SELECT)
     .single()

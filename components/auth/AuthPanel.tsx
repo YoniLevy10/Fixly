@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useAuth, DEMO_PROFESSIONAL_ID } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
+import { featureFlags } from '@/lib/feature-flags'
 import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
 
@@ -12,6 +13,7 @@ export default function AuthPanel() {
     isSupabase,
     signInWithEmail,
     signUpWithEmail,
+    signInWithGoogle,
     claimProfessionalProfile,
     signOut,
   } = useAuth()
@@ -60,6 +62,23 @@ export default function AuthPanel() {
           {user.professionalId ? ` • ${user.professionalId.slice(0, 8)}…` : ''}
         </p>
       </div>
+
+      {featureFlags.googleOAuth && (
+        <button
+          type="button"
+          disabled={loading}
+          onClick={async () => {
+            setLoading(true)
+            setError(null)
+            setError(await signInWithGoogle())
+            setLoading(false)
+          }}
+          className="w-full flex items-center justify-center gap-2 border border-gray-200 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-50"
+        >
+          <span aria-hidden>G</span>
+          {t('auth.google')}
+        </button>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-3 bg-white rounded-2xl border p-4">
         <div className="flex gap-2 mb-2">

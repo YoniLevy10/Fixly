@@ -31,10 +31,26 @@ export default function NativeBootstrap() {
 
       try {
         const { App } = await import('@capacitor/app')
+        const { resolveDeepLink } = await import('@/lib/native/deep-link')
+        const { registerPushNotifications } = await import('@/lib/push/notifications-stub')
+
+        void registerPushNotifications()
+
         void App.addListener('appStateChange', ({ isActive }) => {
           if (isActive) document.body.classList.remove('app-backgrounded')
           else document.body.classList.add('app-backgrounded')
         })
+
+        void App.addListener('appUrlOpen', ({ url }) => {
+          const path = resolveDeepLink(url)
+          if (path) window.location.href = path
+        })
+
+        const launch = await App.getLaunchUrl()
+        if (launch?.url) {
+          const path = resolveDeepLink(launch.url)
+          if (path) window.location.href = path
+        }
       } catch {
         /* ignore */
       }

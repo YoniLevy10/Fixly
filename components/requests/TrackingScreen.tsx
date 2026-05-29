@@ -16,6 +16,7 @@ import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
 import { routes } from '@/lib/routes'
 import { useRequestRealtime } from '@/shared/hooks/use-request-realtime'
 import ReviewForm from '@/components/reviews/ReviewForm'
+import ShareRequestButton from '@/components/requests/ShareRequestButton'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
@@ -95,6 +96,10 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   )
   const isCancelled = request.status === 'cancelled'
   const isCompleted = request.status === 'completed'
+  const progressPct =
+    currentStepIndex < 0
+      ? 0
+      : Math.min(100, Math.round(((currentStepIndex + 1) / STATUS_ORDER.length) * 100))
 
   return (
     <div className="min-h-screen bg-gray-50 max-w-3xl mx-auto lg:max-w-4xl">
@@ -112,6 +117,21 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
               {request.title ?? request.description}
             </h2>
             <p className="text-sm text-gray-500">{request.location}</p>
+            <div className="mt-3">
+              <p className="text-xs text-muted-foreground mb-1">{t('improvements.progress')}</p>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-500"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
+            </div>
+            <div className="mt-3">
+              <ShareRequestButton
+                requestId={request.id}
+                title={request.title ?? request.description}
+              />
+            </div>
           </div>
 
           {professional && (
@@ -192,6 +212,14 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
               <div className="bg-green-50 text-green-800 rounded-2xl p-4 text-center text-sm mt-4">
                 {t('requests.completed')}
               </div>
+              {request.professionalId && (
+                <Link
+                  href={`${routes.newRequest}?professional=${request.professionalId}`}
+                  className="block text-center text-primary font-bold text-sm mt-3"
+                >
+                  {t('improvements.repeatRequest')}
+                </Link>
+              )}
               <ReviewForm
                 requestId={request.id}
                 professionalId={request.professionalId}

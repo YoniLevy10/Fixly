@@ -5,12 +5,16 @@ import { usePathname, useRouter } from 'next/navigation'
 import { mobileNav } from '@/components/layout/nav-config'
 import { routes } from '@/lib/routes'
 import { useLocale } from '@/lib/i18n/locale-provider'
+import { useAuth } from '@/lib/auth/auth-provider'
+import { usePendingRequestsCount } from '@/shared/hooks/use-pending-requests-count'
 import { cn } from '@/lib/utils/cn'
 
 export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const { t } = useLocale()
+  const { user } = useAuth()
+  const pendingCount = usePendingRequestsCount()
 
   const renderItem = ({
     path,
@@ -22,12 +26,20 @@ export default function BottomNav() {
       ? pathname === path
       : pathname === path || pathname.startsWith(`${path}/`)
 
+    const showBadge =
+      path === routes.profile && user.role === 'professional' && pendingCount > 0
+
     return (
       <Link
         key={path}
         href={path}
-        className="flex flex-col items-center gap-0.5 px-4 py-2"
+        className="relative flex flex-col items-center gap-0.5 px-4 py-2"
       >
+        {showBadge && (
+          <span className="absolute top-1 end-2 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+            {pendingCount > 9 ? '9+' : pendingCount}
+          </span>
+        )}
         <Icon
           size={22}
           strokeWidth={isActive ? 2.5 : 1.8}

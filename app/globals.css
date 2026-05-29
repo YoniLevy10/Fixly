@@ -44,6 +44,10 @@
     direction: ltr;
   }
 
+  html {
+    transition: direction 0.2s ease;
+  }
+
   body {
     @apply bg-background text-foreground font-heebo antialiased;
     margin: 0;

@@ -16,10 +16,21 @@ import {
   updateRequestStatusApi,
   useRequestsList,
 } from '@/shared/hooks/use-requests-api'
+import PullToRefreshIndicator from '@/components/shared/PullToRefreshIndicator'
+import { featureFlags } from '@/lib/feature-flags'
+import { agorotToIls } from '@/lib/monetization/config'
+import { track } from '@/lib/analytics/track'
 import { useRequestsListRealtime } from '@/shared/hooks/use-request-realtime'
+import { usePullToRefresh } from '@/shared/hooks/use-pull-to-refresh'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 import { cn } from '@/lib/utils/cn'
+
+const TEMPLATES = [
+  'improvements.templateApprove',
+  'improvements.templateDecline',
+  'improvements.templateThanks',
+] as const
 
 type TabKey = 'pending' | 'active' | 'done' | 'stats'
 
@@ -30,7 +41,11 @@ export default function ProDashboardScreen() {
     scope: user.role === 'professional' ? 'pro' : undefined,
   })
 
-  useRequestsListRealtime(refresh)
+  useRequestsListRealtime(refresh, {
+    professionalId: user.professionalId,
+    enabled: user.role === 'professional',
+  })
+  const pull = usePullToRefresh(refresh)
   const [selectedRequest, setSelectedRequest] = useState<MockRequest | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
@@ -69,12 +84,38 @@ export default function ProDashboardScreen() {
   const updateStatus = async (
     reqId: string,
     newStatus: RequestStatus,
-    extra?: { cancellationReason?: string }
+    extra?: { cancellationReason?: string; quotedAmount?: number }
   ) => {
-    await updateRequestStatusApi(reqId, newStatus, extra)
+    const result = await updateRequestStatusApi(reqId, newStatus, extra)
+    if (newStatus === 'accepted') track('pro_accepted', { requestId: reqId })
+    if (newStatus === 'completed') track('request_completed', { requestId: reqId })
+    const billing = (result as MockRequest & { billing?: { leadCharged?: boolean; amountAgorot?: number } })
+      .billing
+    if (billing?.leadCharged && billing.amountAgorot) {
+      alert(
+        t('monetization.leadCharged', {
+          amount: agorotToIls(billing.amountAgorot),
+        })
+      )
+    }
     await refresh()
     setSelectedRequest(null)
     setCancellationReason('')
+  }
+
+  const completeWithAmount = async (reqId: string) => {
+    if (!featureFlags.monetization) {
+      await updateStatus(reqId, 'completed')
+      return
+    }
+    const raw = window.prompt(t('monetization.completeAmount'))
+    if (raw === null) return
+    const amount = Number(raw)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      await updateStatus(reqId, 'completed')
+      return
+    }
+    await updateStatus(reqId, 'completed', { quotedAmount: amount })
   }
 
   const TABS: { key: TabKey; labelKey: string; count: number | null }[] = [
@@ -293,6 +334,23 @@ export default function ProDashboardScreen() {
                 >
                   <CheckCircle size={16} /> {t('pro.approve')}
                 </button>
+                {featureFlags.proTemplates && (
+                  <div className="flex flex-wrap gap-2">
+                    <p className="text-xs text-muted-foreground w-full">
+                      {t('improvements.useTemplate')}
+                    </p>
+                    {TEMPLATES.map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setCancellationReason(t(key))}
+                        className="text-xs px-2 py-1 rounded-lg bg-muted"
+                      >
+                        {t(key).slice(0, 28)}…
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <Textarea
                   value={cancellationReason}
                   onChange={(e) => setCancellationReason(e.target.value)}
@@ -324,7 +382,7 @@ export default function ProDashboardScreen() {
             {selectedRequest.status === 'in_progress' && (
               <button
                 type="button"
-                onClick={() => updateStatus(selectedRequest.id, 'completed')}
+                onClick={() => completeWithAmount(selectedRequest.id)}
                 className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
               >
                 <CheckCircle size={16} /> {t('pro.markCompleted')}

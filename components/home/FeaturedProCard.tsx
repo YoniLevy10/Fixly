@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
+import AvailableTodayBadge from '@/components/shared/AvailableTodayBadge'
 import { useLocale } from '@/lib/i18n/locale-provider'
 
 type FeaturedProCardProps = {
@@ -24,7 +25,10 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
           >
             {!pro.avatarUrl && pro.name.charAt(0)}
           </div>
-          <p className="font-bold text-sm leading-tight">{pro.name}</p>
+          <div className="flex flex-col items-center gap-1">
+            <p className="font-bold text-sm leading-tight">{pro.name}</p>
+            <AvailableTodayBadge isAvailable={pro.isAvailable} />
+          </div>
           <p className="text-xs text-gray-500 mt-0.5">{pro.title ?? pro.category}</p>
           <div className="flex items-center justify-center gap-0.5 mt-1.5">
             {[1, 2, 3, 4, 5].map((s) => (

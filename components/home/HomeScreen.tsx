@@ -8,6 +8,9 @@ import FeaturedProCard from '@/components/home/FeaturedProCard'
 import { routes } from '@/lib/routes'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { getCategoryLabel } from '@/lib/i18n/category-label'
+import LanguageToggle from '@/components/i18n/LanguageToggle'
+import { featureFlags } from '@/lib/feature-flags'
+import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
 
@@ -56,6 +59,8 @@ export default function HomeScreen() {
   }, [locale])
 
   const displayCats = showAllCats ? categories : categories.slice(0, 9)
+  const seasonalSlugs = featureFlags.seasonalCategories ? getSeasonalCategorySlugs() : []
+  const seasonalCats = categories.filter((c) => seasonalSlugs.includes(c.slug))
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,7 +75,7 @@ export default function HomeScreen() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="lg:hidden bg-white px-4 pt-4 pb-3 flex items-center justify-between sticky top-0 z-10 shadow-sm safe-area-pt">
-        <div className="w-9" />
+        <LanguageToggle />
         <div className="text-center">
           <p className="font-bold text-sm text-foreground">
             👋 {t('home.greeting')}, {firstName}
@@ -125,6 +130,36 @@ export default function HomeScreen() {
       </div>
 
       <div className="px-4 lg:px-8">
+        {featureFlags.quickRequest && (
+          <div className="flex gap-2 mb-4">
+            <Link
+              href={routes.quickRequest}
+              className="flex-1 text-center py-2.5 rounded-xl bg-secondary text-white text-sm font-bold"
+            >
+              {t('improvements.quickRequest')}
+            </Link>
+          </div>
+        )}
+
+        {seasonalCats.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-bold text-muted-foreground mb-2">
+              {t('improvements.seasonalTitle')}
+            </p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+              {seasonalCats.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  href={`${routes.professionals}?category=${cat.slug}`}
+                  className="flex-shrink-0 px-3 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold"
+                >
+                  {cat.icon} {cat.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mb-5 lg:mb-8">
           <h3 className="text-base font-black text-foreground mb-3 lg:text-lg">
             {t('home.pickCategory')}

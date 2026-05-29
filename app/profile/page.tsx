@@ -51,6 +51,24 @@ export default function ProfilePage() {
           {t('profile.findPros')}
         </Link>
         <Link
+          href={routes.proJoin}
+          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+        >
+          {t('improvements.proJoin')}
+        </Link>
+        <Link
+          href={routes.about}
+          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+        >
+          {t('improvements.about')}
+        </Link>
+        <Link
+          href={routes.proPricing}
+          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+        >
+          Fixly Pro
+        </Link>
+        <Link
           href={routes.proDashboard}
           className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
         >

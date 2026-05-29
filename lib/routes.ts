@@ -12,4 +12,8 @@ export const routes = {
   dashboard: '/dashboard',
   privacy: '/privacy',
   terms: '/terms',
+  about: '/about',
+  quickRequest: '/request/quick',
+  proJoin: '/pro/join',
+  proPricing: '/pro/pricing',
 }

@@ -12,6 +12,7 @@ import {
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { CreateRequestInput } from '@/mock/requests'
+import { getClientIp, rateLimit } from '@/lib/api/rate-limit'
 
 async function resolveProfessionalIdFromAuth(): Promise<string | undefined> {
   const supabase = await createServerSupabaseClient()
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
   let customerId = searchParams.get('customerId') ?? undefined
   let professionalId = searchParams.get('professionalId') ?? undefined
   const scope = searchParams.get('scope')
+  const limit = Math.min(Number(searchParams.get('limit') ?? 0) || 0, 50)
+  const offset = Math.max(Number(searchParams.get('offset') ?? 0) || 0, 0)
 
   if (scope === 'mine') {
     const supabase = await createServerSupabaseClient()
@@ -53,14 +56,29 @@ export async function GET(request: Request) {
   const backend = resolveDataBackend()
 
   if (backend === 'supabase') {
-    const fromSupabase = await supabaseListRequests({ customerId, professionalId })
-    return NextResponse.json(fromSupabase ?? [])
+    const fromSupabase = await supabaseListRequests(
+      { customerId, professionalId },
+      limit > 0 ? { limit: limit + 1, offset } : undefined
+    )
+    const rows = fromSupabase ?? []
+    if (limit > 0) {
+      const hasMore = rows.length > limit
+      const items = hasMore ? rows.slice(0, limit) : rows
+      return NextResponse.json({ items, hasMore, offset })
+    }
+    return NextResponse.json(rows)
   }
 
   if (backend === 'mock') {
     let data = listRequests()
     if (customerId) data = listRequestsByCustomer(customerId)
     if (professionalId) data = listRequestsByProfessional(professionalId)
+    if (limit > 0) {
+      const slice = data.slice(offset, offset + limit + 1)
+      const hasMore = slice.length > limit
+      const items = hasMore ? slice.slice(0, limit) : slice
+      return NextResponse.json({ items, hasMore, offset })
+    }
     return NextResponse.json(data)
   }
 
@@ -68,6 +86,18 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request)
+  const limited = rateLimit(`requests-post:${ip}`, 30, 60_000)
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: 'יותר מדי בקשות — נסה שוב בעוד דקה' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limited.retryAfterSec ?? 60) },
+      }
+    )
+  }
+
   try {
     const body = (await request.json()) as CreateRequestInput
     if (!body.description || !body.professionalId) {

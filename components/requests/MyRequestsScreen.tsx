@@ -4,24 +4,37 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
 import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
+import PullToRefreshIndicator from '@/components/shared/PullToRefreshIndicator'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { formatDate } from '@/lib/i18n/format-date'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { useRequestsList } from '@/shared/hooks/use-requests-api'
 import { useRequestsListRealtime } from '@/shared/hooks/use-request-realtime'
+import { usePullToRefresh } from '@/shared/hooks/use-pull-to-refresh'
 import { routes } from '@/lib/routes'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
 export default function MyRequestsScreen() {
   const router = useRouter()
+  const { user } = useAuth()
   const { locale, dir, t } = useLocale()
-  const { requests, loading, refresh } = useRequestsList({ scope: 'mine' })
+  const { requests, loading, refresh, hasMore, loadMore } = useRequestsList({
+    scope: 'mine',
+  })
   const Chevron = dir === 'rtl' ? ChevronLeft : ChevronRight
 
-  useRequestsListRealtime(refresh)
+  useRequestsListRealtime(refresh, { customerId: user.id })
+
+  const pull = usePullToRefresh(refresh)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 lg:px-8">
+    <div
+      className="max-w-4xl mx-auto px-4 py-6 lg:px-8"
+      onTouchStart={pull.onTouchStart}
+      onTouchMove={pull.onTouchMove}
+      onTouchEnd={pull.onTouchEnd}
+    >
+      <PullToRefreshIndicator pulling={pull.pulling} />
       <h1 className="text-2xl font-black mb-6 lg:text-3xl">{t('requests.myTitle')}</h1>
 
       {loading ? (
@@ -41,32 +54,43 @@ export default function MyRequestsScreen() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-          {requests.map((req) => (
-            <button
-              key={req.id}
-              type="button"
-              className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
-              onClick={() => router.push(routes.tracking(req.id))}
-            >
-              <div className="flex items-center justify-between">
-                <Chevron size={18} className="text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 justify-end">
-                    <span className="text-xs text-muted-foreground">{req.category}</span>
-                    <RequestStatusBadge status={req.status as RequestStatus} size="sm" />
+        <>
+          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+            {requests.map((req) => (
+              <button
+                key={req.id}
+                type="button"
+                className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
+                onClick={() => router.push(routes.tracking(req.id))}
+              >
+                <div className="flex items-center justify-between">
+                  <Chevron size={18} className="text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 justify-end">
+                      <span className="text-xs text-muted-foreground">{req.category}</span>
+                      <RequestStatusBadge status={req.status as RequestStatus} size="sm" />
+                    </div>
+                    <p className="font-semibold text-sm truncate">
+                      {req.title ?? req.description.slice(0, 50)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {req.professionalName} • {formatDate(locale, req.createdAt)}
+                    </p>
                   </div>
-                  <p className="font-semibold text-sm truncate">
-                    {req.title ?? req.description.slice(0, 50)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {req.professionalName} • {formatDate(locale, req.createdAt)}
-                  </p>
                 </div>
-              </div>
+              </button>
+            ))}
+          </div>
+          {hasMore && (
+            <button
+              type="button"
+              onClick={loadMore}
+              className="w-full mt-4 py-3 rounded-xl border border-primary text-primary font-bold"
+            >
+              {t('improvements.loadMore')}
             </button>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   )

@@ -14,6 +14,15 @@ import { useLocale } from '@/lib/i18n/locale-provider'
 import { createRequestApi } from '@/shared/hooks/use-requests-api'
 import { uploadRequestImage } from '@/lib/storage/upload-request-image'
 import { routes } from '@/lib/routes'
+import { featureFlags } from '@/lib/feature-flags'
+import {
+  clearRequestDraft,
+  loadRequestDraft,
+  saveRequestDraft,
+} from '@/lib/request-draft'
+import { estimatePriceRange, guessCategorySlug } from '@/lib/estimate/price-estimate'
+import { formatPrice } from '@/lib/i18n/format-locale'
+import { track } from '@/lib/analytics/track'
 
 type ImagePreview = { preview: string; file: File }
 
@@ -22,7 +31,7 @@ export default function NewRequestForm() {
   const searchParams = useSearchParams()
   const proId = searchParams.get('professional')
   const { user } = useAuth()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
 
   const [pro, setPro] = useState<Professional | null>(null)
   const [form, setForm] = useState({
@@ -42,6 +51,34 @@ export default function NewRequestForm() {
       fetchProfessional(proId).then((p) => setPro(p ?? null))
     }
   }, [proId])
+
+  useEffect(() => {
+    if (!featureFlags.requestDrafts) return
+    const draft = loadRequestDraft()
+    if (draft && (!proId || draft.professionalId === proId)) {
+      setForm({
+        title: draft.title,
+        description: draft.description,
+        preferredDate: draft.preferredDate,
+        preferredTime: draft.preferredTime,
+        location: draft.location || (user.location ?? ''),
+        customerPhone: draft.customerPhone || (user.phone ?? ''),
+      })
+    }
+  }, [proId, user.location, user.phone])
+
+  useEffect(() => {
+    if (!featureFlags.requestDrafts) return
+    const tmr = setTimeout(() => {
+      saveRequestDraft({ ...form, professionalId: proId ?? undefined })
+    }, 800)
+    return () => clearTimeout(tmr)
+  }, [form, proId])
+
+  const estimate =
+    featureFlags.priceEstimate && pro
+      ? estimatePriceRange(guessCategorySlug(pro.category))
+      : null
 
   const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
@@ -86,6 +123,8 @@ export default function NewRequestForm() {
         images: imageUrls.length ? imageUrls : undefined,
       })
 
+      clearRequestDraft()
+      track('request_created', { professionalId: pro?.id ?? proId ?? '' })
       router.push(routes.myRequests)
     } catch (err) {
       setError(err instanceof Error ? err.message : t('requests.submitError'))
@@ -100,6 +139,13 @@ export default function NewRequestForm() {
         <BackButton onClick={() => router.back()} />
         <h1 className="text-xl font-black lg:text-2xl">{t('requests.newTitle')}</h1>
       </div>
+
+      {estimate && (
+        <p className="text-sm text-muted-foreground mb-4 bg-muted/50 rounded-xl p-3">
+          {t('improvements.estimate')}: {formatPrice(locale, estimate.min)} –{' '}
+          {formatPrice(locale, estimate.max)}
+        </p>
+      )}
 
       {pro && (
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center gap-3">

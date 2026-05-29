@@ -7,7 +7,7 @@ import { routes } from '@/lib/routes'
 
 type LegalPageLayoutProps = {
   title: string
-  lastUpdated: string
+  lastUpdated?: string
   children: React.ReactNode
 }
 
@@ -24,7 +24,9 @@ export default function LegalPageLayout({
         <BackButton onClick={() => router.back()} />
         <h1 className="text-xl font-black lg:text-2xl">{title}</h1>
       </div>
-      <p className="text-xs text-muted-foreground mb-6">{lastUpdated}</p>
+      {lastUpdated ? (
+        <p className="text-xs text-muted-foreground mb-6">{lastUpdated}</p>
+      ) : null}
       <article className="prose-legal space-y-4 text-sm text-foreground leading-relaxed">
         {children}
       </article>

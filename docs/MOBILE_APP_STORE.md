@@ -132,6 +132,20 @@ GitHub Actions על `macos-latest` יכול להריץ `xcodebuild` + TestFlight
 
 ---
 
+## רשימת השקה (Release)
+
+1. [ ] חשבון [Apple Developer](https://developer.apple.com/programs/)
+2. [ ] `npm run mobile:prepare` — בדיקות + sync iOS
+3. [ ] אייקון 1024×1024 + צילומי מסך (6.7", 6.5")
+4. [ ] Xcode: Archive → Distribute → App Store Connect
+5. [ ] TestFlight לבטא (10–20 משתמשים)
+6. [ ] הגשה ל-Review — קישורים ל-`/privacy` ו-`/terms`
+7. [ ] `NEXT_PUBLIC_APP_URL` מצביע ל-production ב-Vercel
+
+ראה גם `app-store/CHECKLIST.md` ו-`docs/ROADMAP_LAUNCH.md`.
+
+---
+
 ## קבצים שנוספו
 
 - `capacitor.config.ts` — מזהה `com.fixly.app`, URL שרת

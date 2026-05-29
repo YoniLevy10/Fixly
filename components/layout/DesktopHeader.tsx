@@ -3,6 +3,7 @@
 import { useAuth } from '@/lib/auth/auth-provider'
 import Link from 'next/link'
 import { routes } from '@/lib/routes'
+import LanguageToggle from '@/components/i18n/LanguageToggle'
 import { useLocale } from '@/lib/i18n/locale-provider'
 
 export default function DesktopHeader() {
@@ -16,6 +17,7 @@ export default function DesktopHeader() {
         <p className="font-bold">{user.fullName}</p>
       </div>
       <div className="flex items-center gap-3">
+        <LanguageToggle />
         <Link
           href={routes.profile}
           className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm"

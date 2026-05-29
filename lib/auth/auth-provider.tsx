@@ -25,6 +25,7 @@ type AuthContextValue = {
     fullName: string
   ) => Promise<string | null>
   signInAnonymously: () => Promise<string | null>
+  signInWithGoogle: () => Promise<string | null>
   claimProfessionalProfile: (professionalId: string) => Promise<string | null>
   signOut: () => Promise<void>
 }
@@ -131,6 +132,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error?.message ?? null
   }, [getClient])
 
+  const signInWithGoogle = useCallback(async () => {
+    const supabase = getClient()
+    if (!supabase) return 'Supabase לא מוגדר'
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : ''
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${origin}/auth/callback`,
+      },
+    })
+    return error?.message ?? null
+  }, [getClient])
+
   const claimProfessionalProfile = useCallback(async (professionalId: string) => {
     const res = await fetch('/api/pro/claim', {
       method: 'POST',
@@ -169,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithEmail,
       signUpWithEmail,
       signInAnonymously,
+      signInWithGoogle,
       claimProfessionalProfile,
       signOut,
     }),
@@ -178,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithEmail,
       signUpWithEmail,
       signInAnonymously,
+      signInWithGoogle,
       claimProfessionalProfile,
       signOut,
     ]

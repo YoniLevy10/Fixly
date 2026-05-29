@@ -6,9 +6,15 @@ import { HOME_DISPLAY_CATEGORIES } from '@/mock/categories'
 export async function GET() {
   const backend = resolveDataBackend()
 
+  const cacheHeaders = {
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+  }
+
   if (backend === 'supabase') {
     const fromDb = await supabaseListCategories()
-    if (fromDb?.length) return NextResponse.json(fromDb)
+    if (fromDb?.length) {
+      return NextResponse.json(fromDb, { headers: cacheHeaders })
+    }
   }
 
   if (backend === 'mock') {
@@ -19,7 +25,8 @@ export async function GET() {
         name: c.name,
         nameHe: c.name,
         icon: c.emoji,
-      }))
+      })),
+      { headers: cacheHeaders }
     )
   }
 

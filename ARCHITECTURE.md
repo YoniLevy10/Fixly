@@ -167,12 +167,22 @@ Frontend:
 
 ---
 
+# POST-MVP TRACK (in progress)
+
+Launch pillars documented in `docs/ROADMAP_LAUNCH.md`:
+
+- Monetization foundation (`docs/MONETIZATION.md`) — lead credits, Pro subscription, commission accrual
+- Google OAuth (`/auth/callback`)
+- Scale: filtered Realtime, pagination, rate limits, DB indexes
+- Pro waitlist without Midrag scraping (`docs/PRO_OUTREACH.md`)
+- App Store shell (`docs/MOBILE_APP_STORE.md`)
+
 # MVP NON-GOALS
 
-Forbidden for current MVP:
+Forbidden for core request lifecycle MVP:
 
 - AI
-- Payments
+- Full escrow payments (foundation only)
 - Chat
 - Notifications infra
 - Maps

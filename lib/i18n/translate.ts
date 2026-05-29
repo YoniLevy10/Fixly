@@ -23,9 +23,19 @@ function resolvePath(obj: Record<string, unknown>, path: Path): string | undefin
   return typeof cur === 'string' ? cur : undefined
 }
 
-export function translate(locale: Locale, key: Path): string {
-  const msg = resolvePath(getMessages(locale) as unknown as Record<string, unknown>, key)
-  if (msg) return msg
-  const fallback = resolvePath(he as unknown as Record<string, unknown>, key)
-  return fallback ?? key
+export function translate(
+  locale: Locale,
+  key: Path,
+  vars?: Record<string, string | number>
+): string {
+  let msg = resolvePath(getMessages(locale) as unknown as Record<string, unknown>, key)
+  if (!msg) {
+    msg = resolvePath(he as unknown as Record<string, unknown>, key)
+  }
+  const text = msg ?? key
+  if (!vars) return text
+  return Object.entries(vars).reduce(
+    (acc, [k, v]) => acc.replaceAll(`{${k}}`, String(v)),
+    text
+  )
 }

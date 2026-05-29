@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { Clock, MessageCircle } from 'lucide-react'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
+import AvailableTodayBadge from '@/components/shared/AvailableTodayBadge'
+import { formatPrice } from '@/lib/i18n/format-locale'
 import { useLocale } from '@/lib/i18n/locale-provider'
 
 type ProListCardProps = {
@@ -12,7 +14,7 @@ type ProListCardProps = {
 
 export default function ProListCard({ professional: pro }: ProListCardProps) {
   const router = useRouter()
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
@@ -30,16 +32,19 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-bold text-sm">{pro.name}</h3>
+                <AvailableTodayBadge isAvailable={pro.isAvailable} />
                 {pro.isApproved && (
                   <span className="text-primary text-xs font-bold">✓</span>
                 )}
               </div>
               <p className="text-xs text-gray-500">{pro.title ?? pro.category}</p>
+              {pro.availableHours && (
+                <p className="text-xs text-gray-400">{pro.availableHours}</p>
+              )}
             </div>
             <div className="text-end">
               <p className="font-black text-base">
-                {pro.startingPrice}
-                {t('common.currency')}
+                {formatPrice(locale, pro.startingPrice)}
               </p>
               <p className="text-xs text-gray-400">{t('common.quoteLabel')}</p>
             </div>

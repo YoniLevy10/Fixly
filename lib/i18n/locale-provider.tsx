@@ -21,21 +21,36 @@ type LocaleContextValue = {
   locale: Locale
   dir: 'rtl' | 'ltr'
   setLocale: (locale: Locale) => void
-  t: (key: string) => string
+  t: (key: string, vars?: Record<string, string | number>) => string
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null)
 
+const LOCALE_SUGGESTED_KEY = 'fixly-locale-suggested'
+
+function detectBrowserLocale(): Locale {
+  if (typeof navigator === 'undefined') return 'he'
+  const lang = navigator.language?.toLowerCase() ?? ''
+  return lang.startsWith('he') ? 'he' : 'en'
+}
+
 function readStoredLocale(): Locale {
   if (typeof window === 'undefined') return 'he'
   const stored = localStorage.getItem(LOCALE_STORAGE_KEY)
-  return stored && isLocale(stored) ? stored : 'he'
+  if (stored && isLocale(stored)) return stored
+  if (!localStorage.getItem(LOCALE_SUGGESTED_KEY)) {
+    localStorage.setItem(LOCALE_SUGGESTED_KEY, '1')
+    return detectBrowserLocale()
+  }
+  return 'he'
 }
 
 function applyDocumentLocale(locale: Locale) {
   const dir = localeDirection(locale)
   document.documentElement.lang = locale
-  document.documentElement.dir = dir
+  document.documentElement.setAttribute('dir', dir)
+  document.documentElement.classList.toggle('locale-rtl', dir === 'rtl')
+  document.documentElement.classList.toggle('locale-ltr', dir === 'ltr')
   document.body.dir = dir
 }
 
@@ -56,7 +71,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     applyDocumentLocale(next)
   }, [])
 
-  const t = useCallback((key: string) => translate(locale, key), [locale])
+  const t = useCallback(
+    (key: string, vars?: Record<string, string | number>) => translate(locale, key, vars),
+    [locale]
+  )
 
   const value = useMemo(
     () => ({
