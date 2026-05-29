@@ -1,4 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="96" fill="#152a4a"/>
-  <text x="256" y="340" text-anchor="middle" font-family="system-ui,sans-serif" font-size="280" font-weight="900" fill="#ffffff">F</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-label="Fixly">
+  <rect width="512" height="512" rx="112" fill="#123563"/>
+  <path
+    d="M256 110 L374 210 V390 H138 V210 Z"
+    stroke="#FFFFFF"
+    stroke-width="28"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <path
+    d="M202 390 V274 H310 V390"
+    stroke="#FFFFFF"
+    stroke-width="24"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <circle cx="340" cy="340" r="100" fill="#F59E0B"/>
+  <path
+    d="M300 340 L340 380 L400 300"
+    stroke="#123563"
+    stroke-width="26"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
 </svg>

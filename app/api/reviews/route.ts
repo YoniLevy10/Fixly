@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
+import { getReviewsByProfessionalId } from '@/mock/reviews'
 import {
   supabaseCreateReview,
   supabaseListReviewsByProfessional,
@@ -14,6 +15,10 @@ export async function GET(request: Request) {
   if (resolveDataBackend() === 'supabase') {
     const reviews = await supabaseListReviewsByProfessional(professionalId)
     return NextResponse.json(reviews ?? [])
+  }
+
+  if (resolveDataBackend() === 'mock') {
+    return NextResponse.json(getReviewsByProfessionalId(professionalId))
   }
 
   return NextResponse.json([])

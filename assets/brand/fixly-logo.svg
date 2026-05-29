@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" fill="none" role="img" aria-label="Fixly">
+  <rect x="8" y="8" width="144" height="144" rx="32" fill="#123563"/>
+  <path
+    d="M80 44 L128 76 V124 H32 V76 Z"
+    stroke="#FFFFFF"
+    stroke-width="8"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <circle cx="108" cy="108" r="22" fill="#F59E0B"/>
+  <path
+    d="M96 108 L108 120 L124 96"
+    stroke="#123563"
+    stroke-width="6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <text
+    x="180"
+    y="108"
+    font-family="system-ui, -apple-system, 'Segoe UI', Heebo, sans-serif"
+    font-size="72"
+    font-weight="800"
+    fill="#123563"
+    letter-spacing="-2"
+  >
+    Fixly
+  </text>
+  <text
+    x="182"
+    y="138"
+    font-family="system-ui, Heebo, sans-serif"
+    font-size="22"
+    font-weight="600"
+    fill="#F59E0B"
+  >
+    ъйчерйн ббйъ
+  </text>
+</svg>

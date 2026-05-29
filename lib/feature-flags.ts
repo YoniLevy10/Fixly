@@ -8,7 +8,10 @@ export const featureFlags = {
   proTemplates: process.env.NEXT_PUBLIC_FF_PRO_TEMPLATES !== 'false',
   seasonalCategories: process.env.NEXT_PUBLIC_FF_SEASONAL !== 'false',
   analytics: process.env.NEXT_PUBLIC_FF_ANALYTICS === 'true',
-  pushNotifications: process.env.NEXT_PUBLIC_FF_PUSH === 'true',
+  pushNotifications:
+    process.env.NEXT_PUBLIC_FF_DEMO_DATA === 'true' ||
+    process.env.NEXT_PUBLIC_FF_PUSH === 'true',
   monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false',
   googleOAuth: process.env.NEXT_PUBLIC_FF_GOOGLE_OAUTH !== 'false',
+  liveTracking: process.env.NEXT_PUBLIC_FF_LIVE_TRACKING !== 'false',
 } as const

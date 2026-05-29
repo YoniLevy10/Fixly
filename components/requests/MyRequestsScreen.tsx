@@ -12,7 +12,11 @@ import { useRequestsList } from '@/shared/hooks/use-requests-api'
 import { useRequestsListRealtime } from '@/shared/hooks/use-request-realtime'
 import { usePullToRefresh } from '@/shared/hooks/use-pull-to-refresh'
 import { routes } from '@/lib/routes'
-import type { RequestStatus } from '@/shared/constants/request-status'
+import {
+  REQUEST_STATUS_ACCENT,
+  type RequestStatus,
+} from '@/shared/constants/request-status'
+import { cn } from '@/lib/utils/cn'
 
 export default function MyRequestsScreen() {
   const router = useRouter()
@@ -35,7 +39,7 @@ export default function MyRequestsScreen() {
       onTouchEnd={pull.onTouchEnd}
     >
       <PullToRefreshIndicator pulling={pull.pulling} />
-      <h1 className="text-2xl font-black mb-6 lg:text-3xl">{t('requests.myTitle')}</h1>
+      <h1 className="fixly-page-title mb-6">{t('requests.myTitle')}</h1>
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -48,7 +52,7 @@ export default function MyRequestsScreen() {
           <p className="text-muted-foreground mb-4">{t('requests.emptyHint')}</p>
           <Link
             href={routes.professionals}
-            className="text-primary underline font-medium"
+            className="inline-block mt-2 bg-secondary text-secondary-foreground px-6 py-3 rounded-xl font-bold shadow-md"
           >
             {t('requests.searchNow')}
           </Link>
@@ -60,7 +64,10 @@ export default function MyRequestsScreen() {
               <button
                 key={req.id}
                 type="button"
-                className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
+                className={cn(
+                  'w-full text-start bg-card rounded-2xl border-2 border-border p-4 shadow-md hover:shadow-lg transition-all',
+                  REQUEST_STATUS_ACCENT[req.status as RequestStatus]
+                )}
                 onClick={() => router.push(routes.tracking(req.id))}
               >
                 <div className="flex items-center justify-between">
@@ -70,7 +77,7 @@ export default function MyRequestsScreen() {
                       <span className="text-xs text-muted-foreground">{req.category}</span>
                       <RequestStatusBadge status={req.status as RequestStatus} size="sm" />
                     </div>
-                    <p className="font-semibold text-sm truncate">
+                    <p className="font-bold text-sm truncate text-foreground">
                       {req.title ?? req.description.slice(0, 50)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">

@@ -16,13 +16,16 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: '/icons/icon.svg',
-    apple: '/icons/icon.svg',
+    icon: [
+      { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#152a4a',
+  themeColor: '#123563',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,

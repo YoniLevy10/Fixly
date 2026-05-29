@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { mapRequestRow } from '@/lib/data/supabase-mappers'
+import { coordsFromLocationText } from '@/lib/tracking/geo'
 import type { MockRequest, CreateRequestInput } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
@@ -14,6 +15,12 @@ const REQUEST_SELECT = `
   city,
   status,
   created_at,
+  destination_lat,
+  destination_lng,
+  pro_lat,
+  pro_lng,
+  pro_location_updated_at,
+  live_tracking_active,
   professionals ( title ),
   users ( full_name, phone ),
   service_categories ( name, name_he )
@@ -120,6 +127,27 @@ export async function supabaseCreateRequest(
   return mapRequestRow(data)
 }
 
+export async function supabaseUpdateProLocation(
+  requestId: string,
+  lat: number,
+  lng: number
+): Promise<boolean> {
+  const supabase = await createServerSupabaseClient()
+  if (!supabase) return false
+
+  const { error } = await supabase
+    .from('requests')
+    .update({
+      pro_lat: lat,
+      pro_lng: lng,
+      pro_location_updated_at: new Date().toISOString(),
+      live_tracking_active: true,
+    })
+    .eq('id', requestId)
+
+  return !error
+}
+
 export async function supabaseUpdateRequest(
   id: string,
   status: RequestStatus,
@@ -131,6 +159,12 @@ export async function supabaseUpdateRequest(
   const patch: Record<string, unknown> = { status }
   if (extra?.quotedAmount != null) {
     patch.quoted_amount = extra.quotedAmount
+  }
+  if (status === 'on_the_way') {
+    patch.live_tracking_active = true
+  }
+  if (status === 'completed' || status === 'cancelled') {
+    patch.live_tracking_active = false
   }
 
   const { data, error } = await supabase

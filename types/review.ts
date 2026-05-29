@@ -1,7 +1,8 @@
 export type Review = {
   id: string
   professionalId: string
-  customerId: string | null
+  customerId?: string | null
+  requestId?: string
   rating: number
   text: string | null
   createdAt: string

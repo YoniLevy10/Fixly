@@ -16,7 +16,20 @@ function fail(msg) {
   ok = false
 }
 
+const appIcon = join(
+  root,
+  'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'
+)
+if (existsSync(appIcon)) {
+  const stat = readFileSync(appIcon)
+  if (stat.length > 5000) pass('iOS App Icon 1024 PNG')
+  else fail('iOS App Icon looks too small — run npm run icons:generate')
+} else {
+  fail('Missing iOS App Icon — run npm run icons:generate')
+}
+
 const required = [
+  'assets/brand/fixly-icon.svg',
   'capacitor.config.ts',
   'lib/mobile/app-store-config.ts',
   'ios/App/App/Info.plist',

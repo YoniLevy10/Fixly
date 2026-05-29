@@ -11,9 +11,9 @@ export default function ProfilePage() {
 
   return (
     <div className="px-4 py-6 max-w-lg mx-auto lg:max-w-2xl lg:px-8">
-      <h1 className="text-2xl font-black mb-6 lg:text-3xl">{t('profile.title')}</h1>
+      <h1 className="fixly-page-title mb-6">{t('profile.title')}</h1>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
+      <div className="bg-card rounded-2xl border-2 border-border p-4 mb-6 shadow-sm">
         <LanguageSwitcher />
       </div>
 
@@ -40,43 +40,43 @@ export default function ProfilePage() {
       <nav className="space-y-2 mt-6 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
         <Link
           href={routes.myRequests}
-          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+          className="fixly-link-card border-s-4 border-s-sky-500"
         >
           {t('profile.myRequests')}
         </Link>
         <Link
           href={routes.professionals}
-          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+          className="fixly-link-card border-s-4 border-s-violet-500"
         >
           {t('profile.findPros')}
         </Link>
         <Link
           href={routes.proJoin}
-          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+          className="fixly-link-card border-s-4 border-s-emerald-500"
         >
           {t('improvements.proJoin')}
         </Link>
         <Link
           href={routes.about}
-          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+          className="fixly-link-card border-s-4 border-s-gray-400"
         >
           {t('improvements.about')}
         </Link>
         <Link
           href={routes.proPricing}
-          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+          className="fixly-link-card border-s-4 border-s-secondary bg-secondary/10"
         >
           Fixly Pro
         </Link>
         <Link
           href={routes.proDashboard}
-          className="block bg-white rounded-2xl border border-gray-100 px-4 py-3 font-medium hover:border-primary/30"
+          className="fixly-link-card border-s-4 border-s-primary"
         >
           {t('profile.proDashboard')}
         </Link>
         <Link
           href={routes.newRequest}
-          className="block bg-secondary text-white rounded-2xl px-4 py-3 font-bold text-center"
+          className="block col-span-full bg-secondary text-secondary-foreground rounded-2xl px-4 py-4 font-bold text-center shadow-lg border-2 border-secondary lg:col-span-2"
         >
           {t('profile.sendNew')}
         </Link>

@@ -11,8 +11,9 @@
     "cap:copy": "npx cap copy",
     "cap:ios": "npx cap open ios",
     "cap:sync:dev": "cross-env CAPACITOR_SERVER_URL=http://localhost:3000 npx cap sync ios",
+    "icons:generate": "node scripts/generate-app-icons.mjs",
     "mobile:check": "node scripts/mobile-check.mjs",
-    "mobile:prepare": "npm run mobile:check && npm run cap:sync:ios"
+    "mobile:prepare": "npm run icons:generate && npm run mobile:check && npm run cap:sync:ios"
   },
   "dependencies": {
     "@capacitor/app": "^7.0.1",
@@ -24,6 +25,7 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.57.4",
     "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.475.0",
     "next": "^16.2.1",
     "react": "^19.2.4",
@@ -32,11 +34,13 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.2.0",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^24.10.1",
-    "cross-env": "^7.0.3",
     "@types/react": "^19.2.2",
     "autoprefixer": "^10.4.21",
+    "cross-env": "^7.0.3",
     "postcss": "^8.5.6",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3"

@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth/auth-provider'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 export function usePendingRequestsCount() {
   const { user } = useAuth()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
-    if (user.role !== 'professional' || !user.professionalId) {
+    const demoPro = isDemoDataMode()
+    if (!demoPro && (user.role !== 'professional' || !user.professionalId)) {
       setCount(0)
       return
     }
 
     const load = () => {
-      fetch('/api/requests?scope=pro')
+      const url = demoPro
+        ? '/api/requests?scope=pro&professionalId=1'
+        : '/api/requests?scope=pro'
+      fetch(url)
         .then((r) => r.json())
         .then((data) => {
           if (!Array.isArray(data)) return setCount(0)

@@ -30,10 +30,29 @@ export function createRequest(input: CreateRequestInput): MockRequest {
     id: `req-${Date.now()}`,
     createdAt: new Date().toISOString(),
     status: 'pending',
+    liveTrackingActive: false,
     ...input,
   }
   store = [request, ...store]
   return request
+}
+
+export function updateRequestLocation(
+  id: string,
+  lat: number,
+  lng: number
+): MockRequest | undefined {
+  const index = store.findIndex((r) => r.id === id)
+  if (index === -1) return undefined
+  const updated = {
+    ...store[index],
+    proLat: lat,
+    proLng: lng,
+    proLocationUpdatedAt: new Date().toISOString(),
+    liveTrackingActive: true,
+  }
+  store = [...store.slice(0, index), updated, ...store.slice(index + 1)]
+  return updated
 }
 
 export function updateRequestStatus(
@@ -44,7 +63,17 @@ export function updateRequestStatus(
   const index = store.findIndex((r) => r.id === id)
   if (index === -1) return undefined
 
-  const updated = { ...store[index], status, ...extra }
+  const stopTracking =
+    status === 'completed' || status === 'cancelled'
+  const updated = {
+    ...store[index],
+    status,
+    ...extra,
+    ...(stopTracking ? { liveTrackingActive: false } : {}),
+    ...(status === 'on_the_way'
+      ? { liveTrackingActive: true }
+      : {}),
+  }
   store = [...store.slice(0, index), updated, ...store.slice(index + 1)]
   return updated
 }

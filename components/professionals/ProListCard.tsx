@@ -17,7 +17,7 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
   const { t, locale } = useLocale()
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+    <div className="bg-card rounded-2xl border-2 border-border p-4 shadow-md hover:border-primary/40 transition-colors">
       <div className="flex items-start gap-3">
         <div
           className="w-14 h-14 rounded-full flex-shrink-0 bg-primary text-white bg-cover bg-center border-2 border-gray-50 flex items-center justify-center font-bold text-lg"

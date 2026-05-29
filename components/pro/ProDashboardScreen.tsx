@@ -25,6 +25,8 @@ import { usePullToRefresh } from '@/shared/hooks/use-pull-to-refresh'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 import { cn } from '@/lib/utils/cn'
+import { isTrackingStatus } from '@/lib/tracking/geo'
+import ProLocationSharing from '@/components/pro/ProLocationSharing'
 
 const TEMPLATES = [
   'improvements.templateApprove',
@@ -181,13 +183,13 @@ export default function ProDashboardScreen() {
             className={cn(
               'flex-1 min-w-[72px] py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap px-2',
               activeTab === tab.key
-                ? 'bg-white shadow text-foreground'
-                : 'text-muted-foreground'
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'text-foreground/60 hover:text-foreground'
             )}
           >
             {t(tab.labelKey)}
             {tab.count != null && tab.count > 0 && (
-              <span className="ms-1.5 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+              <span className="ms-1.5 bg-secondary text-secondary-foreground text-xs rounded-full px-1.5 py-0.5 font-bold">
                 {tab.count}
               </span>
             )}
@@ -330,7 +332,7 @@ export default function ProDashboardScreen() {
                 <button
                   type="button"
                   onClick={() => updateStatus(selectedRequest.id, 'accepted')}
-                  className="w-full bg-primary text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success"
                 >
                   <CheckCircle size={16} /> {t('pro.approve')}
                 </button>
@@ -364,7 +366,7 @@ export default function ProDashboardScreen() {
                       cancellationReason,
                     })
                   }
-                  className="w-full border border-destructive text-destructive py-2.5 rounded-xl font-medium flex items-center justify-center gap-2"
+                  className="w-full bg-red-50 border-2 border-destructive text-destructive py-3 rounded-xl font-bold flex items-center justify-center gap-2"
                 >
                   <XCircle size={16} /> {t('pro.reject')}
                 </button>
@@ -373,20 +375,41 @@ export default function ProDashboardScreen() {
             {selectedRequest.status === 'accepted' && (
               <button
                 type="button"
-                onClick={() => updateStatus(selectedRequest.id, 'in_progress')}
-                className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold"
+                onClick={() => updateStatus(selectedRequest.id, 'on_the_way')}
+                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md border-2 border-indigo-700 flex items-center justify-center gap-2"
               >
-                {t('pro.startWork')}
+                {t('tracking.proOnTheWay')}
               </button>
             )}
+            {selectedRequest.status === 'on_the_way' && (
+              <>
+                <ProLocationSharing
+                  requestId={selectedRequest.id}
+                  active={isTrackingStatus(selectedRequest.status)}
+                />
+                <button
+                  type="button"
+                  onClick={() => updateStatus(selectedRequest.id, 'in_progress')}
+                  className="w-full bg-info text-info-foreground py-3 rounded-xl font-bold shadow-md border-2 border-info"
+                >
+                  {t('pro.startWork')}
+                </button>
+              </>
+            )}
             {selectedRequest.status === 'in_progress' && (
-              <button
-                type="button"
-                onClick={() => completeWithAmount(selectedRequest.id)}
-                className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
-              >
-                <CheckCircle size={16} /> {t('pro.markCompleted')}
-              </button>
+              <>
+                <ProLocationSharing
+                  requestId={selectedRequest.id}
+                  active={isTrackingStatus(selectedRequest.status)}
+                />
+                <button
+                  type="button"
+                  onClick={() => completeWithAmount(selectedRequest.id)}
+                  className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+                >
+                  <CheckCircle size={16} /> {t('pro.markCompleted')}
+                </button>
+              </>
             )}
           </div>
         </div>

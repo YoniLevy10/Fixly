@@ -1,9 +1,31 @@
-type ButtonProps = {
-  children: React.ReactNode
-  variant?: 'primary' | 'secondary' | 'success' | 'ghost' | 'danger'
+'use client'
+
+import { cn } from '@/lib/utils/cn'
+
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'primary' | 'secondary' | 'success' | 'danger' | 'outline' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   fullWidth?: boolean
-  disabled?: boolean
+}
+
+const variants = {
+  primary:
+    'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 border-2 border-primary',
+  secondary:
+    'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/30 hover:brightness-105 border-2 border-secondary',
+  success:
+    'bg-success text-success-foreground shadow-lg shadow-success/25 hover:brightness-105 border-2 border-success',
+  danger:
+    'bg-destructive text-destructive-foreground shadow-md hover:brightness-105 border-2 border-destructive',
+  outline:
+    'bg-white text-primary border-2 border-primary hover:bg-primary/5',
+  ghost: 'bg-transparent text-foreground hover:bg-muted border-2 border-transparent',
+}
+
+const sizes = {
+  sm: 'min-h-[40px] px-3 py-2 text-sm rounded-xl',
+  md: 'min-h-[48px] px-4 py-2.5 text-base rounded-xl',
+  lg: 'min-h-[52px] px-5 py-3 text-base rounded-2xl',
 }
 
 export default function Button({
@@ -11,51 +33,25 @@ export default function Button({
   variant = 'primary',
   size = 'lg',
   fullWidth = true,
-  disabled = false,
+  className,
+  disabled,
+  type = 'button',
+  ...props
 }: ButtonProps) {
-  const backgrounds = {
-    primary: '#005BFF',
-    secondary: '#F3F4F6',
-    success: '#25D366',
-    ghost: 'transparent',
-    danger: '#FEE2E2',
-  }
-
-  const colors = {
-    primary: 'white',
-    secondary: '#111827',
-    success: 'white',
-    ghost: '#005BFF',
-    danger: '#991B1B',
-  }
-
-  const paddings = {
-    sm: '12px 14px',
-    md: '15px 16px',
-    lg: '18px',
-  }
-
   return (
     <button
+      type={type}
       disabled={disabled}
-      style={{
-        width: fullWidth ? '100%' : 'auto',
-        minHeight: size === 'sm' ? '44px' : '52px',
-        border: 'none',
-        background: disabled ? '#E5E7EB' : backgrounds[variant],
-        color: disabled ? '#9CA3AF' : colors[variant],
-        padding: paddings[size],
-        borderRadius: size === 'sm' ? '14px' : '18px',
-        fontWeight: 800,
-        fontSize: size === 'sm' ? '14px' : '16px',
-        letterSpacing: '-0.01em',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        boxShadow:
-          variant === 'primary' && !disabled
-            ? '0 12px 24px rgba(0,91,255,0.22)'
-            : 'none',
-        transition: 'transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease',
-      }}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 font-bold transition-all',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        'disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98]',
+        variants[variant],
+        sizes[size],
+        fullWidth && 'w-full',
+        className
+      )}
+      {...props}
     >
       {children}
     </button>

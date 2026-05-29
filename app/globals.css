@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+@import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
 @tailwind components;
@@ -6,26 +7,30 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 30% 15%;
+    --background: 220 25% 96%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 15%;
-    --primary: 218 57% 19%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 35 90% 55%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 220 15% 95%;
-    --muted-foreground: 220 10% 50%;
-    --accent: 35 90% 55%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 218 57% 19%;
+    --card-foreground: 222 47% 11%;
+    --primary: 218 70% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 28 95% 52%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 20% 92%;
+    --muted-foreground: 220 20% 32%;
+    --accent: 199 89% 42%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 18% 82%;
+    --input: 220 18% 82%;
+    --ring: 218 70% 22%;
     --radius: 0.75rem;
-    --success: 142 71% 45%;
-    --warning: 35 90% 55%;
+    --success: 152 69% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --info: 199 89% 42%;
+    --info-foreground: 0 0% 100%;
   }
 }
 
@@ -51,6 +56,32 @@
   body {
     @apply bg-background text-foreground font-heebo antialiased;
     margin: 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply text-foreground;
+  }
+}
+
+@layer components {
+  .fixly-section-title {
+    @apply text-base font-black text-foreground lg:text-lg flex items-center gap-2;
+  }
+
+  .fixly-section-title::before {
+    content: '';
+    @apply w-1.5 h-7 rounded-full bg-secondary shrink-0;
+  }
+
+  .fixly-page-title {
+    @apply text-2xl font-black text-foreground lg:text-3xl;
+  }
+
+  .fixly-link-card {
+    @apply block rounded-2xl border-2 border-border bg-card px-4 py-3 font-semibold text-foreground shadow-sm
+      hover:border-primary hover:bg-primary/5 transition-colors;
   }
 }
 

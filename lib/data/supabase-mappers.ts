@@ -33,6 +33,12 @@ type RequestRow = {
   city: string | null
   status: string | null
   created_at: string | null
+  destination_lat?: number | null
+  destination_lng?: number | null
+  pro_lat?: number | null
+  pro_lng?: number | null
+  pro_location_updated_at?: string | null
+  live_tracking_active?: boolean | null
   professionals?: { title: string | null } | { title: string | null }[] | null
   users?:
     | { full_name: string | null; phone: string | null }
@@ -104,5 +110,11 @@ export function mapRequestRow(row: RequestRow): MockRequest {
     status: (row.status ?? 'pending') as RequestStatus,
     createdAt: row.created_at ?? new Date().toISOString(),
     location,
+    destinationLat: row.destination_lat ?? undefined,
+    destinationLng: row.destination_lng ?? undefined,
+    proLat: row.pro_lat ?? undefined,
+    proLng: row.pro_lng ?? undefined,
+    proLocationUpdatedAt: row.pro_location_updated_at ?? undefined,
+    liveTrackingActive: row.live_tracking_active ?? false,
   }
 }

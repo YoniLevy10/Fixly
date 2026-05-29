@@ -11,6 +11,7 @@ import { getCategoryLabel } from '@/lib/i18n/category-label'
 import LanguageToggle from '@/components/i18n/LanguageToggle'
 import { featureFlags } from '@/lib/feature-flags'
 import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
+import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
 
@@ -80,7 +81,7 @@ export default function HomeScreen() {
           <p className="font-bold text-sm text-foreground">
             👋 {t('home.greeting')}, {firstName}
           </p>
-          <p className="flex items-center gap-1 text-xs text-gray-500 justify-center mt-0.5">
+          <p className="flex items-center gap-1 text-xs text-foreground/70 justify-center mt-0.5">
             <MapPin size={11} className="text-primary" />
             {user.location ?? t('common.defaultLocation')}
           </p>
@@ -101,7 +102,7 @@ export default function HomeScreen() {
           <h2 className="text-white font-black text-xl leading-tight mb-1">
             {t('home.heroTitle')}
           </h2>
-          <p className="text-white/80 text-xs leading-relaxed mb-3">
+          <p className="text-white/90 text-sm leading-relaxed mb-3">
             {t('home.heroSubtitle')}
             <br />
             {t('home.heroSubtitle2')}
@@ -143,15 +144,13 @@ export default function HomeScreen() {
 
         {seasonalCats.length > 0 && (
           <div className="mb-4">
-            <p className="text-xs font-bold text-muted-foreground mb-2">
-              {t('improvements.seasonalTitle')}
-            </p>
+            <p className="fixly-section-title mb-2">{t('improvements.seasonalTitle')}</p>
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
               {seasonalCats.map((cat) => (
                 <Link
                   key={cat.slug}
                   href={`${routes.professionals}?category=${cat.slug}`}
-                  className="flex-shrink-0 px-3 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold"
+                  className={`flex-shrink-0 px-3 py-2 rounded-full border-2 text-xs font-bold ${getCategoryAccent(cat.slug).chip}`}
                 >
                   {cat.icon} {cat.name}
                 </Link>
@@ -161,27 +160,29 @@ export default function HomeScreen() {
         )}
 
         <div className="mb-5 lg:mb-8">
-          <h3 className="text-base font-black text-foreground mb-3 lg:text-lg">
-            {t('home.pickCategory')}
-          </h3>
+          <h3 className="fixly-section-title mb-3">{t('home.pickCategory')}</h3>
           <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-4 xl:grid-cols-5 lg:gap-3">
-            {displayCats.map((cat) => (
+            {displayCats.map((cat) => {
+              const accent = getCategoryAccent(cat.slug)
+              return (
               <Link
                 key={cat.slug}
                 href={`${routes.professionals}?category=${cat.slug}`}
-                className="bg-white rounded-2xl border border-gray-100 p-3 flex flex-col items-center gap-2 hover:border-primary/30 hover:shadow-sm transition-all active:scale-95"
+                className={`bg-card rounded-2xl border-2 p-3 flex flex-col items-center gap-2 shadow-sm transition-all active:scale-95 ${accent.card}`}
               >
-                <span className="text-3xl">{cat.icon}</span>
-                <span className="text-xs font-medium text-gray-700 text-center leading-tight">
+                <span className={`text-3xl w-12 h-12 flex items-center justify-center rounded-xl ${accent.iconBg}`}>
+                  {cat.icon}
+                </span>
+                <span className="text-xs font-bold text-foreground text-center leading-tight">
                   {cat.name}
                 </span>
               </Link>
-            ))}
+            )})}
           </div>
           <button
             type="button"
             onClick={() => setShowAllCats(!showAllCats)}
-            className="mt-2.5 w-full bg-gray-100 rounded-2xl py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+            className="mt-2.5 w-full bg-muted border-2 border-border rounded-2xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold text-foreground hover:bg-primary/10 hover:border-primary transition-colors"
           >
             <ChevronDown
               size={15}
@@ -200,9 +201,7 @@ export default function HomeScreen() {
               <ChevronAll size={16} />
               {t('home.showAll')}
             </Link>
-            <h3 className="text-base font-black text-foreground">
-              {t('home.featuredPros')}
-            </h3>
+            <h3 className="fixly-section-title">{t('home.featuredPros')}</h3>
           </div>
 
           {featured.length === 0 ? (

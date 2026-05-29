@@ -21,6 +21,7 @@ import {
   saveRequestDraft,
 } from '@/lib/request-draft'
 import { estimatePriceRange, guessCategorySlug } from '@/lib/estimate/price-estimate'
+import { coordsFromLocationText } from '@/lib/tracking/geo'
 import { formatPrice } from '@/lib/i18n/format-locale'
 import { track } from '@/lib/analytics/track'
 
@@ -109,6 +110,29 @@ export default function NewRequestForm() {
         imageUrls.push(url ?? img.preview)
       }
 
+      let destinationLat: number | undefined
+      let destinationLng: number | undefined
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 8000,
+              maximumAge: 60000,
+            })
+          })
+          destinationLat = pos.coords.latitude
+          destinationLng = pos.coords.longitude
+        } catch {
+          const fallback = coordsFromLocationText(form.location)
+          destinationLat = fallback.lat
+          destinationLng = fallback.lng
+        }
+      } else {
+        const fallback = coordsFromLocationText(form.location)
+        destinationLat = fallback.lat
+        destinationLng = fallback.lng
+      }
+
       await createRequestApi({
         customerName: user.fullName,
         customerPhone: form.customerPhone,
@@ -118,6 +142,8 @@ export default function NewRequestForm() {
         title: form.title,
         description: form.description,
         location: form.location,
+        destinationLat,
+        destinationLng,
         preferredDate: form.preferredDate || undefined,
         preferredTime: form.preferredTime || undefined,
         images: imageUrls.length ? imageUrls : undefined,

@@ -10,6 +10,7 @@ import {
   supabaseListRequests,
 } from '@/lib/data/supabase-requests'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { CreateRequestInput } from '@/mock/requests'
 import { getClientIp, rateLimit } from '@/lib/api/rate-limit'
@@ -50,7 +51,12 @@ export async function GET(request: Request) {
   }
 
   if (scope === 'pro') {
-    professionalId = (await resolveProfessionalIdFromAuth()) ?? professionalId
+    professionalId =
+      (await resolveProfessionalIdFromAuth()) ?? professionalId ?? (isDemoDataMode() ? '1' : undefined)
+  }
+
+  if (scope === 'mine' && isDemoDataMode()) {
+    customerId = undefined
   }
 
   const backend = resolveDataBackend()
