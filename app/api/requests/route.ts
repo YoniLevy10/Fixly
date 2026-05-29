@@ -13,7 +13,10 @@ import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import type { CreateRequestInput } from '@/mock/requests'
-import { getClientIp, rateLimit } from '@/lib/api/rate-limit'
+import { enforceRateLimit } from '@/lib/api/rate-limit'
+import { parseJsonBody } from '@/lib/api/parse-body'
+import { createRequestSchema } from '@/lib/api/schemas'
+import { trackError } from '@/lib/monitoring/track-error'
 
 async function resolveProfessionalIdFromAuth(): Promise<string | undefined> {
   const supabase = await createServerSupabaseClient()
@@ -92,23 +95,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const ip = getClientIp(request)
-  const limited = rateLimit(`requests-post:${ip}`, 30, 60_000)
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: 'יותר מדי בקשות — נסה שוב בעוד דקה' },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(limited.retryAfterSec ?? 60) },
-      }
-    )
-  }
+  const limited = await enforceRateLimit(request, 'requests-post', 30, 60_000)
+  if (limited) return limited
 
   try {
-    const body = (await request.json()) as CreateRequestInput
-    if (!body.description || !body.professionalId) {
-      return NextResponse.json({ error: 'חסרים שדות חובה' }, { status: 400 })
-    }
+    const parsed = await parseJsonBody(request, createRequestSchema)
+    if (!parsed.success) return parsed.response
+    const body = parsed.data as CreateRequestInput
 
     const backend = resolveDataBackend()
 
@@ -130,7 +123,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: 'No data backend' }, { status: 503 })
-  } catch {
+  } catch (error) {
+    trackError(error, { route: 'POST /api/requests' })
     return NextResponse.json({ error: 'שגיאה ביצירת בקשה' }, { status: 500 })
   }
 }

@@ -1,5 +1,11 @@
+import * as Sentry from '@sentry/nextjs'
+
+const hasSentry = Boolean(
+  process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN
+)
+
 /**
- * Error tracking stub — wire to Sentry when SENTRY_DSN is set.
+ * Report errors to Sentry in production when DSN is set; always log in development.
  */
 export function trackError(error: unknown, context?: Record<string, unknown>): void {
   if (process.env.NODE_ENV === 'development') {
@@ -7,7 +13,7 @@ export function trackError(error: unknown, context?: Record<string, unknown>): v
     return
   }
 
-  if (process.env.SENTRY_DSN) {
-    // import('@sentry/nextjs').then((S) => S.captureException(error, { extra: context }))
+  if (hasSentry) {
+    Sentry.captureException(error, { extra: context })
   }
 }

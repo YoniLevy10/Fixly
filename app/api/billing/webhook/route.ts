@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
+import { stripeWebhookEventSchema } from '@/lib/api/schemas'
+import { trackError } from '@/lib/monitoring/track-error'
 
 /**
  * Stripe webhook — activate Pro subscription on checkout.session.completed.
@@ -19,43 +21,55 @@ export async function POST(request: Request) {
   }
 
   // Production: verify with stripe.webhooks.constructEvent (install stripe package)
-  let event: { type: string; data: { object: Record<string, unknown> } }
+  let raw: unknown
   try {
-    event = JSON.parse(body) as typeof event
+    raw = JSON.parse(body)
   } catch {
     return NextResponse.json({ error: 'invalid payload' }, { status: 400 })
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object
-    const professionalId =
-      (session.metadata as Record<string, string> | undefined)?.professional_id ||
-      (session.client_reference_id as string | undefined)
-
-    if (professionalId) {
-      const supabase = getAdminSupabaseClient()
-      if (supabase) {
-        const until = new Date()
-        until.setMonth(until.getMonth() + 1)
-
-        await supabase
-          .from('professionals')
-          .update({
-            subscription_tier: 'pro',
-            subscription_until: until.toISOString(),
-          })
-          .eq('id', professionalId)
-
-        await supabase.from('billing_events').insert({
-          professional_id: professionalId,
-          event_type: 'subscription_started',
-          amount_agorot: 0,
-          currency: 'ils',
-          metadata: { stripeSessionId: session.id },
-        })
-      }
-    }
+  const parsed = stripeWebhookEventSchema.safeParse(raw)
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'invalid event shape' }, { status: 400 })
   }
 
-  return NextResponse.json({ received: true })
+  const event = parsed.data
+
+  try {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object
+      const metadata = session.metadata as Record<string, string> | undefined
+      const professionalId =
+        metadata?.professional_id || (session.client_reference_id as string | undefined)
+
+      if (professionalId) {
+        const supabase = getAdminSupabaseClient()
+        if (supabase) {
+          const until = new Date()
+          until.setMonth(until.getMonth() + 1)
+
+          await supabase
+            .from('professionals')
+            .update({
+              subscription_tier: 'pro',
+              subscription_until: until.toISOString(),
+            })
+            .eq('id', professionalId)
+
+          await supabase.from('billing_events').insert({
+            professional_id: professionalId,
+            event_type: 'subscription_started',
+            amount_agorot: 0,
+            currency: 'ils',
+            metadata: { stripeSessionId: session.id },
+          })
+        }
+      }
+    }
+
+    return NextResponse.json({ received: true })
+  } catch (error) {
+    trackError(error, { route: 'POST /api/billing/webhook', eventType: event.type })
+    return NextResponse.json({ error: 'webhook handler failed' }, { status: 500 })
+  }
 }

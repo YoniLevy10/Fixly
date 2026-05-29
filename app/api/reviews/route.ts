@@ -5,6 +5,10 @@ import {
   supabaseCreateReview,
   supabaseListReviewsByProfessional,
 } from '@/lib/data/supabase-reviews'
+import { enforceRateLimit } from '@/lib/api/rate-limit'
+import { parseJsonBody } from '@/lib/api/parse-body'
+import { createReviewSchema } from '@/lib/api/schemas'
+import { trackError } from '@/lib/monitoring/track-error'
 
 export async function GET(request: Request) {
   const professionalId = new URL(request.url).searchParams.get('professionalId')
@@ -25,21 +29,26 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, 'reviews-post', 20, 60_000)
+  if (limited) return limited
+
   if (resolveDataBackend() !== 'supabase') {
     return NextResponse.json({ error: 'Supabase required' }, { status: 503 })
   }
 
-  const body = await request.json()
-  const review = await supabaseCreateReview({
-    requestId: body.requestId,
-    professionalId: body.professionalId,
-    rating: body.rating,
-    text: body.text,
-  })
+  try {
+    const parsed = await parseJsonBody(request, createReviewSchema)
+    if (!parsed.success) return parsed.response
 
-  if (!review) {
-    return NextResponse.json({ error: 'לא ניתן לשמור ביקורת' }, { status: 400 })
+    const review = await supabaseCreateReview(parsed.data)
+
+    if (!review) {
+      return NextResponse.json({ error: 'לא ניתן לשמור ביקורת' }, { status: 400 })
+    }
+
+    return NextResponse.json(review, { status: 201 })
+  } catch (error) {
+    trackError(error, { route: 'POST /api/reviews' })
+    return NextResponse.json({ error: 'שגיאה בשמירת ביקורת' }, { status: 500 })
   }
-
-  return NextResponse.json(review, { status: 201 })
 }

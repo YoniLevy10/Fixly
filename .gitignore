@@ -28,6 +28,11 @@ npm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+
 # Capacitor — keep ios/ in git; ignore CocoaPods artifacts
 ios/App/Pods/
 ios/App/build/
