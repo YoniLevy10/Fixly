@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
-import { stripeWebhookEventSchema } from '@/lib/api/schemas'
+import { verifyStripeWebhook } from '@/lib/stripe/verify-webhook'
+import { handleStripeWebhookEvent } from '@/lib/stripe/webhook-handlers'
 import { trackError } from '@/lib/monitoring/track-error'
+import { isProduction } from '@/lib/data/config'
 
 /**
  * Stripe webhook — activate Pro subscription on checkout.session.completed.
@@ -10,6 +12,9 @@ import { trackError } from '@/lib/monitoring/track-error'
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   if (!secret) {
+    if (isProduction()) {
+      return NextResponse.json({ error: 'webhook not configured' }, { status: 503 })
+    }
     return NextResponse.json({ received: true, note: 'webhook secret not set' })
   }
 
@@ -20,56 +25,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'missing signature' }, { status: 400 })
   }
 
-  // Production: verify with stripe.webhooks.constructEvent (install stripe package)
-  let raw: unknown
-  try {
-    raw = JSON.parse(body)
-  } catch {
-    return NextResponse.json({ error: 'invalid payload' }, { status: 400 })
+  const verified = verifyStripeWebhook(body, sig, secret)
+  if (!verified.ok) {
+    return NextResponse.json({ error: verified.error }, { status: 400 })
   }
 
-  const parsed = stripeWebhookEventSchema.safeParse(raw)
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'invalid event shape' }, { status: 400 })
+  const supabase = getAdminSupabaseClient()
+  if (!supabase) {
+    trackError(new Error('SUPABASE_SERVICE_ROLE_KEY missing for webhook'), {
+      route: 'POST /api/billing/webhook',
+    })
+    return NextResponse.json({ error: 'admin client unavailable' }, { status: 503 })
   }
 
-  const event = parsed.data
-
   try {
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object
-      const metadata = session.metadata as Record<string, string> | undefined
-      const professionalId =
-        metadata?.professional_id || (session.client_reference_id as string | undefined)
-
-      if (professionalId) {
-        const supabase = getAdminSupabaseClient()
-        if (supabase) {
-          const until = new Date()
-          until.setMonth(until.getMonth() + 1)
-
-          await supabase
-            .from('professionals')
-            .update({
-              subscription_tier: 'pro',
-              subscription_until: until.toISOString(),
-            })
-            .eq('id', professionalId)
-
-          await supabase.from('billing_events').insert({
-            professional_id: professionalId,
-            event_type: 'subscription_started',
-            amount_agorot: 0,
-            currency: 'ils',
-            metadata: { stripeSessionId: session.id },
-          })
-        }
-      }
-    }
-
+    await handleStripeWebhookEvent(supabase, verified.event)
     return NextResponse.json({ received: true })
   } catch (error) {
-    trackError(error, { route: 'POST /api/billing/webhook', eventType: event.type })
+    trackError(error, {
+      route: 'POST /api/billing/webhook',
+      eventType: String(verified.event.type ?? 'unknown'),
+    })
     return NextResponse.json({ error: 'webhook handler failed' }, { status: 500 })
   }
 }

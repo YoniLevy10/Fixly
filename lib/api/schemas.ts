@@ -33,3 +33,34 @@ export const stripeWebhookEventSchema = z.object({
     object: z.record(z.string(), z.unknown()),
   }),
 })
+
+export const updateRequestSchema = z.object({
+  status: z.enum([
+    'pending',
+    'accepted',
+    'on_the_way',
+    'in_progress',
+    'completed',
+    'cancelled',
+  ]),
+  quotedAmount: z.coerce.number().positive().max(1_000_000).optional(),
+  cancellationReason: z.string().trim().max(1000).optional(),
+})
+
+export const proWaitlistSchema = z.object({
+  fullName: z.string().trim().min(2).max(200),
+  phone: z.string().trim().min(7).max(30),
+  email: z.union([z.string().trim().email().max(200), z.literal('')]).optional(),
+  category: z.string().trim().max(100).optional(),
+  city: z.string().trim().max(100).optional(),
+  referralCode: z.string().trim().max(50).optional(),
+})
+
+export const proClaimSchema = z.object({
+  professionalId: z.string().trim().uuid(),
+})
+
+export const locationUpdateSchema = z.object({
+  lat: z.coerce.number().finite().min(-90).max(90),
+  lng: z.coerce.number().finite().min(-180).max(180),
+})

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuth, DEMO_PROFESSIONAL_ID } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { featureFlags } from '@/lib/feature-flags'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -173,10 +174,10 @@ export default function AuthPanel() {
       <button
         type="button"
         onClick={handleClaimPro}
-        disabled={loading}
-        className="w-full border border-primary text-primary py-2.5 rounded-xl font-bold text-sm"
+        disabled={loading || !isDemoDataMode()}
+        className="w-full border border-primary text-primary py-2.5 rounded-xl font-bold text-sm disabled:opacity-40"
       >
-        {t('auth.claimPro')}
+        {isDemoDataMode() ? t('auth.claimPro') : t('auth.claimProProduction')}
       </button>
 
       <button

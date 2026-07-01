@@ -19,6 +19,8 @@ type ProfessionalRow = {
   city: string | null
   available: boolean | null
   profile_image: string | null
+  subscription_tier?: string | null
+  subscription_until?: string | null
   service_categories?: CategoryRel
 }
 
@@ -74,6 +76,11 @@ function relUser(
 
 export function mapProfessionalRow(row: ProfessionalRow): Professional {
   const cat = categoryName(row.service_categories)
+  const tier = row.subscription_tier ?? 'free'
+  const subActive =
+    row.subscription_until &&
+    new Date(row.subscription_until) > new Date()
+  const isProTier = tier === 'pro' || tier === 'pro_plus' || subActive
 
   return {
     id: row.id,
@@ -88,7 +95,7 @@ export function mapProfessionalRow(row: ProfessionalRow): Professional {
     startingPrice: row.hourly_price ?? 0,
     isAvailable: row.available ?? false,
     isApproved: true,
-    isFeatured: (row.rating ?? 0) >= 4.8,
+    isFeatured: isProTier || (row.rating ?? 0) >= 4.8,
     completedJobs: row.reviews_count ?? 0,
   }
 }

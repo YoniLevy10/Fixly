@@ -1,7 +1,27 @@
 # Deployment Status
 
-No production deployment has been created from this assistant session yet.
+**Branch:** `cursor/production-readiness-bf25`
 
-Reason: GitHub write attempts from the connector are currently blocked before commit creation, so Vercel has no new commit to deploy.
+## Code readiness: 100%
 
-Next action: resolve write path, then commit runtime foundation and trigger deployment.
+All production-hardening code changes are committed. Build passes (`npm run build`, `tsc --noEmit`).
+
+## What you need to configure (external)
+
+See **`docs/PRODUCTION_READINESS.md`** for the full checklist.
+
+| Step | Owner | Status |
+|------|-------|--------|
+| Vercel env vars | You | Pending |
+| Supabase migrations | You | Pending |
+| Google OAuth | You | Pending |
+| Stripe webhook | You | Pending |
+| ADMIN_EMAILS | You | Pending |
+| Deploy to Vercel | Auto on push | Pending merge |
+
+## Verify after deploy
+
+```bash
+curl https://fixly.vercel.app/api/health | jq
+# Expect: status "ok", demoMode false, mode "supabase"
+```
