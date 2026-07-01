@@ -63,7 +63,13 @@ export function useRequestsList(params?: { scope?: 'mine' | 'pro' }) {
 }
 
 export async function createRequestApi(
-  input: Omit<CreateRequestInput, 'customerId'> & { customerName: string }
+  input: Omit<CreateRequestInput, 'customerId'> & {
+    customerName: string
+    matchMode?: boolean
+    referralCode?: string
+    categorySlug?: string
+    city?: string
+  },
 ): Promise<MockRequest> {
   const res = await fetch('/api/requests', {
     method: 'POST',

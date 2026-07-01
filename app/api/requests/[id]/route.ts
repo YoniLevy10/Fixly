@@ -11,6 +11,7 @@ import {
   handleLeadOnAccept,
 } from '@/lib/monetization/record-billing'
 import { canTransition } from '@/lib/guards/request-transition'
+import { recordProResponseTime } from '@/lib/matching/response-time'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { updateRequestSchema } from '@/lib/api/schemas'
@@ -76,6 +77,9 @@ export async function PATCH(request: Request, context: RouteContext) {
         cancellationReason,
       })
       if (fromSupabase) {
+        if (status === 'accepted' && existing.professionalId) {
+          await recordProResponseTime(existing.professionalId, existing.createdAt)
+        }
         if (featureFlags.monetization && existing.professionalId) {
           if (status === 'accepted') {
             const lead = await handleLeadOnAccept(existing.professionalId, id)

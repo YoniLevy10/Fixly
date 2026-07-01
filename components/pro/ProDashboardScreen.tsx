@@ -31,6 +31,7 @@ import { isDemoDataMode } from '@/lib/data/demo-mode'
 import Link from 'next/link'
 import { routes } from '@/lib/routes'
 import ProLocationSharing from '@/components/pro/ProLocationSharing'
+import ProAvailabilityEditor from '@/components/pro/ProAvailabilityEditor'
 
 const TEMPLATES = [
   'improvements.templateApprove',
@@ -86,6 +87,17 @@ export default function ProDashboardScreen() {
     })
     return acc.slice(-6)
   }, [requests, locale])
+
+  const acceptInvite = async (reqId: string) => {
+    const res = await fetch(`/api/requests/${reqId}/accept-invite`, { method: 'POST' })
+    if (!res.ok) {
+      alert((await res.json().catch(() => ({}))).error ?? 'Failed')
+      return
+    }
+    track('pro_accepted', { requestId: reqId, invite: true })
+    setSelectedRequest(null)
+    refresh()
+  }
 
   const updateStatus = async (
     reqId: string,
@@ -171,6 +183,8 @@ export default function ProDashboardScreen() {
       <p className="text-muted-foreground text-sm mb-6">
         {t('nav.hello')}, {user.fullName}
       </p>
+
+      <ProAvailabilityEditor />
 
       <div className="grid grid-cols-3 gap-3 mb-6 lg:gap-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 lg:p-4 text-center">
@@ -342,13 +356,23 @@ export default function ProDashboardScreen() {
 
             {selectedRequest.status === 'pending' && (
               <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => updateStatus(selectedRequest.id, 'accepted')}
-                  className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success"
-                >
-                  <CheckCircle size={16} /> {t('pro.approve')}
-                </button>
+                {selectedRequest.matchMode === 'multi' && !selectedRequest.professionalId ? (
+                  <button
+                    type="button"
+                    onClick={() => acceptInvite(selectedRequest.id)}
+                    className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success"
+                  >
+                    <CheckCircle size={16} /> {t('matching.acceptInvite')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => updateStatus(selectedRequest.id, 'accepted')}
+                    className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success"
+                  >
+                    <CheckCircle size={16} /> {t('pro.approve')}
+                  </button>
+                )}
                 {featureFlags.proTemplates && (
                   <div className="flex flex-wrap gap-2">
                     <p className="text-xs text-muted-foreground w-full">

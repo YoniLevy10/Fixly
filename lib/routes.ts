@@ -16,4 +16,5 @@ export const routes = {
   quickRequest: '/request/quick',
   proJoin: '/pro/join',
   proPricing: '/pro/pricing',
+  services: (city: string, category: string) => `/services/${city}/${category}`,
 }

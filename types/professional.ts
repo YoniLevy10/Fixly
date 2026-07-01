@@ -29,4 +29,6 @@ export type Professional = {
   experienceYears?: number
   completedJobs: number
   subscriptionTier?: 'free' | 'pro' | 'pro_plus'
+  avgResponseMinutes?: number | null
+  availabilitySummary?: string
 }

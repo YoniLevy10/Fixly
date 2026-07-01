@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import AuthPanel from '@/components/auth/AuthPanel'
+import ReferralSharePanel from '@/components/referral/ReferralSharePanel'
 import LanguageSwitcher from '@/components/i18n/LanguageSwitcher'
 import { routes } from '@/lib/routes'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -18,6 +19,10 @@ export default function ProfilePage() {
       </div>
 
       <AuthPanel />
+
+      <div className="mt-6">
+        <ReferralSharePanel />
+      </div>
 
       <div className="mt-8 pt-6 border-t border-gray-100 space-y-2">
         <p className="text-xs font-semibold text-muted-foreground mb-2">

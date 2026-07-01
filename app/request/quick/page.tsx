@@ -12,6 +12,8 @@ import { createRequestApi } from '@/shared/hooks/use-requests-api'
 import { routes } from '@/lib/routes'
 import { track } from '@/lib/analytics/track'
 import { featureFlags } from '@/lib/feature-flags'
+import { getStoredReferral } from '@/components/shared/ReferralCapture'
+import FixlyGuaranteeBanner from '@/components/shared/FixlyGuaranteeBanner'
 
 export default function QuickRequestPage() {
   const router = useRouter()
@@ -19,6 +21,7 @@ export default function QuickRequestPage() {
   const { t } = useLocale()
   const [description, setDescription] = useState('')
   const [location, setLocation] = useState(user.location ?? '')
+  const [categorySlug, setCategorySlug] = useState('plumbing')
   const [loading, setLoading] = useState(false)
 
   if (!featureFlags.quickRequest) {
@@ -30,18 +33,21 @@ export default function QuickRequestPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await createRequestApi({
+      const created = await createRequestApi({
         customerName: user.fullName,
         customerPhone: user.phone ?? '',
-        professionalId: '10000000-0000-4000-8000-000000000001',
-        professionalName: 'Fixly',
-        category: 'general',
+        professionalName: '',
+        category: categorySlug,
+        categorySlug,
+        city: location.split(',')[0]?.trim(),
         title: description.slice(0, 60),
         description,
         location,
+        matchMode: true,
+        referralCode: getStoredReferral() ?? undefined,
       })
-      track('request_created', { quick: true })
-      router.push(routes.myRequests)
+      track('request_created', { quick: true, matchMode: true })
+      router.push(routes.tracking(created.id))
     } finally {
       setLoading(false)
     }
@@ -53,7 +59,22 @@ export default function QuickRequestPage() {
         <BackButton onClick={() => router.back()} />
         <h1 className="text-xl font-black">{t('improvements.quickRequest')}</h1>
       </div>
-      <form onSubmit={submit} className="space-y-4">
+      <FixlyGuaranteeBanner compact />
+      <form onSubmit={submit} className="space-y-4 mt-4">
+        <div>
+          <Label>{t('requests.category')}</Label>
+          <select
+            value={categorySlug}
+            onChange={(e) => setCategorySlug(e.target.value)}
+            className="mt-1 w-full border border-border rounded-xl px-3 py-2"
+          >
+            <option value="plumbing">אינסטלטור</option>
+            <option value="electricity">חשמלאי</option>
+            <option value="ac">מיזוג</option>
+            <option value="cleaning">ניקיון</option>
+            <option value="painting">צבעי</option>
+          </select>
+        </div>
         <div>
           <Label>{t('requests.description')}</Label>
           <Textarea
@@ -72,6 +93,7 @@ export default function QuickRequestPage() {
             className="mt-1"
           />
         </div>
+        <p className="text-sm text-muted-foreground">{t('matching.waitingBody')}</p>
         <button
           type="submit"
           disabled={loading}
