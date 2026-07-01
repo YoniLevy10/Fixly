@@ -96,6 +96,11 @@ export async function supabaseCreateRequest(
     .eq('id', input.professionalId)
     .maybeSingle()
 
+  const coords =
+    input.destinationLat != null && input.destinationLng != null
+      ? { lat: input.destinationLat, lng: input.destinationLng }
+      : coordsFromLocationText(input.location)
+
   const { data, error } = await supabase
     .from('requests')
     .insert({
@@ -106,6 +111,8 @@ export async function supabaseCreateRequest(
       description: input.description,
       address: input.location,
       status: 'pending',
+      destination_lat: coords.lat,
+      destination_lng: coords.lng,
     })
     .select(REQUEST_SELECT)
     .single()
@@ -151,7 +158,7 @@ export async function supabaseUpdateProLocation(
 export async function supabaseUpdateRequest(
   id: string,
   status: RequestStatus,
-  extra?: { quotedAmount?: number }
+  extra?: { quotedAmount?: number; cancellationReason?: string }
 ): Promise<MockRequest | null> {
   const supabase = await createServerSupabaseClient()
   if (!supabase) return null
@@ -159,6 +166,9 @@ export async function supabaseUpdateRequest(
   const patch: Record<string, unknown> = { status }
   if (extra?.quotedAmount != null) {
     patch.quoted_amount = extra.quotedAmount
+  }
+  if (extra?.cancellationReason != null) {
+    patch.cancellation_reason = extra.cancellationReason
   }
   if (status === 'on_the_way') {
     patch.live_tracking_active = true

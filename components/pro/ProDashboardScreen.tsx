@@ -24,8 +24,12 @@ import { useRequestsListRealtime } from '@/shared/hooks/use-request-realtime'
 import { usePullToRefresh } from '@/shared/hooks/use-pull-to-refresh'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
+import { ACTIVE_REQUEST_STATUSES } from '@/shared/constants/request-status'
 import { cn } from '@/lib/utils/cn'
 import { isTrackingStatus } from '@/lib/tracking/geo'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
+import Link from 'next/link'
+import { routes } from '@/lib/routes'
 import ProLocationSharing from '@/components/pro/ProLocationSharing'
 
 const TEMPLATES = [
@@ -56,17 +60,17 @@ export default function ProDashboardScreen() {
     () => ({
       pending: requests.filter((r) => r.status === 'pending').length,
       active: requests.filter((r) =>
-        ['accepted', 'in_progress'].includes(r.status)
+        ACTIVE_REQUEST_STATUSES.includes(r.status as RequestStatus),
       ).length,
       completed: requests.filter((r) => r.status === 'completed').length,
     }),
-    [requests]
+    [requests],
   )
 
   const filtered = requests.filter((r) => {
     if (activeTab === 'pending') return r.status === 'pending'
     if (activeTab === 'active')
-      return ['accepted', 'in_progress'].includes(r.status)
+      return ACTIVE_REQUEST_STATUSES.includes(r.status as RequestStatus)
     if (activeTab === 'done')
       return ['completed', 'cancelled'].includes(r.status)
     return true
@@ -132,13 +136,22 @@ export default function ProDashboardScreen() {
       <div className="max-w-2xl mx-auto px-4 py-12 text-center">
         <p className="text-lg font-bold mb-2">{t('pro.dashboard')}</p>
         <p className="text-muted-foreground text-sm mb-6">{t('pro.claimHint')}</p>
-        <button
-          type="button"
-          onClick={() => claimProfessionalProfile(DEMO_PROFESSIONAL_ID)}
-          className="bg-primary text-white px-6 py-3 rounded-xl font-bold"
-        >
-          {t('pro.claimDemo')}
-        </button>
+        {isDemoDataMode() ? (
+          <button
+            type="button"
+            onClick={() => claimProfessionalProfile(DEMO_PROFESSIONAL_ID)}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-bold"
+          >
+            {t('pro.claimDemo')}
+          </button>
+        ) : (
+          <Link
+            href={routes.proJoin}
+            className="inline-block bg-primary text-white px-6 py-3 rounded-xl font-bold"
+          >
+            {t('pro.joinWaitlist')}
+          </Link>
+        )}
       </div>
     )
   }

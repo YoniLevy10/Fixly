@@ -49,6 +49,7 @@
 
 ## מסמכים קשורים
 
+- [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) — **מדריך השקה מלא**
 - [MONETIZATION.md](./MONETIZATION.md)
 - [IMPROVEMENTS_25.md](./IMPROVEMENTS_25.md)
 - [MOBILE_APP_STORE.md](./MOBILE_APP_STORE.md)

@@ -107,7 +107,12 @@ export default function NewRequestForm() {
       const imageUrls: string[] = []
       for (const img of images) {
         const url = await uploadRequestImage(img.file)
-        imageUrls.push(url ?? img.preview)
+        if (!url) {
+          setError(t('requests.imageUploadFailed'))
+          setLoading(false)
+          return
+        }
+        imageUrls.push(url)
       }
 
       let destinationLat: number | undefined

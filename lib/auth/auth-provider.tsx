@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { featureFlags } from '@/lib/feature-flags'
 import { createBrowserSupabaseClient } from '@/lib/supabase/browser'
 import { isSupabaseEnabled } from '@/lib/data/config'
 import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
@@ -133,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getClient])
 
   const signInWithGoogle = useCallback(async () => {
+    if (!featureFlags.googleOAuth) return 'Google OAuth מושבת'
     const supabase = getClient()
     if (!supabase) return 'Supabase לא מוגדר'
     const origin =
