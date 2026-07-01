@@ -13,6 +13,13 @@ const PRO_SELECT = `
   city,
   available,
   profile_image,
+  phone,
+  whatsapp_number,
+  is_verified,
+  avg_response_minutes,
+  availability_summary,
+  subscription_tier,
+  subscription_until,
   service_categories ( name, name_he, slug )
 `
 

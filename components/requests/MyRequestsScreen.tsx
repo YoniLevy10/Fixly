@@ -75,6 +75,11 @@ export default function MyRequestsScreen() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 justify-end">
                       <span className="text-xs text-muted-foreground">{req.category}</span>
+                      {req.status === 'completed' && (
+                        <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                          {t('reviews.promptBadge')}
+                        </span>
+                      )}
                       <RequestStatusBadge status={req.status as RequestStatus} size="sm" />
                     </div>
                     <p className="font-bold text-sm truncate text-foreground">

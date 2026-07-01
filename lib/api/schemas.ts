@@ -1,21 +1,30 @@
 import { z } from 'zod'
 
-export const createRequestSchema = z.object({
-  description: z.string().trim().min(3).max(5000),
-  professionalId: z.string().trim().min(1).max(64),
-  professionalName: z.string().trim().max(200).optional(),
-  customerId: z.string().trim().max(64).optional(),
-  customerName: z.string().trim().max(200).optional(),
-  customerPhone: z.string().trim().max(30).optional(),
-  category: z.string().trim().max(100).optional(),
-  title: z.string().trim().max(200).optional(),
-  location: z.string().trim().max(500).optional(),
-  preferredDate: z.string().trim().max(50).optional(),
-  preferredTime: z.string().trim().max(50).optional(),
-  images: z.array(z.string().url()).max(10).optional(),
-  destinationLat: z.number().finite().optional(),
-  destinationLng: z.number().finite().optional(),
-})
+export const createRequestSchema = z
+  .object({
+    description: z.string().trim().min(3).max(5000),
+    professionalId: z.string().trim().max(64).optional(),
+    professionalName: z.string().trim().max(200).optional(),
+    customerId: z.string().trim().max(64).optional(),
+    customerName: z.string().trim().max(200).optional(),
+    customerPhone: z.string().trim().max(30).optional(),
+    category: z.string().trim().max(100).optional(),
+    categoryId: z.string().uuid().optional(),
+    categorySlug: z.string().trim().max(50).optional(),
+    city: z.string().trim().max(100).optional(),
+    title: z.string().trim().max(200).optional(),
+    location: z.string().trim().max(500).optional(),
+    preferredDate: z.string().trim().max(50).optional(),
+    preferredTime: z.string().trim().max(50).optional(),
+    images: z.array(z.string().url()).max(10).optional(),
+    destinationLat: z.number().finite().optional(),
+    destinationLng: z.number().finite().optional(),
+    matchMode: z.boolean().optional(),
+    referralCode: z.string().trim().max(50).optional(),
+  })
+  .refine((d) => Boolean(d.professionalId) || d.matchMode === true, {
+    message: 'נדרש professionalId או matchMode',
+  })
 
 export const createReviewSchema = z.object({
   requestId: z.string().trim().min(1).max(64),

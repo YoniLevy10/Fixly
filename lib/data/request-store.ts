@@ -33,12 +33,15 @@ export function listRequestsByProfessional(professionalId: string): MockRequest[
 }
 
 export function createRequest(input: CreateRequestInput): MockRequest {
+  const { matchMode: useMulti, ...rest } = input
   const request: MockRequest = {
     id: `req-${Date.now()}`,
     createdAt: new Date().toISOString(),
     status: 'pending',
     liveTrackingActive: false,
-    ...input,
+    ...rest,
+    professionalId: input.professionalId ?? '',
+    matchMode: useMulti ? 'multi' : 'single',
   }
   store = [request, ...store]
   return request

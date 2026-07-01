@@ -17,6 +17,14 @@ import { routes } from '@/lib/routes'
 import { useRequestRealtime } from '@/shared/hooks/use-request-realtime'
 import ReviewForm from '@/components/reviews/ReviewForm'
 import ShareRequestButton from '@/components/requests/ShareRequestButton'
+import WhatsAppButton from '@/components/contact/WhatsAppButton'
+import FixlyGuaranteeBanner from '@/components/shared/FixlyGuaranteeBanner'
+import RequestChat from '@/components/chat/RequestChat'
+import JobPaymentButton from '@/components/payments/JobPaymentButton'
+import VerifiedBadge from '@/components/shared/VerifiedBadge'
+import ResponseTimeBadge from '@/components/shared/ResponseTimeBadge'
+import { buildRequestWhatsAppMessage } from '@/lib/contact/whatsapp-link'
+import { publicEnv } from '@/lib/env/public-env'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { MockRequest } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
@@ -126,6 +134,24 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   )
   const isCancelled = request.status === 'cancelled'
   const isCompleted = request.status === 'completed'
+  const isPendingMulti =
+    request.status === 'pending' &&
+    request.matchMode === 'multi' &&
+    !request.professionalId
+  const appBase =
+    typeof window !== 'undefined'
+      ? window.location.origin
+      : publicEnv.appUrl || 'https://fixly.vercel.app'
+  const whatsAppMessage =
+    professional?.phone && request
+      ? buildRequestWhatsAppMessage({
+          proName: professional.name,
+          customerName: request.customerName,
+          description: request.description,
+          location: request.location,
+          trackingUrl: `${appBase}${routes.tracking(request.id)}`,
+        })
+      : ''
   const progressPct =
     currentStepIndex < 0
       ? 0
@@ -179,7 +205,38 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
                 title={request.title ?? request.description}
               />
             </div>
+            {professional?.phone && whatsAppMessage && (
+              <div className="mt-3">
+                <WhatsAppButton
+                  phone={professional.phone}
+                  message={whatsAppMessage}
+                  className="w-full"
+                />
+              </div>
+            )}
           </div>
+
+          <FixlyGuaranteeBanner compact />
+
+          {isPendingMulti && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <p className="font-bold text-amber-950">{t('matching.waitingTitle')}</p>
+              <p className="text-sm text-amber-900 mt-1">{t('matching.waitingBody')}</p>
+              {request.candidates?.length ? (
+                <ul className="mt-3 space-y-2">
+                  {request.candidates.map((c) => (
+                    <li
+                      key={c.professionalId}
+                      className="text-sm flex justify-between bg-white rounded-lg px-3 py-2"
+                    >
+                      <span>{c.name}</span>
+                      <span className="text-yellow-600">★ {c.rating.toFixed(1)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          )}
 
           {professional && (
             <div className="bg-card rounded-2xl border-2 border-primary/30 p-4 flex items-center gap-3 shadow-md">
@@ -194,10 +251,17 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
                 {!professional.avatarUrl && professional.name.charAt(0)}
               </div>
               <div className="flex-1">
-                <p className="font-bold">{professional.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-bold">{professional.name}</p>
+                  {professional.isVerified && <VerifiedBadge />}
+                </div>
                 <p className="text-sm text-gray-500">
                   {professional.title ?? professional.category}
                 </p>
+                <ResponseTimeBadge
+                  avgResponseMinutes={professional.avgResponseMinutes}
+                  className="mt-1"
+                />
               </div>
               <div className="flex items-center gap-1 text-yellow-500 font-semibold text-sm">
                 <Star size={14} fill="currentColor" />
@@ -259,6 +323,11 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
               <div className="bg-green-50 text-green-800 rounded-2xl p-4 text-center text-sm mt-4">
                 {t('requests.completed')}
               </div>
+              <JobPaymentButton
+                requestId={request.id}
+                amountIls={request.quotedAmount}
+                paymentStatus={request.paymentStatus}
+              />
               {request.professionalId && (
                 <Link
                   href={`${routes.newRequest}?professional=${request.professionalId}`}
@@ -272,6 +341,15 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
                 professionalId={request.professionalId}
               />
             </>
+          )}
+
+          {!isCancelled && request.professionalId && (
+            <RequestChat
+              requestId={request.id}
+              enabled={['accepted', 'on_the_way', 'in_progress', 'completed'].includes(
+                request.status,
+              )}
+            />
           )}
         </div>
       </div>

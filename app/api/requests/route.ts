@@ -17,6 +17,7 @@ import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { createRequestSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
+import { recordReferralRedemption } from '@/lib/referrals/record-redemption'
 
 async function resolveProfessionalIdFromAuth(): Promise<string | undefined> {
   const supabase = await createServerSupabaseClient()
@@ -58,6 +59,8 @@ export async function GET(request: Request) {
       (await resolveProfessionalIdFromAuth()) ?? professionalId ?? (isDemoDataMode() ? '1' : undefined)
   }
 
+  const includeInvites = scope === 'pro'
+
   if (scope === 'mine' && isDemoDataMode()) {
     customerId = undefined
   }
@@ -66,8 +69,8 @@ export async function GET(request: Request) {
 
   if (backend === 'supabase') {
     const fromSupabase = await supabaseListRequests(
-      { customerId, professionalId },
-      limit > 0 ? { limit: limit + 1, offset } : undefined
+      { customerId, professionalId, includeInvites },
+      limit > 0 ? { limit: limit + 1, offset } : undefined,
     )
     const rows = fromSupabase ?? []
     if (limit > 0) {
@@ -108,6 +111,17 @@ export async function POST(request: Request) {
     if (backend === 'supabase') {
       const fromSupabase = await supabaseCreateRequest(body)
       if (fromSupabase) {
+        if (body.referralCode) {
+          const supabase = await createServerSupabaseClient()
+          const { data: { user } } = await supabase?.auth.getUser() ?? { data: { user: null } }
+          if (user) {
+            await recordReferralRedemption({
+              referralCode: body.referralCode,
+              referredUserId: user.id,
+              requestId: fromSupabase.id,
+            })
+          }
+        }
         return NextResponse.json(fromSupabase, { status: 201 })
       }
       return NextResponse.json({ error: 'יש להתחבר כדי לשלוח בקשה' }, { status: 401 })

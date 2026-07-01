@@ -72,9 +72,36 @@ export async function handleStripeWebhookEvent(
   if (!type || !object) return
 
   if (type === 'checkout.session.completed') {
+    const metadata = object.metadata as StripeObject | undefined
+    const paymentType = asString(metadata?.type)
+
+    if (paymentType === 'job_payment') {
+      const requestId = asString(metadata?.request_id)
+      if (requestId) {
+        await supabase
+          .from('requests')
+          .update({
+            payment_status: 'paid',
+            paid_at: new Date().toISOString(),
+            stripe_checkout_session_id: asString(object.id),
+          })
+          .eq('id', requestId)
+
+        const professionalId = asString(metadata?.professional_id)
+        if (professionalId) {
+          await recordWebhookBillingEvent(supabase, {
+            professionalId,
+            eventType: 'job_paid',
+            stripeEventId: eventId,
+            extra: { requestId },
+          })
+        }
+      }
+      return
+    }
+
     const professionalId =
-      professionalIdFromMetadata(object.metadata as StripeObject | undefined) ||
-      asString(object.client_reference_id)
+      professionalIdFromMetadata(metadata) || asString(object.client_reference_id)
 
     if (!professionalId) return
 

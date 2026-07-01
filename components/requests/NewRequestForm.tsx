@@ -23,6 +23,7 @@ import {
 import { estimatePriceRange, guessCategorySlug } from '@/lib/estimate/price-estimate'
 import { coordsFromLocationText } from '@/lib/tracking/geo'
 import { formatPrice } from '@/lib/i18n/format-locale'
+import { getStoredReferral } from '@/components/shared/ReferralCapture'
 import { track } from '@/lib/analytics/track'
 
 type ImagePreview = { preview: string; file: File }
@@ -138,7 +139,7 @@ export default function NewRequestForm() {
         destinationLng = fallback.lng
       }
 
-      await createRequestApi({
+      const created = await createRequestApi({
         customerName: user.fullName,
         customerPhone: form.customerPhone,
         professionalId: pro?.id ?? proId!,
@@ -152,11 +153,12 @@ export default function NewRequestForm() {
         preferredDate: form.preferredDate || undefined,
         preferredTime: form.preferredTime || undefined,
         images: imageUrls.length ? imageUrls : undefined,
+        referralCode: getStoredReferral() ?? undefined,
       })
 
       clearRequestDraft()
       track('request_created', { professionalId: pro?.id ?? proId ?? '' })
-      router.push(routes.myRequests)
+      router.push(routes.tracking(created.id))
     } catch (err) {
       setError(err instanceof Error ? err.message : t('requests.submitError'))
     } finally {

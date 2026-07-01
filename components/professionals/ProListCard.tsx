@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { Clock, MessageCircle } from 'lucide-react'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
+import VerifiedBadge from '@/components/shared/VerifiedBadge'
+import ResponseTimeBadge from '@/components/shared/ResponseTimeBadge'
 import AvailableTodayBadge from '@/components/shared/AvailableTodayBadge'
 import { formatPrice } from '@/lib/i18n/format-locale'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -32,12 +34,16 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
             <div>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-bold text-sm">{pro.name}</h3>
+                {pro.isVerified && <VerifiedBadge />}
                 <AvailableTodayBadge isAvailable={pro.isAvailable} />
                 {pro.isApproved && (
                   <span className="text-primary text-xs font-bold">✓</span>
                 )}
               </div>
               <p className="text-xs text-gray-500">{pro.title ?? pro.category}</p>
+              <div className="flex flex-wrap gap-1 mt-0.5">
+                <ResponseTimeBadge avgResponseMinutes={pro.avgResponseMinutes} />
+              </div>
               {pro.availableHours && (
                 <p className="text-xs text-gray-400">{pro.availableHours}</p>
               )}

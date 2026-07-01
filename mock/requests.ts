@@ -1,5 +1,13 @@
 import type { RequestStatus } from '@/shared/constants/request-status'
 
+export type RequestCandidate = {
+  professionalId: string
+  rank: number
+  name: string
+  rating: number
+  status?: string
+}
+
 export type MockRequest = {
   id: string
   customerId: string
@@ -23,12 +31,31 @@ export type MockRequest = {
   proLng?: number
   proLocationUpdatedAt?: string
   liveTrackingActive?: boolean
+  matchMode?: 'single' | 'multi'
+  candidates?: RequestCandidate[]
+  quotedAmount?: number
+  paymentStatus?: string
+  needsReview?: boolean
+  referralCode?: string
 }
 
 export type CreateRequestInput = Omit<
   MockRequest,
-  'id' | 'createdAt' | 'status'
->
+  | 'id'
+  | 'createdAt'
+  | 'status'
+  | 'needsReview'
+  | 'candidates'
+  | 'matchMode'
+  | 'paymentStatus'
+  | 'professionalId'
+> & {
+  professionalId?: string
+  matchMode?: boolean
+  categoryId?: string
+  categorySlug?: string
+  city?: string
+}
 
 import { getDemoRequests } from '@/mock/demo-requests'
 
