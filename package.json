@@ -13,7 +13,8 @@
     "cap:sync:dev": "cross-env CAPACITOR_SERVER_URL=http://localhost:3000 npx cap sync ios",
     "icons:generate": "node scripts/generate-app-icons.mjs",
     "mobile:check": "node scripts/mobile-check.mjs",
-    "mobile:prepare": "npm run icons:generate && npm run mobile:check && npm run cap:sync:ios",
+    "mobile:sync-version": "node scripts/sync-ios-version.mjs",
+    "mobile:prepare": "npm run mobile:sync-version && npm run icons:generate && npm run mobile:check && npm run cap:sync:ios",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"

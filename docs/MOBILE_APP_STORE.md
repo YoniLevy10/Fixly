@@ -14,6 +14,8 @@
 | הרשאות מצלמה/גלריה | `ios.infoPlist` ב-Capacitor |
 | צ'קליסט + metadata | `app-store/CHECKLIST.md`, `metadata.template.json` |
 | בדיקה | `npm run mobile:check` |
+| סנכרון גרסאות iOS | `npm run mobile:sync-version` |
+| הכנה מלאה לפני Archive | `npm run mobile:prepare` |
 
 ## אסטרטגיה
 

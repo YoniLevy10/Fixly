@@ -32,9 +32,10 @@ const config: CapacitorConfig = {
       },
   ios: {
     contentInset: 'automatic',
-    scheme: 'Fixly',
+    scheme: 'fixly',
     preferredContentMode: 'mobile',
-  },  plugins: {
+  },
+  plugins: {
     SplashScreen: {
       launchShowDuration: 1500,
       launchAutoHide: true,

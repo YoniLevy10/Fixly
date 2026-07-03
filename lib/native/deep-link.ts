@@ -1,9 +1,12 @@
 import { routes } from '@/lib/routes'
 
-/** Parse Fixly:// or https paths into app routes */
+/** Parse fixly://, com.fixly.app://, or https paths into app routes */
 export function resolveDeepLink(url: string): string | null {
   try {
-    const parsed = new URL(url.replace(/^fixly:\/\//i, 'https://fixly.app/'))
+    const normalized = url
+      .replace(/^fixly:\/\//i, 'https://fixly.app/')
+      .replace(/^com\.fixly\.app:\/\//i, 'https://fixly.app/')
+    const parsed = new URL(normalized)
     const path = parsed.pathname
     if (path.startsWith('/tracking/')) return path
     if (path.startsWith('/request/')) return path
