@@ -51,6 +51,20 @@
 	<string>Fixly accesses your photo library so you can attach images to repair requests.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Fixly may save images related to your repair requests.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Fixly uses your location so professionals can share live arrival updates with customers.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.fixly.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fixly</string>
+				<string>com.fixly.app</string>
+			</array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

@@ -14,6 +14,8 @@
 | הרשאות מצלמה/גלריה | `ios.infoPlist` ב-Capacitor |
 | צ'קליסט + metadata | `app-store/CHECKLIST.md`, `metadata.template.json` |
 | בדיקה | `npm run mobile:check` |
+| סנכרון גרסאות iOS | `npm run mobile:sync-version` |
+| הכנה מלאה לפני Archive | `npm run mobile:prepare` |
 
 ## אסטרטגיה
 
@@ -122,7 +124,9 @@ npx capacitor-assets generate --ios
 |--------|--------|
 | `npm run cap:sync` | מעתיק web + config לפרויקט iOS |
 | `npm run cap:ios` | פותח Xcode |
-| `npm run cap:copy` | העתקה מהירה בלי עדכון plugins |
+| `npm run mobile:check` | בדיקת תשתית App Store (גם ב-CI) |
+| `npm run mobile:sync-version` | סנכרון גרסה/build ל-Xcode |
+| `npm run mobile:prepare` | sync גרסאות + אייקונים + בדיקה + cap sync |
 
 ---
 

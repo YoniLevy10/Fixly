@@ -15,6 +15,9 @@ function fail(msg) {
   console.error(`✗ ${msg}`)
   ok = false
 }
+function warn(msg) {
+  console.warn(`⚠ ${msg}`)
+}
 
 const appIcon = join(
   root,
@@ -39,6 +42,7 @@ const required = [
   'docs/MOBILE_APP_STORE.md',
   'app-store/CHECKLIST.md',
   'app-store/metadata.template.json',
+  'resources/icon.png',
 ]
 
 for (const f of required) {
@@ -53,12 +57,68 @@ try {
     if (pkg.dependencies?.[d] || pkg.devDependencies?.[d]) pass(`dependency ${d}`)
     else fail(`Missing dependency ${d}`)
   }
-} catch {
-  fail('Could not read package.json')
-}
 
-if (!existsSync(join(root, 'resources/icon.png'))) {
-  console.warn('⚠ resources/icon.png not found — add 1024×1024 PNG before App Store icons')
+  const pbx = readFileSync(
+    join(root, 'ios/App/App.xcodeproj/project.pbxproj'),
+    'utf8'
+  )
+  const config = readFileSync(
+    join(root, 'lib/mobile/app-store-config.ts'),
+    'utf8'
+  )
+  const plist = readFileSync(join(root, 'ios/App/App/Info.plist'), 'utf8')
+  const privacy = readFileSync(
+    join(root, 'ios/App/App/PrivacyInfo.xcprivacy'),
+    'utf8'
+  )
+
+  if (pbx.includes(`MARKETING_VERSION = ${pkg.version};`)) {
+    pass(`iOS MARKETING_VERSION matches package.json (${pkg.version})`)
+  } else {
+    fail(
+      `iOS MARKETING_VERSION mismatch — run npm run mobile:sync-version (expected ${pkg.version})`
+    )
+  }
+
+  const buildMatch = config.match(/buildNumber:\s*['"]([^'"]+)['"]/)
+  const build = buildMatch?.[1]
+  if (build && pbx.includes(`CURRENT_PROJECT_VERSION = ${build};`)) {
+    pass(`iOS build number ${build}`)
+  } else {
+    fail('iOS CURRENT_PROJECT_VERSION mismatch — run npm run mobile:sync-version')
+  }
+
+  if (pbx.includes('PRODUCT_BUNDLE_IDENTIFIER = com.fixly.app;')) {
+    pass('bundle id com.fixly.app')
+  } else {
+    fail('Unexpected PRODUCT_BUNDLE_IDENTIFIER in Xcode project')
+  }
+
+  const plistKeys = [
+    'NSCameraUsageDescription',
+    'NSPhotoLibraryUsageDescription',
+    'NSLocationWhenInUseUsageDescription',
+    'ITSAppUsesNonExemptEncryption',
+    'CFBundleURLTypes',
+  ]
+  for (const key of plistKeys) {
+    if (plist.includes(key)) pass(`Info.plist ${key}`)
+    else fail(`Info.plist missing ${key}`)
+  }
+
+  if (plist.includes('<string>fixly</string>')) {
+    pass('deep link scheme fixly://')
+  } else {
+    fail('Info.plist missing fixly URL scheme')
+  }
+
+  if (privacy.includes('NSPrivacyCollectedDataTypePreciseLocation')) {
+    pass('Privacy manifest declares location')
+  } else {
+    fail('PrivacyInfo.xcprivacy missing precise location declaration')
+  }
+} catch {
+  fail('Could not read package.json or iOS project files')
 }
 
 if (ok) {
