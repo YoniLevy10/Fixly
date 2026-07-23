@@ -133,11 +133,31 @@ Internal Fixly DB still uses `pending` / `on_the_way` for the consumer app; the 
 
 ---
 
-## 3) Status webhook (Fixly → Bamakor)
+## 3) Cancel job
 
-Emitted when status changes (create with matches, accept, progress, cancel).
+`POST /api/v1/jobs/:job_id/cancel`
 
-`POST <callback_url>`
+```json
+{ "reason": "optional manager cancel note" }
+```
+
+**Response:** `{ "ok": true, "job_id": "...", "status": "cancelled", "webhook": { ... } }`
+
+Allowed from non-terminal statuses (`open` / `offered` / `accepted` / `en_route` / `in_progress` / `no_providers` / …).  
+Emits a signed `cancelled` webhook.
+
+---
+
+## 4) Status webhook (Fixly → Bamakor)
+
+Emitted when status changes (create, accept, progress, cancel).
+
+**Important statuses to emit:**  
+`offered` · `accepted` · `en_route` · `in_progress` · `completed` · `cancelled` · `expired` · `no_providers`
+
+`POST <callback_url>` — expected Bamakor path (receiver **not** built in this workstream):
+
+`https://bamakor.vercel.app/api/integrations/fixly/webhook`
 
 ```json
 {
@@ -149,13 +169,13 @@ Emitted when status changes (create with matches, accept, progress, cancel).
     "system": "bamakor",
     "ticket_id": "uuid",
     "ticket_number": 42,
-    "client_id": "uuid",
-    "client_name": "..."
+    "client_id": "uuid"
   },
   "provider": {
-    "id": "pro_uuid",
-    "display_name": "מעלית פלוס",
-    "phone": "9725..."
+    "id": "provider_uuid",
+    "name": "מעלית שירות בע״מ",
+    "phone": "9725...",
+    "category": "elevators"
   },
   "occurred_at": "2026-07-23T21:00:00.000Z"
 }
@@ -169,11 +189,16 @@ Headers:
 
 Verify: HMAC-SHA256(raw body, `BAMAKOR_WEBHOOK_SECRET`) must equal signature hex.
 
-Dev: set `FIXLY_WEBHOOK_DRY_RUN=1` or omit `callback_url` to log payload to console.
+### Retries
+
+Outbound client retries **up to 3 attempts** with backoff: immediate → **500ms** → **2000ms**.  
+Retries on network errors, `408`, `429`, and `5xx`. Most `4xx` are not retried.
+
+Dev: set `FIXLY_WEBHOOK_DRY_RUN=1` or omit `callback_url` to log payload to console (no HTTP).
 
 ---
 
-## 4) Accept offer (smoke / partner)
+## 5) Accept offer (smoke / partner)
 
 `POST /api/v1/jobs/:job_id/accept`
 
@@ -183,7 +208,7 @@ Dev: set `FIXLY_WEBHOOK_DRY_RUN=1` or omit `callback_url` to log payload to cons
 
 Production Fixly pros continue to use authenticated `POST /api/requests/:id/accept-invite`.
 
-## 5) Patch status (progress)
+## 6) Patch status (progress)
 
 `PATCH /api/v1/jobs/:job_id/status`
 
@@ -195,12 +220,15 @@ Production Fixly pros continue to use authenticated `POST /api/requests/:id/acce
 
 ## What Bamakor needs later (not implemented here)
 
+**Do not build the Bamakor webhook receiver in Bamakor as part of this Fixly workstream.**  
+Documented expected path only. Bamakor team later:
+
 Exactly **one thin endpoint + one button**:
 
 1. **Button** in Bamakor ticket UI: **«שלח ל-Fixly»** (only when addon / feature allowed).
 2. **Thin server action / API route** that:
    - Builds the JSON payload from the ticket (id, number, description, phones, building, client)
-   - `POST`s to Fixly ` /api/v1/jobs` with the API key
+   - `POST`s to Fixly `/api/v1/jobs` with the API key
    - Stores returned `job_id` on the ticket (or side table)
 3. **Webhook receiver** at e.g. `/api/integrations/fixly/webhook` that verifies signature and updates ticket status / timeline (e.g. toward `PROFESSIONAL_ESCORT` or a Fixly-specific mirror status).
 

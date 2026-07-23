@@ -12,10 +12,14 @@ import {
   memorySeedCategories,
   memoryCreateProvider,
   memoryCreateJob,
-  memoryAcceptOffer,
   memoryGetJob,
 } from '../../lib/integrations/bamakor/memory-store'
-import { createJob, acceptJobOffer, getJob } from '../../lib/integrations/bamakor/jobs-service'
+import {
+  createJob,
+  acceptJobOffer,
+  getJob,
+  cancelJob,
+} from '../../lib/integrations/bamakor/jobs-service'
 
 describe('normalizeCategoryKey', () => {
   it('resolves aliases', () => {
@@ -61,6 +65,74 @@ describe('webhook signing', () => {
       },
     })
     assert.equal(result.dryRun, true)
+    assert.equal(result.attempts, 0)
+  })
+
+  it('retries 3 times with backoff on 500', async () => {
+    const prevDry = process.env.FIXLY_WEBHOOK_DRY_RUN
+    delete process.env.FIXLY_WEBHOOK_DRY_RUN
+    try {
+      let calls = 0
+      const sleeps: number[] = []
+      const result = await emitJobStatusWebhook({
+        callbackUrl: 'https://example.test/webhook',
+        payload: {
+          event: 'job.status_changed',
+          job_id: 'j-retry',
+          status: 'accepted',
+          external_ref: null,
+          occurred_at: new Date().toISOString(),
+        },
+        maxAttempts: 3,
+        backoffMs: [0, 10, 20],
+        sleepImpl: async (ms) => {
+          sleeps.push(ms)
+        },
+        fetchImpl: async () => {
+          calls += 1
+          return new Response('nope', { status: 500 })
+        },
+      })
+      assert.equal(calls, 3)
+      assert.equal(result.delivered, false)
+      assert.equal(result.attempts, 3)
+      assert.deepEqual(sleeps, [0, 10, 20])
+    } finally {
+      if (prevDry === undefined) delete process.env.FIXLY_WEBHOOK_DRY_RUN
+      else process.env.FIXLY_WEBHOOK_DRY_RUN = prevDry
+    }
+  })
+
+  it('succeeds on second attempt', async () => {
+    const prevDry = process.env.FIXLY_WEBHOOK_DRY_RUN
+    delete process.env.FIXLY_WEBHOOK_DRY_RUN
+    try {
+      let calls = 0
+      const result = await emitJobStatusWebhook({
+        callbackUrl: 'https://example.test/webhook',
+        payload: {
+          event: 'job.status_changed',
+          job_id: 'j-ok',
+          status: 'offered',
+          external_ref: null,
+          occurred_at: new Date().toISOString(),
+        },
+        maxAttempts: 3,
+        backoffMs: [0, 0, 0],
+        sleepImpl: async () => {},
+        fetchImpl: async () => {
+          calls += 1
+          if (calls === 1) return new Response('busy', { status: 503 })
+          return new Response('ok', { status: 200 })
+        },
+      })
+      assert.equal(calls, 2)
+      assert.equal(result.delivered, true)
+      assert.equal(result.attempts, 2)
+    } finally {
+      if (prevDry === undefined) delete process.env.FIXLY_WEBHOOK_DRY_RUN
+      else process.env.FIXLY_WEBHOOK_DRY_RUN = prevDry
+    }
   })
 })
 
@@ -150,5 +222,24 @@ describe('memory marketplace flow', () => {
     })
     assert.equal(first.job_id, second.job_id)
     assert.ok(memoryGetJob(first.job_id))
+  })
+
+  it('cancels an offered job and emits cancelled', async () => {
+    memoryCreateProvider({
+      display_name: 'P',
+      category: 'elevators',
+      city: 'חדרה',
+    })
+    const { job } = await createJob({
+      source: 'bamakor',
+      category: 'elevators',
+      title: 'cancel me',
+      description: 'x',
+      location: { city: 'חדרה' },
+      callback_url: null,
+    })
+    const { job: cancelled, webhook } = await cancelJob(job.job_id, { reason: 'manager cancel' })
+    assert.equal(cancelled.status, 'cancelled')
+    assert.equal(webhook.payload.status, 'cancelled')
   })
 })

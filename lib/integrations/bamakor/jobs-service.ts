@@ -14,7 +14,22 @@ import type {
   JobApiStatus,
   JobView,
   WebhookPayload,
+  WebhookProvider,
 } from './types'
+
+function providerFromJob(job: JobView, providerId?: string | null): WebhookProvider | null {
+  const id = providerId ?? job.assigned_provider_id
+  if (!id) return null
+  const offer = job.offers.find((o) => o.provider_id === id)
+  const name = offer?.provider_name ?? 'Pro'
+  return {
+    id,
+    name,
+    display_name: name,
+    phone: null,
+    category: job.category,
+  }
+}
 
 function useMemoryFallback(): boolean {
   if (process.env.FIXLY_JOBS_STORE === 'memory') return true
@@ -199,25 +214,13 @@ async function maybeEmit(
   previousStatus: JobApiStatus | null,
   extra?: Record<string, unknown>,
 ) {
-  const provider =
-    job.assigned_provider_id != null
-      ? (() => {
-          const offer = job.offers.find((o) => o.provider_id === job.assigned_provider_id)
-          return {
-            id: job.assigned_provider_id,
-            display_name: offer?.provider_name ?? 'Pro',
-            phone: null as string | null,
-          }
-        })()
-      : null
-
   const payload: WebhookPayload = {
     event: 'job.status_changed',
     job_id: job.job_id,
     status: job.status,
     previous_status: previousStatus,
     external_ref: job.external_ref,
-    provider,
+    provider: providerFromJob(job),
     occurred_at: new Date().toISOString(),
     payload: extra,
   }
@@ -363,12 +366,7 @@ export async function acceptJobOffer(
         status: job.status,
         previous_status: prev?.status ?? null,
         external_ref: job.external_ref,
-        provider: {
-          id: providerId,
-          display_name:
-            job.offers.find((o) => o.provider_id === providerId)?.provider_name ?? 'Pro',
-          phone: null,
-        },
+        provider: providerFromJob(job, providerId),
         occurred_at: new Date().toISOString(),
       },
     })
@@ -443,15 +441,7 @@ export async function updateJobStatus(
         status: job.status,
         previous_status: prev.status,
         external_ref: job.external_ref,
-        provider: job.assigned_provider_id
-          ? {
-              id: job.assigned_provider_id,
-              display_name:
-                job.offers.find((o) => o.provider_id === job.assigned_provider_id)
-                  ?.provider_name ?? 'Pro',
-              phone: null,
-            }
-          : null,
+        provider: providerFromJob(job),
         occurred_at: new Date().toISOString(),
         payload: opts?.note ? { note: opts.note } : {},
       },
@@ -481,6 +471,35 @@ export async function updateJobStatus(
   if (!job) throw new Error('Job missing after update')
   const webhook = await maybeEmit(job, existing.status, opts?.note ? { note: opts.note } : {})
   return { job, webhook }
+}
+
+/** Cancel job (partner API) — emits `cancelled` webhook */
+export async function cancelJob(
+  jobId: string,
+  opts?: { reason?: string },
+): Promise<{ job: JobView; webhook: Awaited<ReturnType<typeof emitJobStatusWebhook>> }> {
+  const existing = useMemoryFallback() ? memoryGetJob(jobId) : await getJob(jobId)
+  if (!existing) throw new Error('Job not found')
+  if (existing.status === 'cancelled') {
+    throw new Error('Job already cancelled')
+  }
+  if (['completed', 'expired'].includes(existing.status)) {
+    throw new Error(`Invalid transition ${existing.status} → cancelled`)
+  }
+  const result = await updateJobStatus(jobId, 'cancelled', { note: opts?.reason })
+
+  if (!useMemoryFallback()) {
+    const admin = getAdminSupabaseClient()
+    if (admin) {
+      await admin
+        .from('request_candidates')
+        .update({ status: 'expired', responded_at: new Date().toISOString() })
+        .eq('request_id', jobId)
+        .eq('status', 'invited')
+    }
+  }
+
+  return result
 }
 
 /** Called from consumer accept / PATCH paths when request has callback_url */

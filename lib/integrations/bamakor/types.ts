@@ -106,17 +106,23 @@ export type JobView = {
   updated_at: string
 }
 
+export type WebhookProvider = {
+  id: string
+  /** Contract field (brief) */
+  name: string
+  phone?: string | null
+  category?: string | null
+  /** @deprecated alias of name — kept for early consumers */
+  display_name?: string
+}
+
 export type WebhookPayload = {
   event: 'job.status_changed'
   job_id: string
   status: JobApiStatus
   previous_status?: JobApiStatus | null
   external_ref: ExternalRef | null
-  provider?: {
-    id: string
-    display_name: string
-    phone?: string | null
-  } | null
+  provider?: WebhookProvider | null
   occurred_at: string
   payload?: Record<string, unknown>
 }
