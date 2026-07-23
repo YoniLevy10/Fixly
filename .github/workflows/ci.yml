@@ -22,6 +22,11 @@ jobs:
 
       - run: npm ci
       - run: npx tsc --noEmit
+      - run: npm run test:unit
+        env:
+          FIXLY_JOBS_STORE: memory
+          FIXLY_WEBHOOK_DRY_RUN: '1'
+      - run: npm run smoke:phase1
       - run: npm run build
 
   smoke:

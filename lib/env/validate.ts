@@ -29,7 +29,17 @@ export function validateProductionEnv(): EnvValidationResult {
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    warnings.push('SUPABASE_SERVICE_ROLE_KEY missing — Stripe webhooks and admin API will not work')
+    warnings.push(
+      'SUPABASE_SERVICE_ROLE_KEY missing — partner /api/v1/jobs, Stripe webhooks, and admin API will not work',
+    )
+  }
+
+  if (!process.env.FIXLY_API_KEYS?.trim() && !process.env.FIXLY_API_KEY?.trim()) {
+    warnings.push('FIXLY_API_KEYS missing — Bamakor/partner job API rejects production requests')
+  }
+
+  if (!process.env.BAMAKOR_WEBHOOK_SECRET?.trim()) {
+    warnings.push('BAMAKOR_WEBHOOK_SECRET missing — outbound status webhooks unsigned')
   }
 
   if (process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false') {

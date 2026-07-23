@@ -101,14 +101,22 @@ curl https://your-domain/api/health | jq
 
 ## Checklist מהיר
 
-- [ ] Vercel env vars מוגדרים
-- [ ] Supabase migrations רצו
+### בקוד (סגור)
+- [x] Marketplace + hardening ב-`main`
+- [x] Bamakor API + webhooks (#6)
+- [x] מיגרציית Bamakor (ורצה אצלך)
+
+### אתה (תפעול — חוסם שיווק חזק)
+- [ ] Vercel env vars מוגדרים (כולל `FIXLY_API_KEYS`, `BAMAKOR_WEBHOOK_SECRET` אם רוצים שותפים)
+- [ ] שאר מיגרציות Supabase (אם עדיין לא: monetization / scale / waitlist…)
+- [ ] אופציונלי: `supabase/seed_pilot_optional.sql` לפיילוט
 - [ ] Google OAuth עובד
-- [ ] Stripe webhook verified (Stripe Dashboard → Webhooks → test)
-- [ ] `/api/health` מחזיר ok
+- [ ] Stripe webhook verified (רק אם גובים כסף)
+- [ ] `/api/health` מחזיר `ok` / `degraded` עם `demoMode: false`
 - [ ] `/admin` נגיש עם האימייל שלך
-- [ ] 20+ pros manually added לעיר הפיילוט
+- [ ] 20+ pros אמיתיים בעיר הפיילוט
 - [ ] TestFlight / App Store (אופציונלי לשלב 1)
+- [ ] Bamakor UI + webhook receiver — בריפו Bamakor בלבד
 
 ---
 

@@ -20,6 +20,7 @@ import {
   getJob,
   cancelJob,
 } from '../../lib/integrations/bamakor/jobs-service'
+import { assignmentModeToMatchMode } from '../../lib/integrations/bamakor/assignment'
 
 describe('normalizeCategoryKey', () => {
   it('resolves aliases', () => {
@@ -27,6 +28,13 @@ describe('normalizeCategoryKey', () => {
     assert.equal(normalizeCategoryKey('electrical'), 'electricity')
     assert.equal(normalizeCategoryKey('hvac'), 'ac')
     assert.equal(normalizeCategoryKey('מעליות'), 'elevators')
+  })
+})
+
+describe('assignmentModeToMatchMode', () => {
+  it('maps partner modes to multi', () => {
+    assert.equal(assignmentModeToMatchMode('broadcast_first_accept'), 'multi')
+    assert.equal(assignmentModeToMatchMode('manual_select'), 'multi')
   })
 })
 

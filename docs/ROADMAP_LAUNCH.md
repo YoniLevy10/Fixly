@@ -6,12 +6,13 @@
 
 | ציר | תשתית בקוד | דורש הגדרה חיצונית | סטטוס |
 |-----|------------|---------------------|--------|
-| **25 שיפורי UX** | כן | — | [ ] commit + push |
-| **סקייל** | Realtime מסונן, pagination, cache, rate limit | Supabase Pro, load test | [ ] |
-| **Pro (ללא מידרג)** | `/pro/join` waitlist | שיווק, מיילים | [ ] |
-| **Google OAuth** | כפתור + callback | Supabase + Google Console | [ ] |
-| **מונטיזציה** | DB + billing events + pricing | Stripe keys | [ ] |
-| **App Store** | Capacitor iOS, legal | Apple Developer, הגשה | [ ] |
+| **25 שיפורי UX** | כן | — | [x] ב-`main` |
+| **סקייל** | Realtime מסונן, pagination, cache, rate limit | Supabase Pro, load test | [x] קוד / [ ] ops |
+| **Pro (ללא מידרג)** | `/pro/join` waitlist | שיווק, מיילים | [x] קוד / [ ] גיוס |
+| **Google OAuth** | כפתור + callback | Supabase + Google Console | [x] קוד / [ ] הגדרה |
+| **מונטיזציה** | DB + billing events + pricing | Stripe keys | [x] קוד / [ ] keys |
+| **App Store** | Capacitor iOS, legal | Apple Developer, הגשה | [x] shell / [ ] הגשה |
+| **Bamakor API** | `/api/v1/jobs` + webhooks | `FIXLY_API_KEYS`, secret, Bamakor UI | [x] Fixly / [ ] Bamakor |
 
 ## צ'קליסט לפני השקה
 
