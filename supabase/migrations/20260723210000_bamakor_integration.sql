@@ -2,18 +2,31 @@
 -- Maps brief "jobs" → existing public.requests / request_candidates
 
 -- ---------------------------------------------------------------------------
--- Categories: add missing trades + normalize Hebrew labels
+-- Categories: ensure columns exist on older DBs, then seed missing trades
 -- ---------------------------------------------------------------------------
-insert into public.service_categories (name, slug, name_he, sort_order)
-select v.name, v.slug, v.name_he, v.sort_order
+alter table public.service_categories
+  add column if not exists slug text,
+  add column if not exists name_he text,
+  add column if not exists sort_order int default 0;
+
+create unique index if not exists service_categories_slug_key
+  on public.service_categories (slug)
+  where slug is not null;
+
+insert into public.service_categories (name, slug, name_he)
+select v.name, v.slug, v.name_he
 from (values
-  ('Elevators', 'elevators', 'מעליות', 10),
-  ('Pest Control', 'pest_control', 'הדברה', 20),
-  ('General', 'general', 'כללי / אחר', 90)
-) as v(name, slug, name_he, sort_order)
+  ('Elevators', 'elevators', 'מעליות'),
+  ('Pest Control', 'pest_control', 'הדברה'),
+  ('General', 'general', 'כללי / אחר')
+) as v(name, slug, name_he)
 where not exists (
   select 1 from public.service_categories c where c.slug = v.slug
 );
+
+update public.service_categories set sort_order = 10 where slug = 'elevators' and (sort_order is null or sort_order = 0);
+update public.service_categories set sort_order = 20 where slug = 'pest_control' and (sort_order is null or sort_order = 0);
+update public.service_categories set sort_order = 90 where slug = 'general' and (sort_order is null or sort_order = 0);
 
 -- Align Hebrew labels for brief minimum set (idempotent)
 update public.service_categories set name_he = 'ניקיון' where slug = 'cleaning';
