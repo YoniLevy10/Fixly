@@ -130,6 +130,8 @@ export async function GET() {
       waitlist: 'POST /api/pro/waitlist',
       admin: 'GET /api/admin/stats',
       cron: 'GET /api/cron/reset-lead-credits',
+      v1Jobs:
+        'POST /api/v1/jobs | GET /api/v1/jobs/:id | POST …/cancel | POST …/accept | PATCH …/status',
     },
   })
 }

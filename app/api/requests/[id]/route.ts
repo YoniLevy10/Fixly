@@ -17,6 +17,8 @@ import { parseJsonBody } from '@/lib/api/parse-body'
 import { updateRequestSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
 import type { RequestStatus } from '@/shared/constants/request-status'
+import { emitWebhookForRequestId } from '@/lib/integrations/bamakor/jobs-service'
+import { toApiStatus } from '@/lib/integrations/bamakor/status-map'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -97,6 +99,11 @@ export async function PATCH(request: Request, context: RouteContext) {
             billing = { ...billing, commissionAgorot: commission }
           }
         }
+        // Bamakor / partner callback when this request has callback_url
+        await emitWebhookForRequestId(
+          id,
+          toApiStatus(existing.status as string),
+        ).catch((err) => trackError(err, { route: 'PATCH request webhook' }))
         return NextResponse.json({ ...fromSupabase, billing })
       }
       return NextResponse.json({ error: 'לא נמצא או אין הרשאה' }, { status: 404 })

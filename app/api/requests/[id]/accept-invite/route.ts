@@ -5,6 +5,7 @@ import { recordProResponseTime } from '@/lib/matching/response-time'
 import { handleLeadOnAccept } from '@/lib/monetization/record-billing'
 import { featureFlags } from '@/lib/feature-flags'
 import { trackError } from '@/lib/monitoring/track-error'
+import { emitWebhookForRequestId } from '@/lib/integrations/bamakor/jobs-service'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -32,7 +33,7 @@ export async function POST(_request: Request, context: RouteContext) {
 
   const { data: req } = await admin
     .from('requests')
-    .select('id, status, match_mode, created_at, professional_id')
+    .select('id, status, match_mode, created_at, professional_id, callback_url')
     .eq('id', requestId)
     .maybeSingle()
 
@@ -85,6 +86,12 @@ export async function POST(_request: Request, context: RouteContext) {
 
     if (featureFlags.monetization) {
       await handleLeadOnAccept(pro.id, requestId)
+    }
+
+    if (req.callback_url) {
+      await emitWebhookForRequestId(requestId, 'offered').catch((err) =>
+        trackError(err, { route: 'accept-invite webhook' }),
+      )
     }
 
     return NextResponse.json({ ok: true, professionalId: pro.id, professionalName: pro.title })
