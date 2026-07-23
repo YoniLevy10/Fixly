@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export type MatchCandidate = {
   professionalId: string
@@ -8,14 +9,33 @@ export type MatchCandidate = {
   rating: number
 }
 
-/** Find top N available pros by category + city, preferring verified and fast responders */
-export async function findMatchingCandidates(input: {
+type MatchInput = {
   categoryId?: string | null
   city?: string | null
   limit?: number
-}): Promise<MatchCandidate[]> {
+  /**
+   * Prefer service-role client (partner / cron routes without user session).
+   * Default: cookie session client, then admin fallback.
+   */
+  preferAdmin?: boolean
+  /** Injected client for tests */
+  client?: SupabaseClient | null
+}
+
+async function resolveClient(input: MatchInput): Promise<SupabaseClient | null> {
+  if (input.client) return input.client
+  if (input.preferAdmin) {
+    return getAdminSupabaseClient() ?? (await createServerSupabaseClient())
+  }
+  return (await createServerSupabaseClient()) ?? getAdminSupabaseClient()
+}
+
+/** Single matching engine: category + city, prefer verified / fast / rating */
+export async function findMatchingCandidates(
+  input: MatchInput,
+): Promise<MatchCandidate[]> {
   const limit = input.limit ?? 3
-  const supabase = (await createServerSupabaseClient()) ?? getAdminSupabaseClient()
+  const supabase = await resolveClient(input)
   if (!supabase) return []
 
   let query = supabase

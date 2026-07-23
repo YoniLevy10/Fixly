@@ -17,8 +17,7 @@
     "mobile:prepare": "npm run mobile:sync-version && npm run icons:generate && npm run mobile:check && npm run cap:sync:ios",
     "typecheck": "tsc --noEmit",
     "test:unit": "node --import tsx --test tests/unit/bamakor-integration.test.ts",
-    "test:unit:smoke": "node --test tests/unit/bamakor-integration.test.mjs",
-    "smoke:phase1": "FIXLY_JOBS_STORE=memory FIXLY_WEBHOOK_DRY_RUN=1 node scripts/smoke-phase1.mjs",
+    "smoke:phase1": "FIXLY_JOBS_STORE=memory FIXLY_WEBHOOK_DRY_RUN=1 node --import tsx scripts/smoke-phase1.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },

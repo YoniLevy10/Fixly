@@ -1,7 +1,9 @@
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
+import { findMatchingCandidates } from '@/lib/matching/find-candidates'
 import { normalizeCategoryKey } from './categories'
 import { toApiStatus, toFixlyStatus, canTransitionApi } from './status-map'
 import { emitJobStatusWebhook } from './webhook'
+import { assignmentModeToMatchMode } from './assignment'
 import {
   memoryAcceptOffer,
   memoryCreateJob,
@@ -25,7 +27,6 @@ function providerFromJob(job: JobView, providerId?: string | null): WebhookProvi
   return {
     id,
     name,
-    display_name: name,
     phone: null,
     category: job.category,
   }
@@ -51,38 +52,6 @@ async function resolveCategoryId(
     .maybeSingle()
   if (!data) return null
   return { id: data.id as string, slug: data.slug as string }
-}
-
-/** Match via service role (no user session on partner API routes) */
-async function matchProvidersAdmin(input: {
-  categoryId: string
-  city: string
-  limit?: number
-}): Promise<Array<{ professionalId: string; rank: number; name: string }>> {
-  const admin = getAdminSupabaseClient()
-  if (!admin) return []
-  const limit = input.limit ?? 5
-
-  let query = admin
-    .from('professionals')
-    .select('id, title, rating, city, available, is_verified, avg_response_minutes, category_id')
-    .eq('available', true)
-    .eq('category_id', input.categoryId)
-    .order('is_verified', { ascending: false })
-    .order('avg_response_minutes', { ascending: true, nullsFirst: false })
-    .order('rating', { ascending: false })
-    .limit(limit * 2)
-
-  if (input.city) {
-    query = query.ilike('city', `%${input.city}%`)
-  }
-
-  const { data } = await query
-  return (data ?? []).slice(0, limit).map((row, i) => ({
-    professionalId: row.id as string,
-    rank: i + 1,
-    name: (row.title as string) ?? 'Pro',
-  }))
 }
 
 function rowToExternalRef(row: Record<string, unknown>): ExternalRef | null {
@@ -279,10 +248,12 @@ export async function createJob(
     }
   }
 
-  const candidates = await matchProvidersAdmin({
+  const assignmentMode = input.assignment_mode ?? 'broadcast_first_accept'
+  const candidates = await findMatchingCandidates({
     categoryId: category.id,
     city: input.location.city,
     limit: 5,
+    preferAdmin: true,
   })
 
   const status = candidates.length === 0 ? 'no_providers' : 'pending'
@@ -298,7 +269,7 @@ export async function createJob(
       address: input.location.address ?? input.location.building_name ?? null,
       city: input.location.city,
       status,
-      match_mode: 'multi',
+      match_mode: assignmentModeToMatchMode(assignmentMode),
       source: input.source ?? 'bamakor',
       external_system: input.external_ref?.system ?? null,
       external_ticket_id: input.external_ref?.ticket_id ?? null,
@@ -310,7 +281,7 @@ export async function createJob(
       manager_phone: input.contact?.manager_phone ?? null,
       manager_notes: input.contact?.notes ?? null,
       callback_url: input.callback_url ?? null,
-      assignment_mode: input.assignment_mode ?? 'broadcast_first_accept',
+      assignment_mode: assignmentMode,
       priority: input.priority ?? 'medium',
       media_urls: input.media_urls ?? [],
       matched_providers_count: candidates.length,

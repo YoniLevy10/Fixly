@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       {
         ok: true,
         job_id: job.job_id,
-        status: job.status === 'offered' ? 'open' : job.status,
+        status: job.status,
         matched_providers: job.matched_providers,
         job,
       },

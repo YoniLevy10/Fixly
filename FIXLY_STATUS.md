@@ -1,81 +1,65 @@
-# Fixly — Repository Status (Phase 1 kickoff)
+# Fixly — Repository Status
 
-Last inspected: 2026-07-23  
-Branch baseline: `main` (`YoniLevy10/Fixly`)
+Last updated: 2026-07-23  
+Branch: `cursor/bamakor-integration-phase1-bfd6` (vs `main`)
 
-## What Fixly is today
+## Product
 
-Fixly is a **Hebrew-first maintenance marketplace** (Next.js App Router + Supabase + Vercel + Capacitor iOS shell). The product core is **request lifecycle management**, not a generic social feed.
-
-Primary users already modeled:
-- Customers who create service requests
-- Professionals (pros) who accept / progress jobs
-- Admins / waitlist / monetization hooks
+Fixly = Hebrew-first maintenance marketplace (“Wolt for trades”).  
+Bamakor = separate building-ops SaaS; integration is **API + webhook only** (no shared DB, no Bamakor code changes in this workstream).
 
 ## Stack
 
-| Layer | Choice |
-|-------|--------|
-| App | Next.js 16, React 19, TypeScript, Tailwind |
-| Data | Supabase (Postgres + Auth + Realtime + Storage) |
-| Deploy | Vercel |
-| Mobile | Capacitor iOS |
-| Payments | Stripe (optional feature flag) |
-| Monitoring | Sentry (optional) |
+Next.js 16 · React 19 · TypeScript · Tailwind · Supabase · Vercel · Capacitor iOS
 
-## Existing domain map (vs brief entities)
+## Domain map (single source of truth)
 
-| Brief entity | Existing Fixly artifact | Notes |
-|--------------|-------------------------|--------|
-| Category | `service_categories` | Slugs: plumbing, electricity, ac, cleaning, … Missing: elevators, pest_control, general |
-| Provider | `professionals` | Single `category_id` + `city` + `available`; phone/WhatsApp columns exist |
-| Service area | `professionals.city` | No radius/polygon table yet |
-| Job / Order | `requests` | Statuses: pending → accepted → on_the_way → in_progress → completed \| cancelled |
-| Offer / Assignment | `request_candidates` | Multi-match invites; first accept wins via `/api/requests/[id]/accept-invite` |
-| Job status events | — | **Missing** — no audit/timeline table |
-| External source (Bamakor) | — | **Missing** — no `source` / ticket / callback columns |
+| Concept | Table / module |
+|---------|----------------|
+| Category | `service_categories` |
+| Provider | `professionals` |
+| Job | `requests` (+ Bamakor columns) |
+| Offer | `request_candidates` |
+| Events / webhook audit | `request_events` |
+| Matching | `lib/matching/find-candidates.ts` (**one engine**) |
+| Partner façade | `lib/integrations/bamakor/*` + `/api/v1/jobs/*` |
+| Consumer API | `/api/requests*` (unchanged product path) |
 
-## Matching (already present)
+## What Phase 1–2 added
 
-`lib/matching/find-candidates.ts`:
-1. `available = true`
-2. Optional `category_id` equality
-3. Optional city `ilike`
-4. Prefer verified + faster `avg_response_minutes` + rating
-5. Top N (default 3)
+- `POST/GET /api/v1/jobs`, `POST …/accept`, `POST …/cancel`, `PATCH …/status`
+- API-key auth (`FIXLY_API_KEYS`), signed outbound webhooks + 3 retries
+- Migration `20260723210000_bamakor_integration.sql`
+- Docs: `docs/BAMAKOR_INTEGRATION.md`, `docs/BAMAKOR_NEXT_STEPS.md`
+- Smoke: `npm run smoke:phase1` (memory store → real modules)
+- Tests: `npm run test:unit`
 
-Consumer create path: `POST /api/requests` with `matchMode` inserts candidates.
+## Status naming (not duplicated product state)
 
-## API surface (pre–Phase 1)
+| Partner API | Fixly DB / consumer UI |
+|-------------|------------------------|
+| `open` / `offered` | `pending` |
+| `en_route` | `on_the_way` |
+| `accepted` / `in_progress` / `completed` / `cancelled` | same |
+| `no_providers` / `expired` / `rejected_by_all` | same (partner jobs) |
 
-- `GET/POST /api/requests`, `GET/PATCH /api/requests/[id]`
-- `POST /api/requests/[id]/accept-invite`
-- `GET /api/categories`, `GET/POST /api/professionals`, …
-- **No** `/api/v1/jobs` and **no** outbound Bamakor webhook
+Mapped only in `lib/integrations/bamakor/status-map.ts`.
 
-## Auth / ops today
+## Assignment naming
 
-- End-user: Supabase Auth (email / Google OAuth)
-- Server admin: `SUPABASE_SERVICE_ROLE_KEY`
-- Cron: `CRON_SECRET`
-- **No** inter-service API key for Bamakor yet
+| Partner `assignment_mode` | Internal `match_mode` |
+|---------------------------|------------------------|
+| `broadcast_first_accept` | `multi` |
+| `manual_select` | `multi` |
 
-## Gaps vs Phase 1 brief
+Helper: `lib/integrations/bamakor/assignment.ts`
 
-1. Bamakor integration contract (`POST/GET /api/v1/jobs` + signed status webhooks)
-2. External ticket / callback fields on jobs
-3. `request_events` timeline for callbacks
-4. Category seed for elevators / pest / general (+ slug aliases electrical→electricity, hvac→ac)
-5. Documented env: `FIXLY_API_KEYS`, `BAMAKOR_WEBHOOK_SECRET`
-6. Smoke path: seed → 2 pros → create job → offers → accept → webhook payload
+## Still later (Bamakor repo — not here)
 
-## Design decision for Phase 1
+1. Button «שלח ל-Fixly»
+2. Thin `POST` to Fixly `/api/v1/jobs`
+3. Webhook receiver at the `callback_url`
 
-**Map jobs onto `requests` + offers onto `request_candidates`** (do not duplicate tables).  
-Add Bamakor columns + `request_events`, expose a clean `/api/v1/*` boundary, and map Bamakor-facing statuses (`open` / `offered` / `en_route` / …) in the API layer while keeping the consumer app on existing Fixly statuses where possible.
+## Ops
 
-Hard rule honored: **no Bamakor repo changes**.
-
-## Independent marketplace (usable without Bamakor)
-
-Existing consumer + pro flows already create/match/accept requests. Phase 1 keeps that path and adds an API-key job ingress for Bamakor (and future partners) that reuses the same matching engine.
+See `.env.example`: `FIXLY_API_KEYS`, `BAMAKOR_WEBHOOK_SECRET`, `FIXLY_WEBHOOK_DRY_RUN`, `FIXLY_JOBS_STORE`.

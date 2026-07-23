@@ -66,10 +66,12 @@ Keys on Fixly: `FIXLY_API_KEYS` (comma-separated) or `FIXLY_API_KEY`.
 {
   "ok": true,
   "job_id": "fixly_job_uuid",
-  "status": "open",
+  "status": "offered",
   "matched_providers": 3
 }
 ```
+
+`status` matches `GET /api/v1/jobs/:id` (`offered` when matches exist, `no_providers` when none, etc.).
 
 Idempotency: same `external_ref.system` + `external_ref.ticket_id` returns the existing job.
 

@@ -108,12 +108,9 @@ export type JobView = {
 
 export type WebhookProvider = {
   id: string
-  /** Contract field (brief) */
   name: string
   phone?: string | null
   category?: string | null
-  /** @deprecated alias of name — kept for early consumers */
-  display_name?: string
 }
 
 export type WebhookPayload = {
