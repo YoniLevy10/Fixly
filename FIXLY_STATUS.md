@@ -1,7 +1,7 @@
 # Fixly — Repository Status
 
 Last updated: 2026-07-23  
-Branch: `cursor/bamakor-integration-phase1-bfd6` (vs `main`)
+On `main` (Bamakor Phase 1–2 merged). Bamakor SQL migration applied in production Supabase.
 
 ## Product
 

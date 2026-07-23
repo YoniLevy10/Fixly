@@ -1,6 +1,17 @@
 # Fixly
 
-AI-powered marketplace MVP.
+Hebrew-first maintenance marketplace MVP (Next.js + Supabase + Vercel).
+
+**Launch / ops:** see `docs/PRODUCTION_READINESS.md` and `DEPLOYMENT_STATUS.md`  
+**Bamakor partner API:** see `docs/BAMAKOR_INTEGRATION.md`  
+**Current inventory:** `FIXLY_STATUS.md`
+
+```bash
+npm ci
+npm run dev
+npm run test:unit
+npm run smoke:phase1
+```
 
 ---
 

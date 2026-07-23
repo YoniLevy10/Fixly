@@ -54,6 +54,21 @@ export async function GET() {
     reviews_table: { ok: false, detail: 'skipped' },
     storage: { ok: false, detail: 'skipped' },
     realtime: { ok: true, detail: 'requests table in publication' },
+    partner_api_keys: {
+      ok: Boolean(process.env.FIXLY_API_KEYS?.trim() || process.env.FIXLY_API_KEY?.trim()),
+      detail:
+        process.env.FIXLY_API_KEYS?.trim() || process.env.FIXLY_API_KEY?.trim()
+          ? 'FIXLY_API_KEYS configured'
+          : 'missing — set FIXLY_API_KEYS for /api/v1/jobs',
+    },
+    bamakor_webhook_secret: {
+      ok: Boolean(process.env.BAMAKOR_WEBHOOK_SECRET?.trim()),
+      detail: process.env.BAMAKOR_WEBHOOK_SECRET?.trim()
+        ? 'configured'
+        : 'missing — outbound webhooks unsigned',
+    },
+    bamakor_migration: { ok: false, detail: 'skipped' },
+    elevators_category: { ok: false, detail: 'skipped' },
   }
 
   if (backend !== 'supabase') {
@@ -103,6 +118,30 @@ export async function GET() {
   checks.storage = {
     ok: Boolean(buckets?.some((b) => b.id === 'request-images')),
     detail: buckets?.map((b) => b.id).join(', ') ?? '',
+  }
+
+  // Bamakor migration presence (columns + request_events)
+  const { error: sourceColErr } = await supabase
+    .from('requests')
+    .select('source, callback_url, external_ticket_id', { head: true, count: 'exact' })
+  const { error: eventsErr } = await supabase
+    .from('request_events')
+    .select('id', { head: true, count: 'exact' })
+  checks.bamakor_migration = {
+    ok: !sourceColErr && !eventsErr,
+    detail:
+      !sourceColErr && !eventsErr
+        ? 'requests Bamakor columns + request_events ok'
+        : [sourceColErr?.message, eventsErr?.message].filter(Boolean).join('; '),
+  }
+
+  const { count: elevCount } = await supabase
+    .from('service_categories')
+    .select('*', { count: 'exact', head: true })
+    .eq('slug', 'elevators')
+  checks.elevators_category = {
+    ok: (elevCount ?? 0) > 0,
+    detail: (elevCount ?? 0) > 0 ? 'elevators seeded' : 'missing elevators category',
   }
 
   const criticalOk =
