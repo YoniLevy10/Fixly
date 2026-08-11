@@ -170,7 +170,145 @@
         width: 30px; height: 30px; border-radius: 999px; background: #123563; color: #fff;
         display: grid; place-items: center; font-weight: 800; font-size: 13px;
       }
-      .phone-body { padding: 12px 14px 28px; flex: 1; background: #f2f4f7; overflow: hidden; }
+      .phone-body {
+        padding: 10px 12px 0; flex: 1; background: #f2f4f7; overflow: hidden;
+        display: flex; flex-direction: column; position: relative;
+        padding-bottom: 58px;
+      }
+      .phone-body.no-nav { padding-bottom: 18px; }
+      .scroll-fill { flex: 1; overflow: hidden; }
+
+      /* Bottom nav — matches Fixly BottomNav */
+      .bottom-nav {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: 58px; background: #fff;
+        border-top: 2px solid #e5e7eb;
+        display: flex; align-items: center; justify-content: space-around;
+        padding: 0 6px 10px; z-index: 12;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+      }
+      .bn-item {
+        display: flex; flex-direction: column; align-items: center; gap: 1px;
+        font-size: 10px; font-weight: 700; color: rgba(15,23,41,0.55); min-width: 52px;
+      }
+      .bn-item.active { color: #123563; }
+      .bn-item .ico { font-size: 16px; line-height: 1; }
+      .bn-fab-wrap {
+        display: flex; flex-direction: column; align-items: center; margin-top: -18px;
+      }
+      .bn-fab {
+        width: 44px; height: 44px; border-radius: 999px; background: #f59e0b; color: #fff;
+        display: grid; place-items: center; font-size: 24px; font-weight: 800;
+        border: 3px solid #fff; box-shadow: 0 6px 16px rgba(245,158,11,0.45);
+      }
+      .bn-fab-label { font-size: 9px; font-weight: 800; color: #c2410c; margin-top: 1px; }
+
+      .loc-line {
+        display: flex; align-items: center; justify-content: center; gap: 3px;
+        font-size: 10px; font-weight: 600; color: rgba(15,23,41,0.65); margin-top: 1px;
+      }
+      .cta-orange {
+        margin-top: 0; margin-bottom: 8px; background: #b45309; color: #fff;
+        border-radius: 12px; text-align: center; padding: 11px; font-size: 14px; font-weight: 800;
+        border: none; box-shadow: 0 6px 14px rgba(245,158,11,0.28);
+      }
+      .cat-grid-3 {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;
+      }
+      .cat-grid-3 .cat { padding: 10px 4px; gap: 4px; }
+      .cat-grid-3 .cat-icon { width: 36px; height: 36px; font-size: 18px; border-radius: 10px; }
+      .cat-grid-3 .cat-label { font-size: 10px; }
+      .more-cats {
+        margin-top: 7px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 14px;
+        padding: 8px; text-align: center; font-size: 11px; font-weight: 800; color: #0f1729;
+      }
+      .demo-stats {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;
+      }
+      .demo-stat {
+        background: #fff; border: 2px solid rgba(18,53,99,0.18); border-radius: 14px;
+        padding: 8px 8px; display: flex; align-items: center; gap: 8px;
+        box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+      }
+      .demo-stat-ico {
+        width: 32px; height: 32px; border-radius: 10px; background: rgba(18,53,99,0.12);
+        display: grid; place-items: center; font-size: 14px; flex-shrink: 0;
+      }
+      .demo-stat-n { font-size: 15px; font-weight: 900; color: #0f1729; line-height: 1; }
+      .demo-stat-l { font-size: 9px; font-weight: 700; color: rgba(15,23,41,0.55); margin-top: 2px; }
+      .city-browse { margin-top: 8px; margin-bottom: 4px; }
+      .city-browse-row { display: flex; gap: 6px; overflow: hidden; }
+      .city-browse-chip {
+        flex-shrink: 0; background: #fff; border: 2px solid #e5e7eb; border-radius: 999px;
+        padding: 6px 11px; font-size: 10px; font-weight: 800; color: #123563;
+      }
+      .status-card {
+        margin-top: 8px; background: #fff; border: 1px solid #f3f4f6; border-radius: 14px;
+        padding: 10px 12px; box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+      }
+      .status-card h4 { font-size: 13px; font-weight: 800; color: #0f1729; margin-bottom: 8px; }
+      .share-btn {
+        margin-top: 8px; background: #fff; border: 2px solid #e5e7eb; border-radius: 12px;
+        text-align: center; padding: 9px; font-size: 12px; font-weight: 800; color: #123563;
+      }
+      .feat-row {
+        display: flex; gap: 8px; overflow: hidden; margin-top: 4px;
+      }
+      .feat-card {
+        flex: 0 0 118px; background: #fff; border-radius: 14px; border: 1px solid #f3f4f6;
+        padding: 10px 8px; text-align: center; box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+      }
+      .feat-av {
+        width: 44px; height: 44px; border-radius: 999px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 900; font-size: 16px; margin: 0 auto 6px;
+      }
+      .feat-name { font-size: 11px; font-weight: 800; color: #0f1729; }
+      .feat-title { font-size: 9px; color: rgba(15,23,41,0.55); font-weight: 600; margin-top: 2px; }
+      .feat-stars { font-size: 9px; color: #f59e0b; margin-top: 3px; }
+      .season-row { display: flex; gap: 6px; overflow: hidden; margin-bottom: 8px; }
+      .season-chip {
+        flex-shrink: 0; font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 999px;
+        border: 2px solid #bfdbfe; background: #eff6ff; color: #1e3a8a;
+      }
+      .req-card {
+        background: #fff; border: 2px solid #e5e7eb; border-radius: 14px; padding: 12px;
+        box-shadow: 0 4px 12px rgba(15,23,41,0.05); margin-bottom: 8px; text-align: right;
+      }
+      .req-cat { font-size: 10px; font-weight: 800; color: #0369a1; margin-bottom: 2px; }
+      .req-title { font-size: 13px; font-weight: 800; color: #0f1729; }
+      .req-loc { font-size: 11px; font-weight: 600; color: rgba(15,23,41,0.6); margin-top: 2px; }
+      .progress {
+        margin-top: 8px; height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden;
+      }
+      .progress > i {
+        display: block; height: 100%; width: 60%;
+        background: linear-gradient(90deg, #22c55e, #123563, #f59e0b);
+      }
+      .cand-list { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+      .cand {
+        background: #fff; border-radius: 10px; padding: 8px 10px; display: flex;
+        justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700;
+      }
+      .steps-v { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+      .step-row { display: flex; align-items: center; gap: 8px; }
+      .step-dot {
+        width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center;
+        font-size: 11px; font-weight: 800; flex-shrink: 0;
+      }
+      .step-dot.done { background: #059669; color: #fff; }
+      .step-dot.on { background: #c2410c; color: #fff; }
+      .step-dot.wait { background: #e5e7eb; color: #4b5563; }
+      .step-label { font-size: 12px; font-weight: 700; color: #0f1729; }
+      .step-label.muted { color: rgba(15,23,41,0.55); }
+      .wa-btn {
+        margin-top: 8px; background: #128c7e; color: #fff; border-radius: 12px;
+        text-align: center; padding: 10px; font-size: 13px; font-weight: 800;
+      }
+      .action-row { display: flex; gap: 6px; margin-top: 8px; }
+      .action-btn {
+        flex: 1; background: #fff; border: 2px solid #e5e7eb; border-radius: 12px;
+        padding: 9px 6px; text-align: center; font-size: 11px; font-weight: 800; color: #123563;
+      }
 
       .duo {
         display: flex; flex-direction: column; gap: 22px; align-items: center;
@@ -183,25 +321,40 @@
       }
 
       .hero {
-        background: #123563; border-radius: 20px; padding: 18px 14px; color: #fff;
-        position: relative; overflow: hidden; min-height: 148px;
+        background: #123563; border-radius: 16px; padding: 10px 12px; color: #fff;
+        position: relative; overflow: hidden; min-height: 0; margin-bottom: 7px;
       }
-      .hero h2 { font-size: 28px; font-weight: 900; line-height: 1.15; margin-bottom: 6px; }
-      .hero p { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.4; margin-bottom: 12px; }
+      .hero h2 { font-size: 20px; font-weight: 900; line-height: 1.15; margin-bottom: 3px; }
+      .hero p { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.3; margin-bottom: 7px; }
+      .section-title { margin: 4px 2px 5px; font-size: 12px; font-weight: 800; color: #0f1729; }
+      .cta-orange {
+        margin-top: 0; margin-bottom: 7px; background: #b45309; color: #fff;
+        border-radius: 12px; text-align: center; padding: 10px; font-size: 13px; font-weight: 800;
+        border: none; box-shadow: 0 6px 14px rgba(245,158,11,0.28);
+      }
+      .cat-grid-3 .cat { padding: 8px 4px; gap: 3px; }
+      .more-cats {
+        margin-top: 6px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 12px;
+        padding: 7px; text-align: center; font-size: 11px; font-weight: 800; color: #0f1729;
+      }
+      .guarantee {
+        margin-top: 8px; background: #ecfdf5; border: 2px solid #a7f3d0; border-radius: 12px;
+        padding: 9px 10px; text-align: center; font-size: 12px; font-weight: 800; color: #065f46;
+      }
       .search {
-        background: #fff; border-radius: 12px; padding: 10px 12px; color: #4b5563;
-        font-size: 14px; font-weight: 600; position: relative; z-index: 2;
+        background: #fff; border-radius: 10px; padding: 8px 10px; color: #4b5563;
+        font-size: 12px; font-weight: 600; position: relative; z-index: 2;
       }
       .hero-emoji {
-        position: absolute; left: 6px; bottom: 2px; font-size: 58px; opacity: 0.5; z-index: 1;
+        position: absolute; left: 4px; bottom: 0; font-size: 42px; opacity: 0.45; z-index: 1;
       }
       .cta {
-        margin-top: 12px; background: #123563; color: #fff; border-radius: 12px;
-        text-align: center; padding: 13px; font-size: 16px; font-weight: 800;
+        margin-top: 8px; background: #123563; color: #fff; border-radius: 12px;
+        text-align: center; padding: 11px; font-size: 14px; font-weight: 800;
         border: 3px solid #f59e0b; position: relative;
       }
       .cta.green { background: #047857; border-color: #34d399; }
-      .section-title { margin: 10px 2px 10px; font-size: 15px; font-weight: 800; color: #0f1729; }
+      .map-panel { height: 118px !important; }
       .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .cat {
         background: #fff; border: 2px solid rgba(18,53,99,0.08); border-radius: 16px;
@@ -227,14 +380,14 @@
       }
       .avail { color: #059669; font-size: 11px; font-weight: 800; }
       .match-card {
-        margin-top: 10px; background: #fff7ed; border: 2px solid #fdba74; border-radius: 18px;
-        padding: 18px 14px; text-align: center; position: relative; min-height: 140px;
+        margin-top: 8px; background: #fff7ed; border: 2px solid #fdba74; border-radius: 16px;
+        padding: 12px 12px; text-align: center; position: relative; min-height: 0;
       }
       .match-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 12px; }
       .match-dots span { width: 9px; height: 9px; border-radius: 999px; background: #f59e0b; }
-      .match-title { font-size: 17px; font-weight: 800; color: #9a3412; margin-bottom: 6px; }
-      .match-sub { font-size: 12px; font-weight: 600; color: #c2410c; line-height: 1.4; }
-      #match-state-b { position: absolute; left: 14px; right: 14px; top: 48px; opacity: 0; }
+      .match-title { font-size: 14px; font-weight: 800; color: #9a3412; margin-bottom: 4px; }
+      .match-sub { font-size: 11px; font-weight: 600; color: #c2410c; line-height: 1.35; }
+      #match-state-b { position: absolute; left: 12px; right: 12px; top: 40px; opacity: 0; }
       .map-panel {
         height: 210px; border-radius: 18px; position: relative; overflow: hidden;
         border: 1px solid rgba(18,53,99,0.08);
@@ -368,15 +521,71 @@
               <div class="island"></div>
               <div class="iphone-screen">
                 <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
-                <div class="app-bar"><span>👋 שלום, יוני</span><div class="avatar">י</div></div>
-                <div class="phone-body">
-                  <div class="hero" id="hero">
-                    <div class="hero-emoji" data-layout-allow-occlusion>👷</div>
-                    <h2 id="h-title">זקוקים לתיקון?</h2>
-                    <p id="h-sub">מצא את איש המקצוע המתאים<br />במהירות ובקלות</p>
-                    <div class="search" id="h-search">מה צריך לתקן?</div>
+                <div class="app-bar" style="flex-direction:column;height:auto;padding:8px 14px 6px;gap:0;align-items:stretch">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div class="avatar">י</div>
+                    <div style="text-align:center">
+                      <div style="font-size:13px;font-weight:800">👋 שלום, יוני</div>
+                      <div class="loc-line">📍 תל אביב</div>
+                    </div>
+                    <div style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:grid;place-items:center;font-size:12px">עב</div>
                   </div>
-                  <div class="cta" id="cta1">בקשה מהירה</div>
+                </div>
+                <div class="phone-body">
+                  <div class="scroll-fill">
+                    <div class="hero" id="hero">
+                      <div class="hero-emoji" data-layout-allow-occlusion>👷</div>
+                      <h2 id="h-title">זקוקים לתיקון?</h2>
+                      <p id="h-sub">מצא את איש המקצוע המתאים<br />במהירות ובקלות</p>
+                      <div class="search" id="h-search">🔍 מה צריך לתקן?</div>
+                    </div>
+                    <div class="demo-stats" id="h-stats">
+                      <div class="demo-stat"><div class="demo-stat-ico">👥</div><div><div class="demo-stat-n">58</div><div class="demo-stat-l">אנשי מקצוע</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">📋</div><div><div class="demo-stat-n">54</div><div class="demo-stat-l">בקשות פעילות</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">🛠</div><div><div class="demo-stat-n">36.5K</div><div class="demo-stat-l">עבודות שהושלמו</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">★</div><div><div class="demo-stat-n">4.8</div><div class="demo-stat-l">דירוג ממוצע</div></div></div>
+                    </div>
+                    <div class="cta-orange" id="cta1">בקשה מהירה</div>
+                    <div class="section-title">בחרו קטגוריה</div>
+                    <div class="cat-grid-3">
+                      <div class="cat"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#dbeafe">🚿</div><div class="cat-label">אינסטלטור</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fef3c7">💡</div><div class="cat-label">חשמלאי</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fce7f3">🔐</div><div class="cat-label">מנעולן</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ffedd5">🎨</div><div class="cat-label">צבעי</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ecfdf5">🧹</div><div class="cat-label">ניקיון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ffedd5">🪚</div><div class="cat-label">נגרות</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#dcfce7">🌿</div><div class="cat-label">גינון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#e2e8f0">🏗️</div><div class="cat-label">ריצוף</div></div>
+                    </div>
+                    <div class="more-cats">עוד קטגוריות ▾</div>
+                    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+                      <span style="font-size:11px;font-weight:700;color:#123563">הצג הכל ‹</span>
+                      <span>אנשי מקצוע מומלצים</span>
+                    </div>
+                    <div class="feat-row">
+                      <div class="feat-card"><div class="feat-av">ד</div><div class="feat-name">דני אינסטלציה</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★★ 4.9</div><div class="avail" style="margin-top:4px;font-size:10px">● זמין עכשיו</div></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#c2410c">מ</div><div class="feat-name">מיכל חשמל</div><div class="feat-title">חשמלאית</div><div class="feat-stars">★★★★★ 4.8</div><div class="avail" style="margin-top:4px;font-size:10px">● זמין היום</div></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#047857">א</div><div class="feat-name">אורי מיזוג</div><div class="feat-title">טכנאי מזגנים</div><div class="feat-stars">★★★★☆ 4.7</div><div class="avail" style="margin-top:4px;font-size:10px">● זמין עכשיו</div></div>
+                    </div>
+                    <div class="city-browse">
+                      <div class="section-title">עיון לפי עיר</div>
+                      <div class="city-browse-row">
+                        <span class="city-browse-chip">תל אביב</span>
+                        <span class="city-browse-chip">חיפה</span>
+                        <span class="city-browse-chip">ירושלים</span>
+                        <span class="city-browse-chip">באר שבע</span>
+                      </div>
+                    </div>
+                  </div>
+
+                <div class="bottom-nav">
+                  <div class="bn-item active"><div class="ico">🏠</div>בית</div>
+                  <div class="bn-item "><div class="ico">🔍</div>חיפוש</div>
+                  <div class="bn-fab-wrap"><div class="bn-fab">+</div><div class="bn-fab-label">פרסם תקלה</div></div>
+                  <div class="bn-item "><div class="ico">📋</div>הבקשות</div>
+                  <div class="bn-item "><div class="ico">👤</div>פרופיל</div>
+                </div>
                 </div>
                 <div class="home-ind"></div>
               </div>
@@ -396,33 +605,53 @@
                 <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
                 <div class="app-bar"><span>Fixly</span><div class="avatar">י</div></div>
                 <div class="phone-body">
-                  <div class="section-title" id="cats-t">בחרו קטגוריה</div>
-                  <div class="cat-grid">
-                    <div class="cat" id="c1"><div class="cat-icon" style="background:#dbeafe">🔧</div><div class="cat-label">אינסטלציה</div></div>
-                    <div class="cat" id="c2"><div class="cat-icon" style="background:#fef3c7">⚡</div><div class="cat-label">חשמל</div></div>
-                    <div class="cat" id="c3"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג אוויר</div></div>
-                    <div class="cat" id="c4"><div class="cat-icon" style="background:#ffedd5">🪵</div><div class="cat-label">נגרות</div></div>
-                  </div>
-                  <div class="section-title" id="feat-t" style="margin-top:14px">אנשי מקצוע מומלצים</div>
-                  <div class="pro-card" id="pc1">
-                    <div class="pro-av">ד</div>
-                    <div class="pro-meta">
-                      <div class="pro-name">דני אינסטלציה</div>
-                      <div class="pro-sub">★ 4.9 (128) · תל אביב</div>
-                      <span class="badge">✓ מאומת Fixly</span>
-                      <div class="avail">● זמין היום</div>
+                  <div class="scroll-fill">
+                    <div class="section-title" id="cats-t">מומלץ העונה</div>
+                    <div class="season-row">
+                      <span class="season-chip">❄️ מיזוג אוויר</span>
+                      <span class="season-chip">🚿 אינסטלציה</span>
+                      <span class="season-chip">💡 חשמל</span>
+                    </div>
+                    <div class="section-title">בחרו קטגוריה</div>
+                    <div class="cat-grid-3">
+                      <div class="cat" id="c1"><div class="cat-icon" style="background:#dbeafe">🚿</div><div class="cat-label">אינסטלציה</div></div>
+                      <div class="cat" id="c2"><div class="cat-icon" style="background:#fef3c7">💡</div><div class="cat-label">חשמל</div></div>
+                      <div class="cat" id="c3"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג</div></div>
+                      <div class="cat" id="c4"><div class="cat-icon" style="background:#ffedd5">🪚</div><div class="cat-label">נגרות</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fce7f3">🔐</div><div class="cat-label">מנעולן</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ecfdf5">🧹</div><div class="cat-label">ניקיון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fef3c7">🎨</div><div class="cat-label">צביעה</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#dcfce7">🌿</div><div class="cat-label">גינון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#e2e8f0">🏗️</div><div class="cat-label">ריצוף</div></div>
+                    </div>
+                    <div class="section-title" id="feat-t" style="display:flex;justify-content:space-between"><span style="font-size:11px;color:#123563;font-weight:700">הצג הכל ‹</span><span>אנשי מקצוע מומלצים</span></div>
+                    <div class="feat-row">
+                      <div class="feat-card" id="pc1"><div class="feat-av">ד</div><div class="feat-name">דני אינסטלציה</div><div class="feat-title">אינסטלטור · ת״א</div><div class="feat-stars">★★★★★ 4.9</div><span class="badge">✓ מאומת</span></div>
+                      <div class="feat-card" id="pc2"><div class="feat-av" style="background:#c2410c">מ</div><div class="feat-name">מיכל חשמל</div><div class="feat-title">חשמלאית · ר״ג</div><div class="feat-stars">★★★★★ 4.8</div><span class="badge">✓ מאומת</span></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#047857">י</div><div class="feat-name">יוסי צבע</div><div class="feat-title">צבעי · Holon</div><div class="feat-stars">★★★★☆ 4.6</div><span class="badge">✓ מאומת</span></div>
+                    </div>
+                    <div class="demo-stats" style="margin-top:10px">
+                      <div class="demo-stat"><div class="demo-stat-ico">👥</div><div><div class="demo-stat-n">58</div><div class="demo-stat-l">אנשי מקצוע</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">★</div><div><div class="demo-stat-n">4.8</div><div class="demo-stat-l">דירוג ממוצע</div></div></div>
+                    </div>
+                    <div class="city-browse">
+                      <div class="section-title">עיון לפי עיר</div>
+                      <div class="city-browse-row">
+                        <span class="city-browse-chip">תל אביב</span>
+                        <span class="city-browse-chip">רמת גן</span>
+                        <span class="city-browse-chip">חולון</span>
+                        <span class="city-browse-chip">חיפה</span>
+                      </div>
                     </div>
                   </div>
-                  <div class="pro-card" id="pc2">
-                    <div class="pro-av" style="background:#c2410c">מ</div>
-                    <div class="pro-meta">
-                      <div class="pro-name">מיכל חשמל</div>
-                      <div class="pro-sub">★ 4.8 (96) · רמת גן</div>
-                      <span class="badge">✓ מאומת Fixly</span>
-                      <div class="avail">● זמין עכשיו</div>
-                    </div>
-                  </div>
-                </div>
+
+                <div class="bottom-nav">
+                  <div class="bn-item active"><div class="ico">🏠</div>בית</div>
+                  <div class="bn-item "><div class="ico">🔍</div>חיפוש</div>
+                  <div class="bn-fab-wrap"><div class="bn-fab">+</div><div class="bn-fab-label">פרסם תקלה</div></div>
+                  <div class="bn-item "><div class="ico">📋</div>הבקשות</div>
+                  <div class="bn-item "><div class="ico">👤</div>פרופיל</div>
+                </div></div>
                 <div class="home-ind"></div>
               </div>
             </div>
@@ -441,7 +670,14 @@
                 <div class="iphone-screen">
                   <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><div class="bat"></div></div></div>
                   <div class="app-bar"><span>מעקב בקשה</span><div class="avatar">י</div></div>
-                  <div class="phone-body">
+                  <div class="phone-body no-nav">
+                  <div class="scroll-fill" style="padding-bottom:8px">
+                    <div class="req-card">
+                      <div class="req-cat">אינסטלציה</div>
+                      <div class="req-title">נזילה בכיור המטבח</div>
+                      <div class="req-loc">📍 תל אביב · דיזנגוף 120</div>
+                      <div class="progress"><i></i></div>
+                    </div>
                     <div class="match-card" id="match-card">
                       <div class="match-dots" id="mdots"><span></span><span></span><span></span></div>
                       <div id="match-state-a">
@@ -452,8 +688,15 @@
                         <div class="match-title">3 מקצוענים קיבלו את הבקשה</div>
                         <div class="match-sub">הראשון שמאשר יקבל</div>
                       </div>
+                      <div class="cand-list">
+                        <div class="cand"><span>דני אינסטלציה</span><span style="color:#92400e">★ 4.9</span></div>
+                        <div class="cand"><span>אבי צנרת</span><span style="color:#92400e">★ 4.7</span></div>
+                        <div class="cand"><span>רון תיקונים</span><span style="color:#92400e">★ 4.8</span></div>
+                      </div>
                     </div>
+                    <div class="guarantee">✓ מכוסה באחריות Fixly</div>
                   </div>
+</div>
                   <div class="home-ind"></div>
                 </div>
               </div>
@@ -467,18 +710,29 @@
                 <div class="iphone-screen">
                   <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><div class="bat"></div></div></div>
                   <div class="app-bar"><span>דשבורד מקצועי</span><div class="avatar">ד</div></div>
-                  <div class="phone-body">
+                  <div class="phone-body no-nav">
+                  <div class="scroll-fill" style="padding-bottom:8px">
                     <div class="dash-stats">
                       <div class="dash-stat y"><div class="n">2</div><div class="l">ממתינות</div></div>
                       <div class="dash-stat b"><div class="n">1</div><div class="l">פעילות</div></div>
                       <div class="dash-stat g"><div class="n">47</div><div class="l">הושלמו</div></div>
                     </div>
-                    <div class="job-row" id="job">
+                    <div class="section-title">ממתינות לאישור</div>
+                    <div class="job-row" id="job" style="border:2px solid #f59e0b">
                       <div class="t">נזילה בכיור · תל אביב</div>
-                      <div class="s">בקשה מהירה · לפני דקה</div>
+                      <div class="s">בקשה מהירה · לפני דקה · ~3 ק״מ</div>
+                    </div>
+                    <div class="job-row">
+                      <div class="t">סתימה באמבטיה · רמת גן</div>
+                      <div class="s">לפני 8 דק׳ · ~5 ק״מ</div>
                     </div>
                     <div class="cta green" id="accept">קבל בקשה</div>
+                    <div class="action-row">
+                      <div class="action-btn">דחה</div>
+                      <div class="action-btn">פרטים</div>
+                    </div>
                   </div>
+</div>
                   <div class="home-ind"></div>
                 </div>
               </div>
@@ -496,32 +750,57 @@
               <div class="island"></div>
               <div class="iphone-screen">
                 <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
-                <div class="app-bar"><span>בזמן אמת</span><div class="avatar">י</div></div>
-                <div class="phone-body">
-                  <div class="map-panel" id="map">
-                    <div class="road"></div>
-                    <div class="route-line" id="rline"></div>
-                    <div class="pin pro" id="pinp"></div>
-                    <div class="pin home" id="pinh"></div>
-                    <div class="live-dot" id="ldot"></div>
-                  </div>
-                  <div class="track-copy" id="tcopy">
-                    <h3>איש המקצוע בדרך אליך</h3>
-                    <p>המיקום מתעדכן בזמן אמת (כמו Wolt)</p>
-                    <div>
-                      <span class="chip" id="chip">● בדרך</span>
-                      <span class="eta" id="eta">זמן הגעה משוער · 12 דק׳</span>
+                <div class="app-bar"><span>מעקב בקשה</span><span class="chip" style="margin:0;padding:4px 8px;font-size:10px">● בדרך</span></div>
+                <div class="phone-body no-nav">
+                  <div class="scroll-fill" style="padding-bottom:8px">
+                    <div class="req-card">
+                      <div class="req-cat">אינסטלציה</div>
+                      <div class="req-title">נזילה בכיור המטבח</div>
+                      <div class="req-loc">📍 תל אביב · דיזנגוף 120</div>
+                      <div style="font-size:10px;font-weight:800;margin-top:6px;margin-bottom:3px">התקדמות</div>
+                      <div class="progress"><i style="width:60%"></i></div>
+                      <div class="share-btn">↗ שתף בקשה</div>
                     </div>
-                    <div class="status-row" id="srow">
-                      <span class="st done">ממתין</span>
-                      <span class="st done">אושר</span>
-                      <span class="st on">בדרך</span>
-                      <span class="st">בתהליך</span>
-                      <span class="st">הושלם</span>
+                    <div class="map-panel" id="map">
+                      <div class="road"></div>
+                      <div class="route-line" id="rline"></div>
+                      <div class="pin pro" id="pinp"></div>
+                      <div class="pin home" id="pinh"></div>
+                      <div class="live-dot" id="ldot"></div>
+                    </div>
+                    <div class="track-copy" id="tcopy" style="margin-top:8px;padding:10px">
+                      <h3 style="font-size:15px">איש המקצוע בדרך אליך</h3>
+                      <p>המיקום מתעדכן בזמן אמת (כמו Wolt)</p>
+                      <div>
+                        <span class="chip" id="chip">● בדרך</span>
+                        <span class="eta" id="eta">ETA · 12 דק׳</span>
+                      </div>
+                    </div>
+                    <div class="pro-card" style="margin-top:8px">
+                      <div class="pro-av">ד</div>
+                      <div class="pro-meta">
+                        <div class="pro-name">דני אינסטלציה <span class="badge">✓ מאומת</span></div>
+                        <div class="pro-sub">★ 4.9 · מגיב תוך 8 דק׳</div>
+                      </div>
+                    </div>
+                    <div class="status-card" id="srow">
+                      <h4>סטטוס הבקשה</h4>
+                      <div class="steps-v" style="margin-top:0;gap:6px">
+                        <div class="step-row"><div class="step-dot done">✓</div><div class="step-label">ממתין לאישור</div></div>
+                        <div class="step-row"><div class="step-dot done">✓</div><div class="step-label">אושר</div></div>
+                        <div class="step-row"><div class="step-dot on">●</div><div class="step-label">בדרך</div></div>
+                        <div class="step-row"><div class="step-dot wait">4</div><div class="step-label muted">בתהליך</div></div>
+                        <div class="step-row"><div class="step-dot wait">5</div><div class="step-label muted">הושלם</div></div>
+                      </div>
+                    </div>
+                    <div class="guarantee" id="gmini">✓ מכוסה באחריות Fixly</div>
+                    <div class="wa-btn">WhatsApp לדני</div>
+                    <div class="action-row">
+                      <div class="action-btn">📞 התקשר</div>
+                      <div class="action-btn">בטל בקשה</div>
                     </div>
                   </div>
-                  <div class="guarantee" id="gmini">✓ מכוסה באחריות Fixly</div>
-                </div>
+</div>
                 <div class="home-ind"></div>
               </div>
             </div>
@@ -545,22 +824,43 @@
                 <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
                 <div class="app-bar"><span>פרופיל מקצוען</span><div class="avatar">י</div></div>
                 <div class="phone-body">
-                  <div class="pro-card" id="trust-pro" style="flex-direction:column;align-items:flex-start;gap:8px;padding:16px">
-                    <div style="display:flex;gap:12px;align-items:center;width:100%">
-                      <div class="pro-av" style="width:56px;height:56px;font-size:22px">ד</div>
-                      <div>
-                        <div class="pro-name" style="font-size:17px">דני אינסטלציה</div>
-                        <div class="pro-sub">תל אביב · מגיב תוך 8 דק׳</div>
-                        <span class="badge" id="vbadge">✓ מאומת Fixly</span>
+                  <div class="scroll-fill">
+                    <div class="pro-card" id="trust-pro" style="flex-direction:column;align-items:flex-start;gap:8px;padding:14px">
+                      <div style="display:flex;gap:10px;align-items:center;width:100%">
+                        <div class="pro-av" style="width:52px;height:52px;font-size:20px">ד</div>
+                        <div style="flex:1">
+                          <div class="pro-name" style="font-size:15px">דני אינסטלציה</div>
+                          <div class="pro-sub">תל אביב · אינסטלטור מוסמך</div>
+                          <span class="badge" id="vbadge">✓ מאומת Fixly</span>
+                        </div>
+                      </div>
+                      <div class="stars" id="stars">★★★★★ 4.9 (128 ביקורות)</div>
+                      <div class="dash-stats" style="width:100%">
+                        <div class="dash-stat b"><div class="n">312</div><div class="l">עבודות</div></div>
+                        <div class="dash-stat g"><div class="n">8׳</div><div class="l">תגובה</div></div>
+                        <div class="dash-stat y"><div class="n">98%</div><div class="l">שביעות</div></div>
                       </div>
                     </div>
-                    <div class="stars" id="stars">★★★★★ 4.9</div>
+                    <div class="section-title" id="rev-t">ביקורות</div>
+                    <div class="review" id="rev1"><div class="stars">★★★★★</div>הגיע מהר, תיקן את הנזילה במקצועיות. ממליצה בחום!</div>
+                    <div class="review" id="rev2"><div class="stars">★★★★★</div>שירות אדיב ומחיר הוגן. Fixly עשו את זה קל.</div>
+                    <div class="review"><div class="stars">★★★★☆</div>עבודה איכותית, קצת איחור אבל שווה.</div>
+                    <div class="guarantee">✓ מכוסה באחריות Fixly</div>
+                    <div class="cta" id="rate" style="margin-top:8px">דרג את איש המקצוע</div>
+                    <div class="wa-btn">שלח הודעה</div>
+                    <div class="action-row">
+                      <div class="action-btn">בקשה חדשה</div>
+                      <div class="action-btn">שמור מועדף</div>
+                    </div>
                   </div>
-                  <div class="section-title" id="rev-t">ביקורות</div>
-                  <div class="review" id="rev1"><div class="stars">★★★★★</div>הגיע מהר, תיקן את הנזילה במקצועיות. ממליצה בחום!</div>
-                  <div class="review" id="rev2"><div class="stars">★★★★★</div>שירות אדיב ומחיר הוגן. Fixly עשו את זה קל.</div>
-                  <div class="cta" id="rate" style="margin-top:12px">דרג את איש המקצוע</div>
-                </div>
+
+                <div class="bottom-nav">
+                  <div class="bn-item "><div class="ico">🏠</div>בית</div>
+                  <div class="bn-item active"><div class="ico">🔍</div>חיפוש</div>
+                  <div class="bn-fab-wrap"><div class="bn-fab">+</div><div class="bn-fab-label">פרסם תקלה</div></div>
+                  <div class="bn-item "><div class="ico">📋</div>הבקשות</div>
+                  <div class="bn-item "><div class="ico">👤</div>פרופיל</div>
+                </div></div>
                 <div class="home-ind"></div>
               </div>
             </div>
