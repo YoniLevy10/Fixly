@@ -32,10 +32,16 @@ export async function GET(request: Request) {
       ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
       detail: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'missing',
     },
-    stripe: {
-      ok: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
+    tranzila: {
+      ok: Boolean(
+        process.env.TRANZILA_TERMINAL &&
+          process.env.TRANZILA_API_APP_KEY &&
+          process.env.TRANZILA_API_SECRET_KEY,
+      ),
       detail:
-        process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET
+        process.env.TRANZILA_TERMINAL &&
+        process.env.TRANZILA_API_APP_KEY &&
+        process.env.TRANZILA_API_SECRET_KEY
           ? 'configured'
           : 'partial or missing',
     },

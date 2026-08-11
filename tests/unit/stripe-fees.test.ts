@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { computeJobPlatformFee } from '../../lib/stripe/job-checkout'
+import { computeJobPlatformFee } from '../../lib/tranzila/checkout'
 import { computeCommissionAgorot } from '../../lib/monetization/config'
 
 describe('computeJobPlatformFee', () => {

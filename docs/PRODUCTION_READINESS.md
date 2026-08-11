@@ -35,10 +35,10 @@ NEXT_PUBLIC_FF_DEMO_DATA=false
 # Admin (האימייל שלך)
 ADMIN_EMAILS=your@email.com,partner@email.com
 
-# Stripe
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_PRO_MONTHLY=price_...
+# Tranzila
+TRANZILA_TERMINAL=your_terminal
+TRANZILA_API_APP_KEY=...
+TRANZILA_API_SECRET_KEY=...
 
 # מומלץ
 UPSTASH_REDIS_REST_URL=https://...
@@ -61,22 +61,21 @@ CRON_SECRET=random-long-secret
 2. Authorized redirect URI = Supabase callback URL
 3. העתק Client ID/Secret ל-Supabase
 
-### 4. Stripe
+### 4. Tranzila
 
-1. צור Product "Fixly Pro" — 149 ₪/month
-2. Webhook endpoint: `https://your-domain/api/billing/webhook`
-3. Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
-4. העתק `whsec_...` ל-Vercel
+1. חשבון ב-my.tranzila.com — terminal + API keys
+2. Webhook / Transaction Notification: `https://your-domain/api/tranzila/webhook`
+3. העתק `TRANZILA_*` ל-Vercel
 
 ### 5. Deploy
 
 ```bash
-git push origin cursor/production-readiness-bf25
+git push origin main
 # Vercel auto-deploys
 # Verify: curl https://fixly.vercel.app/api/health
 ```
 
-**Health צריך להחזיר:** `"status":"ok"`, `"demoMode":false`, `"mode":"supabase"`
+**Health צריך להחזיר:** `"status":"ok"` (או degraded), עם `?verbose=1`: `"demoMode":false`, `"mode":"supabase"`
 
 ### 6. App Store (iOS)
 

@@ -92,6 +92,9 @@ export type Database = {
           lead_credits: number
           subscription_until: string | null
           stripe_customer_id: string | null
+          tranzila_token: string | null
+          tranzila_sto_id: string | null
+          tranzila_subscription_until: string | null
           is_verified: boolean
           verified_at: string | null
           phone: string | null
@@ -119,6 +122,9 @@ export type Database = {
           lead_credits?: number
           subscription_until?: string | null
           stripe_customer_id?: string | null
+          tranzila_token?: string | null
+          tranzila_sto_id?: string | null
+          tranzila_subscription_until?: string | null
           is_verified?: boolean
           verified_at?: string | null
           phone?: string | null
@@ -146,6 +152,9 @@ export type Database = {
           lead_credits?: number
           subscription_until?: string | null
           stripe_customer_id?: string | null
+          tranzila_token?: string | null
+          tranzila_sto_id?: string | null
+          tranzila_subscription_until?: string | null
           is_verified?: boolean
           verified_at?: string | null
           phone?: string | null
@@ -202,6 +211,7 @@ export type Database = {
           referral_code: string | null
           review_prompted_at: string | null
           payment_status: string | null
+          payment_amount_agorot: number | null
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
           source: string
@@ -249,6 +259,7 @@ export type Database = {
           referral_code?: string | null
           review_prompted_at?: string | null
           payment_status?: string | null
+          payment_amount_agorot?: number | null
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           source?: string
@@ -296,6 +307,7 @@ export type Database = {
           referral_code?: string | null
           review_prompted_at?: string | null
           payment_status?: string | null
+          payment_amount_agorot?: number | null
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           source?: string

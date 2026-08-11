@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { monetizationConfig, agorotToIls } from '@/lib/monetization/config'
-import { getProPriceDisplayIls } from '@/lib/stripe/checkout'
+import { getProPriceDisplayIls } from '@/lib/tranzila/checkout'
 import { routes } from '@/lib/routes'
 import Link from 'next/link'
 

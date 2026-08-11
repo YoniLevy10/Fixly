@@ -25,5 +25,5 @@
     },
     "instructions": "Open the app, sign in with the demo account, browse professionals, create a request, and open tracking. Pro flows use the same account after claiming a professional profile."
   },
-  "notes": "Fill URLs after production domain is final. Run npm run mobile:check before Archive. Configure STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET in Vercel for billing."
+  "notes": "Fill URLs after production domain is final. Run npm run mobile:check before Archive. Configure TRANZILA_TERMINAL + TRANZILA_API_* in Vercel for billing."
 }

@@ -25,12 +25,12 @@ export function validateProductionEnv(): EnvValidationResult {
   }
 
   if (!process.env.NEXT_PUBLIC_APP_URL) {
-    errors.push('NEXT_PUBLIC_APP_URL is required for OAuth and Stripe redirects')
+    errors.push('NEXT_PUBLIC_APP_URL is required for OAuth and payment redirects')
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     warnings.push(
-      'SUPABASE_SERVICE_ROLE_KEY missing — partner /api/v1/jobs, Stripe webhooks, and admin API will not work',
+      'SUPABASE_SERVICE_ROLE_KEY missing — partner /api/v1/jobs, payment webhooks, and admin API will not work',
     )
   }
 
@@ -43,14 +43,11 @@ export function validateProductionEnv(): EnvValidationResult {
   }
 
   if (process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false') {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      warnings.push('STRIPE_SECRET_KEY missing — monetization checkout disabled')
+    if (!process.env.TRANZILA_TERMINAL) {
+      warnings.push('TRANZILA_TERMINAL missing — monetization checkout disabled')
     }
-    if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      warnings.push('STRIPE_WEBHOOK_SECRET missing — subscription webhooks rejected')
-    }
-    if (!process.env.STRIPE_PRICE_PRO_MONTHLY) {
-      warnings.push('STRIPE_PRICE_PRO_MONTHLY missing — Pro checkout disabled')
+    if (!process.env.TRANZILA_API_APP_KEY || !process.env.TRANZILA_API_SECRET_KEY) {
+      warnings.push('TRANZILA_API_APP_KEY / TRANZILA_API_SECRET_KEY missing — checkout disabled')
     }
   }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { createJobPaymentCheckout } from '@/lib/stripe/job-checkout'
+import { createJobPaymentCheckout } from '@/lib/tranzila/checkout'
 import { publicEnv } from '@/lib/env/public-env'
 import { trackError } from '@/lib/monitoring/track-error'
 import { z } from 'zod'
