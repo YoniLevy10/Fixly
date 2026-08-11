@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="he" data-resolution="landscape">
+<html lang="he" data-resolution="portrait">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
-    <title>Fixly — /brag v2</title>
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Fixly — Reels /brag</title>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <script src="assets/music/audio-data.js"></script>
     <style>
@@ -25,53 +25,183 @@
       }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html, body {
-        margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000;
+        margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000;
       }
       body { font-family: "Heebo", sans-serif; }
-      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
-      .stage-bg { position: absolute; inset: 0; background: #f2f4f7; }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+      .stage-bg {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse at 50% 18%, rgba(18,53,99,0.18), transparent 52%),
+          radial-gradient(ellipse at 50% 88%, rgba(245,158,11,0.12), transparent 48%),
+          linear-gradient(180deg, #e8eef6 0%, #f2f4f7 42%, #e9edf3 100%);
+      }
       .clip {
-        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
       }
-      .phone {
-        width: 400px; height: 820px; background: #fff; border-radius: 44px;
-        box-shadow: 0 28px 80px rgba(15, 23, 41, 0.18); border: 9px solid #0f1729;
-        overflow: hidden; position: relative; display: flex; flex-direction: column;
-        direction: rtl; text-align: right;
+
+      /* ===== Premium iPhone Pro frame ===== */
+      .iphone {
+        position: relative;
+        width: 560px;
+        height: 1144px;
+        flex-shrink: 0;
       }
-      .phone.sm { width: 360px; height: 740px; border-radius: 40px; }
-      .phone-bar {
-        height: 48px; display: flex; align-items: center; justify-content: space-between;
-        padding: 0 18px; background: #fff; border-bottom: 1px solid rgba(15,23,41,0.06);
+      .iphone.sm { width: 460px; height: 940px; }
+      .iphone-shell {
+        position: absolute; inset: 0;
+        border-radius: 78px;
+        background:
+          linear-gradient(160deg, #5c5c5e 0%, #2a2a2c 22%, #121214 55%, #1a1a1c 78%, #3d3d40 100%);
+        box-shadow:
+          0 50px 120px rgba(15, 23, 41, 0.42),
+          0 0 0 1.5px rgba(255,255,255,0.14),
+          0 2px 0 rgba(255,255,255,0.18) inset,
+          0 -3px 8px rgba(0,0,0,0.55) inset;
+      }
+      .iphone.sm .iphone-shell { border-radius: 66px; }
+      .iphone-bezel {
+        position: absolute;
+        inset: 11px;
+        border-radius: 68px;
+        background: #050505;
+        overflow: hidden;
+        box-shadow:
+          inset 0 0 0 1px rgba(255,255,255,0.1),
+          inset 0 0 18px rgba(0,0,0,0.65);
+      }
+      .iphone.sm .iphone-bezel { inset: 10px; border-radius: 57px; }
+      .iphone-screen {
+        position: absolute;
+        inset: 3px;
+        border-radius: 65px;
+        background: #f2f4f7;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        direction: rtl;
+        text-align: right;
+      }
+      .iphone.sm .iphone-screen { border-radius: 54px; }
+
+      /* Side buttons — titanium */
+      .btn-silent {
+        position: absolute; left: -4px; top: 170px; width: 5px; height: 34px;
+        border-radius: 2px 0 0 2px;
+        background: linear-gradient(90deg, #6a6a6c, #2e2e30);
+        box-shadow: -1px 0 0 rgba(255,255,255,0.15);
+      }
+      .btn-vol-up {
+        position: absolute; left: -4px; top: 240px; width: 5px; height: 68px;
+        border-radius: 2px 0 0 2px;
+        background: linear-gradient(90deg, #6a6a6c, #2e2e30);
+      }
+      .btn-vol-down {
+        position: absolute; left: -4px; top: 324px; width: 5px; height: 68px;
+        border-radius: 2px 0 0 2px;
+        background: linear-gradient(90deg, #6a6a6c, #2e2e30);
+      }
+      .btn-power {
+        position: absolute; right: -4px; top: 280px; width: 5px; height: 110px;
+        border-radius: 0 2px 2px 0;
+        background: linear-gradient(270deg, #6a6a6c, #2e2e30);
+      }
+      .iphone.sm .btn-silent { top: 140px; height: 28px; }
+      .iphone.sm .btn-vol-up { top: 198px; height: 56px; }
+      .iphone.sm .btn-vol-down { top: 268px; height: 56px; }
+      .iphone.sm .btn-power { top: 230px; height: 90px; }
+
+      /* Dynamic Island */
+      .island {
+        position: absolute;
+        top: 16px; left: 50%;
+        width: 136px; height: 38px;
+        margin-left: -68px;
+        background: #000;
+        border-radius: 22px;
+        z-index: 20;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.4);
+      }
+      .iphone.sm .island { top: 14px; width: 116px; height: 33px; margin-left: -58px; }
+      .island::after {
+        content: "";
+        position: absolute; right: 16px; top: 12px;
+        width: 11px; height: 11px; border-radius: 999px;
+        background: radial-gradient(circle at 35% 35%, #2a5a8c, #071018 70%);
+        box-shadow: inset 0 0 2px rgba(100,170,230,0.4);
+      }
+
+      /* iOS status bar */
+      .status-bar {
+        height: 54px; flex-shrink: 0;
+        display: flex; align-items: flex-end; justify-content: space-between;
+        padding: 0 28px 8px; font-size: 15px; font-weight: 700; color: #0f1729;
+        position: relative; z-index: 5;
+      }
+      .iphone.sm .status-bar { height: 48px; padding: 0 24px 6px; font-size: 13px; }
+      .status-icons { display: flex; align-items: center; gap: 6px; font-size: 13px; letter-spacing: -0.02em; }
+      .bat {
+        width: 26px; height: 12px; border: 1.5px solid #0f1729; border-radius: 3px;
+        position: relative; opacity: 0.9;
+      }
+      .bat::before {
+        content: ""; position: absolute; inset: 1.5px; right: auto; width: 70%;
+        background: #0f1729; border-radius: 1px;
+      }
+      .bat::after {
+        content: ""; position: absolute; right: -4px; top: 3px;
+        width: 2px; height: 5px; background: #0f1729; border-radius: 0 1px 1px 0; opacity: 0.7;
+      }
+
+      .home-ind {
+        position: absolute; bottom: 8px; left: 50%; width: 126px; height: 5px;
+        margin-left: -63px; background: #0f1729; border-radius: 99px; opacity: 0.35; z-index: 15;
+      }
+      .iphone.sm .home-ind { width: 108px; margin-left: -54px; bottom: 7px; }
+
+      .app-bar {
+        height: 44px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 16px; background: #fff; border-bottom: 1px solid rgba(15,23,41,0.06);
         font-size: 14px; font-weight: 700; color: #0f1729; flex-shrink: 0;
       }
       .avatar {
         width: 30px; height: 30px; border-radius: 999px; background: #123563; color: #fff;
         display: grid; place-items: center; font-weight: 800; font-size: 13px;
       }
-      .phone-body { padding: 14px 14px 18px; flex: 1; background: #f2f4f7; overflow: hidden; }
-      .duo { display: flex; gap: 48px; align-items: center; }
+      .phone-body { padding: 12px 14px 28px; flex: 1; background: #f2f4f7; overflow: hidden; }
+
+      .duo {
+        display: flex; flex-direction: column; gap: 22px; align-items: center;
+      }
+      .push {
+        position: absolute; top: 86px; left: 50%; width: 480px; margin-left: -240px;
+        background: rgba(255,255,255,0.97); border-radius: 24px; padding: 18px 20px;
+        box-shadow: 0 22px 55px rgba(15,23,41,0.3); direction: rtl; text-align: right;
+        border: 1px solid rgba(18,53,99,0.08); z-index: 30;
+      }
+
       .hero {
         background: #123563; border-radius: 20px; padding: 18px 14px; color: #fff;
-        position: relative; overflow: hidden; min-height: 150px;
+        position: relative; overflow: hidden; min-height: 148px;
       }
-      .hero h2 { font-size: 30px; font-weight: 900; line-height: 1.15; margin-bottom: 6px; }
+      .hero h2 { font-size: 28px; font-weight: 900; line-height: 1.15; margin-bottom: 6px; }
       .hero p { font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.4; margin-bottom: 12px; }
       .search {
         background: #fff; border-radius: 12px; padding: 10px 12px; color: #4b5563;
         font-size: 14px; font-weight: 600; position: relative; z-index: 2;
       }
       .hero-emoji {
-        position: absolute; left: 6px; bottom: 2px; font-size: 64px; opacity: 0.5; z-index: 1;
+        position: absolute; left: 6px; bottom: 2px; font-size: 58px; opacity: 0.5; z-index: 1;
       }
       .cta {
         margin-top: 12px; background: #123563; color: #fff; border-radius: 12px;
-        text-align: center; padding: 12px; font-size: 16px; font-weight: 800;
+        text-align: center; padding: 13px; font-size: 16px; font-weight: 800;
         border: 3px solid #f59e0b; position: relative;
       }
       .cta.green { background: #047857; border-color: #34d399; }
-      .cta.orange { background: #9a3412; border-color: #fdba74; }
-      .section-title { margin: 10px 2px 10px; font-size: 16px; font-weight: 800; color: #0f1729; }
+      .section-title { margin: 10px 2px 10px; font-size: 15px; font-weight: 800; color: #0f1729; }
       .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .cat {
         background: #fff; border: 2px solid rgba(18,53,99,0.08); border-radius: 16px;
@@ -85,28 +215,28 @@
         box-shadow: 0 4px 14px rgba(15,23,41,0.06); margin-bottom: 8px; border: 1px solid rgba(18,53,99,0.06);
       }
       .pro-av {
-        width: 48px; height: 48px; border-radius: 14px; background: #123563; color: #fff;
-        display: grid; place-items: center; font-weight: 900; font-size: 18px; flex-shrink: 0;
+        width: 46px; height: 46px; border-radius: 14px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 900; font-size: 17px; flex-shrink: 0;
       }
       .pro-meta { flex: 1; min-width: 0; }
-      .pro-name { font-size: 15px; font-weight: 800; color: #0f1729; }
-      .pro-sub { font-size: 12px; font-weight: 600; color: rgba(15,23,41,0.65); margin-top: 2px; }
+      .pro-name { font-size: 14px; font-weight: 800; color: #0f1729; }
+      .pro-sub { font-size: 11px; font-weight: 600; color: rgba(15,23,41,0.65); margin-top: 2px; }
       .badge {
         display: inline-flex; align-items: center; gap: 4px; background: #dbeafe; color: #1e3a8a;
-        font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px; margin-top: 4px;
+        font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; margin-top: 4px;
       }
       .avail { color: #059669; font-size: 11px; font-weight: 800; }
       .match-card {
         margin-top: 10px; background: #fff7ed; border: 2px solid #fdba74; border-radius: 18px;
-        padding: 18px 14px; text-align: center; position: relative; min-height: 150px;
+        padding: 18px 14px; text-align: center; position: relative; min-height: 140px;
       }
       .match-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 12px; }
       .match-dots span { width: 9px; height: 9px; border-radius: 999px; background: #f59e0b; }
-      .match-title { font-size: 18px; font-weight: 800; color: #9a3412; margin-bottom: 6px; }
-      .match-sub { font-size: 13px; font-weight: 600; color: #c2410c; line-height: 1.4; }
+      .match-title { font-size: 17px; font-weight: 800; color: #9a3412; margin-bottom: 6px; }
+      .match-sub { font-size: 12px; font-weight: 600; color: #c2410c; line-height: 1.4; }
       #match-state-b { position: absolute; left: 14px; right: 14px; top: 48px; opacity: 0; }
       .map-panel {
-        height: 220px; border-radius: 18px; position: relative; overflow: hidden;
+        height: 210px; border-radius: 18px; position: relative; overflow: hidden;
         border: 1px solid rgba(18,53,99,0.08);
         background:
           radial-gradient(circle at 28% 38%, rgba(18,53,99,0.14), transparent 42%),
@@ -124,7 +254,7 @@
       .pin.home { top: 58%; right: 26%; background: #f59e0b; }
       .pin.pro { top: 26%; left: 32%; }
       .route-line {
-        position: absolute; top: 34%; left: 36%; width: 140px; height: 3px;
+        position: absolute; top: 34%; left: 36%; width: 130px; height: 3px;
         background: repeating-linear-gradient(90deg, #123563 0 9px, transparent 9px 16px);
         transform: rotate(28deg); transform-origin: left center; opacity: 0.7;
       }
@@ -136,7 +266,7 @@
         margin-top: 12px; background: #fff; border-radius: 16px; padding: 14px 12px;
         box-shadow: 0 6px 16px rgba(15,23,41,0.06);
       }
-      .track-copy h3 { font-size: 18px; font-weight: 900; color: #0f1729; margin-bottom: 4px; }
+      .track-copy h3 { font-size: 17px; font-weight: 900; color: #0f1729; margin-bottom: 4px; }
       .track-copy p { font-size: 12px; font-weight: 600; color: rgba(15,23,41,0.7); line-height: 1.35; }
       .chip {
         display: inline-flex; align-items: center; gap: 5px; margin-top: 10px;
@@ -151,16 +281,10 @@
         margin-top: 10px; background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46;
         border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 800; text-align: center;
       }
-      .push {
-        position: absolute; top: 70px; left: 50%; width: 340px; margin-left: -170px;
-        background: rgba(255,255,255,0.96); border-radius: 18px; padding: 14px 16px;
-        box-shadow: 0 16px 40px rgba(15,23,41,0.2); direction: rtl; text-align: right;
-        border: 1px solid rgba(18,53,99,0.08); z-index: 5;
-      }
       .push-app { font-size: 11px; font-weight: 800; color: #123563; margin-bottom: 4px; }
-      .push-title { font-size: 16px; font-weight: 900; color: #0f1729; }
+      .push-title { font-size: 17px; font-weight: 900; color: #0f1729; }
       .push-body { font-size: 13px; font-weight: 600; color: rgba(15,23,41,0.7); margin-top: 2px; }
-      .status-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; justify-content: flex-start; }
+      .status-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
       .st {
         font-size: 11px; font-weight: 800; padding: 5px 9px; border-radius: 999px;
         background: #e5e7eb; color: #374151;
@@ -173,44 +297,44 @@
       }
       .stars { color: #f59e0b; letter-spacing: 1px; font-size: 16px; margin-bottom: 4px; }
       .guarantee-hero {
-        width: 720px; background: #ecfdf5; border: 2px solid #6ee7b7; border-radius: 28px;
-        padding: 36px 40px; direction: rtl; text-align: right;
-        box-shadow: 0 20px 50px rgba(6,95,70,0.12);
+        width: 860px; background: #ecfdf5; border: 2px solid #6ee7b7; border-radius: 32px;
+        padding: 48px 44px; direction: rtl; text-align: right;
+        box-shadow: 0 24px 60px rgba(6,95,70,0.14);
       }
-      .guarantee-hero h2 { font-size: 42px; font-weight: 900; color: #065f46; margin-bottom: 12px; }
-      .guarantee-hero p { font-size: 22px; font-weight: 600; color: #047857; line-height: 1.45; }
+      .guarantee-hero h2 { font-size: 52px; font-weight: 900; color: #065f46; margin-bottom: 16px; }
+      .guarantee-hero p { font-size: 26px; font-weight: 600; color: #047857; line-height: 1.45; }
       .city-frame {
-        width: 860px; background: #fff; border-radius: 28px; padding: 40px 44px;
-        direction: rtl; text-align: right; box-shadow: 0 24px 60px rgba(15,23,41,0.12);
+        width: 900px; background: #fff; border-radius: 32px; padding: 48px 44px;
+        direction: rtl; text-align: right; box-shadow: 0 28px 70px rgba(15,23,41,0.14);
       }
-      .city-frame h2 { font-size: 48px; font-weight: 900; color: #123563; margin-bottom: 10px; }
-      .city-frame .sub { font-size: 18px; font-weight: 600; color: rgba(15,23,41,0.7); margin-bottom: 18px; }
-      .city-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+      .city-frame h2 { font-size: 48px; font-weight: 900; color: #123563; margin-bottom: 12px; }
+      .city-frame .sub { font-size: 20px; font-weight: 600; color: rgba(15,23,41,0.7); margin-bottom: 22px; }
+      .city-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
       .city-chip {
-        background: #dbeafe; color: #1e3a8a; font-size: 15px; font-weight: 800;
-        padding: 8px 14px; border-radius: 999px;
+        background: #dbeafe; color: #1e3a8a; font-size: 16px; font-weight: 800;
+        padding: 10px 16px; border-radius: 999px;
       }
       .city-cta {
-        display: inline-block; background: #123563; color: #fff; font-size: 18px; font-weight: 800;
-        padding: 14px 22px; border-radius: 14px; border: 3px solid #f59e0b;
+        display: inline-block; background: #123563; color: #fff; font-size: 20px; font-weight: 800;
+        padding: 16px 24px; border-radius: 16px; border: 3px solid #f59e0b;
       }
       .stats {
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; width: 1400px; direction: rtl;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 880px; direction: rtl;
       }
       .stat {
-        background: #fff; border-radius: 22px; padding: 28px 22px; text-align: center;
-        box-shadow: 0 16px 40px rgba(15,23,41,0.08); border: 1px solid rgba(18,53,99,0.06);
+        background: #fff; border-radius: 24px; padding: 36px 22px; text-align: center;
+        box-shadow: 0 18px 44px rgba(15,23,41,0.1); border: 1px solid rgba(18,53,99,0.06);
       }
-      .stat-num { font-size: 56px; font-weight: 900; color: #123563; line-height: 1; }
-      .stat-label { font-size: 18px; font-weight: 700; color: rgba(15,23,41,0.7); margin-top: 10px; }
-      .outro { display: flex; flex-direction: column; align-items: center; gap: 18px; direction: rtl; text-align: center; }
+      .stat-num { font-size: 64px; font-weight: 900; color: #123563; line-height: 1; }
+      .stat-label { font-size: 20px; font-weight: 700; color: rgba(15,23,41,0.7); margin-top: 12px; }
+      .outro { display: flex; flex-direction: column; align-items: center; gap: 22px; direction: rtl; text-align: center; }
       .logo-wrap {
-        width: 200px; height: 200px; border-radius: 44px; overflow: hidden;
-        box-shadow: 0 24px 60px rgba(18,53,99,0.28);
+        width: 240px; height: 240px; border-radius: 54px; overflow: hidden;
+        box-shadow: 0 28px 70px rgba(18,53,99,0.32);
       }
       .logo-wrap img { width: 100%; height: 100%; display: block; }
-      .wordmark { font-size: 80px; font-weight: 900; color: #123563; line-height: 1; }
-      .tagline { font-size: 26px; font-weight: 700; color: #0f1729; }
+      .wordmark { font-size: 96px; font-weight: 900; color: #123563; line-height: 1; }
+      .tagline { font-size: 32px; font-weight: 700; color: #0f1729; }
       .job-row {
         background: #fff; border-radius: 14px; padding: 12px; margin-top: 10px;
         box-shadow: 0 4px 12px rgba(15,23,41,0.05); text-align: right;
@@ -218,101 +342,146 @@
       .job-row .t { font-size: 14px; font-weight: 800; color: #0f1729; }
       .job-row .s { font-size: 12px; font-weight: 600; color: rgba(15,23,41,0.6); margin-top: 2px; }
       .dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-      .dash-stat {
-        border-radius: 12px; padding: 12px 8px; text-align: center; color: #fff; font-weight: 800;
+      .dash-stat { border-radius: 12px; padding: 12px 8px; text-align: center; color: #fff; font-weight: 800; }
+      .dash-stat .n { font-size: 20px; }
+      .dash-stat .l { font-size: 11px; margin-top: 2px; color: #fff; }
+      .y { background: #d97706; } .b { background: #123563; } .g { background: #047857; }
+      .reel-caption {
+        position: absolute; bottom: 72px; left: 48px; right: 48px;
+        text-align: center; direction: rtl;
+        font-size: 28px; font-weight: 900; color: #123563;
+        text-shadow: 0 2px 12px rgba(242,244,247,0.9);
+        opacity: 0;
       }
-      .dash-stat .n { font-size: 22px; }
-      .dash-stat .l { font-size: 11px; opacity: 1; margin-top: 2px; color: #ffffff; }
-      .y { background: #d97706; } .b { background: #123563; } .g { background: #059669; }
     </style>
   </head>
   <body>
-    <div id="root" data-composition-id="main" data-start="0" data-duration="40" data-width="1920" data-height="1080">
+    <div id="root" data-composition-id="main" data-start="0" data-duration="40" data-width="1080" data-height="1920">
       <div class="stage-bg" id="stage-bg"></div>
 
       <!-- S1 Hook 0-4 -->
       <section id="s1" class="clip" data-start="0" data-duration="4" data-track-index="1">
-        <div class="phone" id="p1">
-          <div class="phone-bar"><span>👋 שלום, יוני</span><div class="avatar">י</div></div>
-          <div class="phone-body">
-            <div class="hero" id="hero">
-              <div class="hero-emoji" data-layout-allow-occlusion>👷</div>
-              <h2 id="h-title">זקוקים לתיקון?</h2>
-              <p id="h-sub">מצא את איש המקצוע המתאים<br />במהירות ובקלות</p>
-              <div class="search" id="h-search">מה צריך לתקן?</div>
+        <div class="iphone" id="p1">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>👋 שלום, יוני</span><div class="avatar">י</div></div>
+                <div class="phone-body">
+                  <div class="hero" id="hero">
+                    <div class="hero-emoji" data-layout-allow-occlusion>👷</div>
+                    <h2 id="h-title">זקוקים לתיקון?</h2>
+                    <p id="h-sub">מצא את איש המקצוע המתאים<br />במהירות ובקלות</p>
+                    <div class="search" id="h-search">מה צריך לתקן?</div>
+                  </div>
+                  <div class="cta" id="cta1">בקשה מהירה</div>
+                </div>
+                <div class="home-ind"></div>
+              </div>
             </div>
-            <div class="cta" id="cta1">בקשה מהירה</div>
           </div>
         </div>
       </section>
 
-      <!-- S2 Categories + featured 4-9 -->
+      <!-- S2 Categories 4-9 -->
       <section id="s2" class="clip" data-start="4" data-duration="5" data-track-index="2">
-        <div class="phone" id="p2">
-          <div class="phone-bar"><span>Fixly</span><div class="avatar">י</div></div>
-          <div class="phone-body">
-            <div class="section-title" id="cats-t">בחרו קטגוריה</div>
-            <div class="cat-grid">
-              <div class="cat" id="c1"><div class="cat-icon" style="background:#dbeafe">🔧</div><div class="cat-label">אינסטלציה</div></div>
-              <div class="cat" id="c2"><div class="cat-icon" style="background:#fef3c7">⚡</div><div class="cat-label">חשמל</div></div>
-              <div class="cat" id="c3"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג אוויר</div></div>
-              <div class="cat" id="c4"><div class="cat-icon" style="background:#ffedd5">🪵</div><div class="cat-label">נגרות</div></div>
-            </div>
-            <div class="section-title" id="feat-t" style="margin-top:14px">אנשי מקצוע מומלצים</div>
-            <div class="pro-card" id="pc1">
-              <div class="pro-av">ד</div>
-              <div class="pro-meta">
-                <div class="pro-name">דני אינסטלציה</div>
-                <div class="pro-sub">★ 4.9 (128) · תל אביב</div>
-                <span class="badge">✓ מאומת Fixly</span>
-                <div class="avail">● זמין היום</div>
-              </div>
-            </div>
-            <div class="pro-card" id="pc2">
-              <div class="pro-av" style="background:#c2410c">מ</div>
-              <div class="pro-meta">
-                <div class="pro-name">מיכל חשמל</div>
-                <div class="pro-sub">★ 4.8 (96) · רמת גן</div>
-                <span class="badge">✓ מאומת Fixly</span>
-                <div class="avail">● זמין עכשיו</div>
+        <div class="iphone" id="p2">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>Fixly</span><div class="avatar">י</div></div>
+                <div class="phone-body">
+                  <div class="section-title" id="cats-t">בחרו קטגוריה</div>
+                  <div class="cat-grid">
+                    <div class="cat" id="c1"><div class="cat-icon" style="background:#dbeafe">🔧</div><div class="cat-label">אינסטלציה</div></div>
+                    <div class="cat" id="c2"><div class="cat-icon" style="background:#fef3c7">⚡</div><div class="cat-label">חשמל</div></div>
+                    <div class="cat" id="c3"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג אוויר</div></div>
+                    <div class="cat" id="c4"><div class="cat-icon" style="background:#ffedd5">🪵</div><div class="cat-label">נגרות</div></div>
+                  </div>
+                  <div class="section-title" id="feat-t" style="margin-top:14px">אנשי מקצוע מומלצים</div>
+                  <div class="pro-card" id="pc1">
+                    <div class="pro-av">ד</div>
+                    <div class="pro-meta">
+                      <div class="pro-name">דני אינסטלציה</div>
+                      <div class="pro-sub">★ 4.9 (128) · תל אביב</div>
+                      <span class="badge">✓ מאומת Fixly</span>
+                      <div class="avail">● זמין היום</div>
+                    </div>
+                  </div>
+                  <div class="pro-card" id="pc2">
+                    <div class="pro-av" style="background:#c2410c">מ</div>
+                    <div class="pro-meta">
+                      <div class="pro-name">מיכל חשמל</div>
+                      <div class="pro-sub">★ 4.8 (96) · רמת גן</div>
+                      <span class="badge">✓ מאומת Fixly</span>
+                      <div class="avail">● זמין עכשיו</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="home-ind"></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- S3 Match race 9-14 -->
+      <!-- S3 Match race 9-14 — stacked phones for Reels -->
       <section id="s3" class="clip" data-start="9" data-duration="5" data-track-index="3">
         <div class="duo">
-          <div class="phone sm" id="p3a">
-            <div class="phone-bar"><span>מעקב בקשה</span><div class="avatar">י</div></div>
-            <div class="phone-body">
-              <div class="match-card" id="match-card">
-                <div class="match-dots" id="mdots"><span></span><span></span><span></span></div>
-                <div id="match-state-a">
-                  <div class="match-title">מחפשים מקצוענים...</div>
-                  <div class="match-sub">שולחים את הבקשה לאנשי מקצוע באזור</div>
-                </div>
-                <div id="match-state-b">
-                  <div class="match-title">3 מקצוענים קיבלו את הבקשה</div>
-                  <div class="match-sub">הראשון שמאשר יקבל</div>
+          <div class="iphone sm" id="p3a">
+            <div class="iphone-shell">
+              <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+              <div class="iphone-bezel">
+                <div class="island"></div>
+                <div class="iphone-screen">
+                  <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><div class="bat"></div></div></div>
+                  <div class="app-bar"><span>מעקב בקשה</span><div class="avatar">י</div></div>
+                  <div class="phone-body">
+                    <div class="match-card" id="match-card">
+                      <div class="match-dots" id="mdots"><span></span><span></span><span></span></div>
+                      <div id="match-state-a">
+                        <div class="match-title">מחפשים מקצוענים...</div>
+                        <div class="match-sub">שולחים את הבקשה לאנשי מקצוע באזור</div>
+                      </div>
+                      <div id="match-state-b">
+                        <div class="match-title">3 מקצוענים קיבלו את הבקשה</div>
+                        <div class="match-sub">הראשון שמאשר יקבל</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="home-ind"></div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="phone sm" id="p3b">
-            <div class="phone-bar"><span>דשבורד מקצועי</span><div class="avatar">ד</div></div>
-            <div class="phone-body">
-              <div class="dash-stats">
-                <div class="dash-stat y"><div class="n">2</div><div class="l">ממתינות</div></div>
-                <div class="dash-stat b"><div class="n">1</div><div class="l">פעילות</div></div>
-                <div class="dash-stat g"><div class="n">47</div><div class="l">הושלמו</div></div>
+          <div class="iphone sm" id="p3b">
+            <div class="iphone-shell">
+              <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+              <div class="iphone-bezel">
+                <div class="island"></div>
+                <div class="iphone-screen">
+                  <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><div class="bat"></div></div></div>
+                  <div class="app-bar"><span>דשבורד מקצועי</span><div class="avatar">ד</div></div>
+                  <div class="phone-body">
+                    <div class="dash-stats">
+                      <div class="dash-stat y"><div class="n">2</div><div class="l">ממתינות</div></div>
+                      <div class="dash-stat b"><div class="n">1</div><div class="l">פעילות</div></div>
+                      <div class="dash-stat g"><div class="n">47</div><div class="l">הושלמו</div></div>
+                    </div>
+                    <div class="job-row" id="job">
+                      <div class="t">נזילה בכיור · תל אביב</div>
+                      <div class="s">בקשה מהירה · לפני דקה</div>
+                    </div>
+                    <div class="cta green" id="accept">קבל בקשה</div>
+                  </div>
+                  <div class="home-ind"></div>
+                </div>
               </div>
-              <div class="job-row" id="job">
-                <div class="t">נזילה בכיור · תל אביב</div>
-                <div class="s">בקשה מהירה · לפני דקה</div>
-              </div>
-              <div class="cta green" id="accept">קבל בקשה</div>
             </div>
           </div>
         </div>
@@ -320,32 +489,42 @@
 
       <!-- S4 Live track 14-22 -->
       <section id="s4" class="clip" data-start="14" data-duration="8" data-track-index="4">
-        <div class="phone" id="p4">
-          <div class="phone-bar"><span>בזמן אמת</span><div class="avatar">י</div></div>
-          <div class="phone-body">
-            <div class="map-panel" id="map">
-              <div class="road"></div>
-              <div class="route-line" id="rline"></div>
-              <div class="pin pro" id="pinp"></div>
-              <div class="pin home" id="pinh"></div>
-              <div class="live-dot" id="ldot"></div>
-            </div>
-            <div class="track-copy" id="tcopy">
-              <h3>איש המקצוע בדרך אליך</h3>
-              <p>המיקום מתעדכן בזמן אמת (כמו Wolt)</p>
-              <div>
-                <span class="chip" id="chip">● בדרך</span>
-                <span class="eta" id="eta">זמן הגעה משוער · 12 דק׳</span>
+        <div class="iphone" id="p4">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>בזמן אמת</span><div class="avatar">י</div></div>
+                <div class="phone-body">
+                  <div class="map-panel" id="map">
+                    <div class="road"></div>
+                    <div class="route-line" id="rline"></div>
+                    <div class="pin pro" id="pinp"></div>
+                    <div class="pin home" id="pinh"></div>
+                    <div class="live-dot" id="ldot"></div>
+                  </div>
+                  <div class="track-copy" id="tcopy">
+                    <h3>איש המקצוע בדרך אליך</h3>
+                    <p>המיקום מתעדכן בזמן אמת (כמו Wolt)</p>
+                    <div>
+                      <span class="chip" id="chip">● בדרך</span>
+                      <span class="eta" id="eta">זמן הגעה משוער · 12 דק׳</span>
+                    </div>
+                    <div class="status-row" id="srow">
+                      <span class="st done">ממתין</span>
+                      <span class="st done">אושר</span>
+                      <span class="st on">בדרך</span>
+                      <span class="st">בתהליך</span>
+                      <span class="st">הושלם</span>
+                    </div>
+                  </div>
+                  <div class="guarantee" id="gmini">✓ מכוסה באחריות Fixly</div>
+                </div>
+                <div class="home-ind"></div>
               </div>
-              <div class="status-row" id="srow">
-                <span class="st done">ממתין</span>
-                <span class="st done">אושר</span>
-                <span class="st on">בדרך</span>
-                <span class="st">בתהליך</span>
-                <span class="st">הושלם</span>
-              </div>
             </div>
-            <div class="guarantee" id="gmini">✓ מכוסה באחריות Fixly</div>
           </div>
         </div>
         <div class="push" id="push" data-layout-allow-occlusion data-layout-allow-overlap>
@@ -357,30 +536,34 @@
 
       <!-- S5 Trust 22-27 -->
       <section id="s5" class="clip" data-start="22" data-duration="5" data-track-index="5">
-        <div class="phone" id="p5">
-          <div class="phone-bar"><span>פרופיל מקצוען</span><div class="avatar">י</div></div>
-          <div class="phone-body">
-            <div class="pro-card" id="trust-pro" style="flex-direction:column;align-items:flex-start;gap:8px;padding:16px">
-              <div style="display:flex;gap:12px;align-items:center;width:100%">
-                <div class="pro-av" style="width:56px;height:56px;font-size:22px">ד</div>
-                <div>
-                  <div class="pro-name" style="font-size:18px">דני אינסטלציה</div>
-                  <div class="pro-sub">תל אביב · מגיב תוך 8 דק׳</div>
-                  <span class="badge" id="vbadge">✓ מאומת Fixly</span>
+        <div class="iphone" id="p5">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>פרופיל מקצוען</span><div class="avatar">י</div></div>
+                <div class="phone-body">
+                  <div class="pro-card" id="trust-pro" style="flex-direction:column;align-items:flex-start;gap:8px;padding:16px">
+                    <div style="display:flex;gap:12px;align-items:center;width:100%">
+                      <div class="pro-av" style="width:56px;height:56px;font-size:22px">ד</div>
+                      <div>
+                        <div class="pro-name" style="font-size:17px">דני אינסטלציה</div>
+                        <div class="pro-sub">תל אביב · מגיב תוך 8 דק׳</div>
+                        <span class="badge" id="vbadge">✓ מאומת Fixly</span>
+                      </div>
+                    </div>
+                    <div class="stars" id="stars">★★★★★ 4.9</div>
+                  </div>
+                  <div class="section-title" id="rev-t">ביקורות</div>
+                  <div class="review" id="rev1"><div class="stars">★★★★★</div>הגיע מהר, תיקן את הנזילה במקצועיות. ממליצה בחום!</div>
+                  <div class="review" id="rev2"><div class="stars">★★★★★</div>שירות אדיב ומחיר הוגן. Fixly עשו את זה קל.</div>
+                  <div class="cta" id="rate" style="margin-top:12px">דרג את איש המקצוע</div>
                 </div>
+                <div class="home-ind"></div>
               </div>
-              <div class="stars" id="stars">★★★★★ 4.9</div>
             </div>
-            <div class="section-title" id="rev-t">ביקורות</div>
-            <div class="review" id="rev1">
-              <div class="stars">★★★★★</div>
-              הגיע מהר, תיקן את הנזילה במקצועיות. ממליצה בחום!
-            </div>
-            <div class="review" id="rev2">
-              <div class="stars">★★★★★</div>
-              שירות אדיב ומחיר הוגן. Fixly עשו את זה קל.
-            </div>
-            <div class="cta" id="rate" style="margin-top:12px">דרג את איש המקצוע</div>
           </div>
         </div>
       </section>
@@ -423,7 +606,6 @@
         </div>
       </section>
 
-      <!-- Audio -->
       <audio id="bg-music" data-start="0" data-duration="40" data-track-index="10" data-volume="0.30"
         src="assets/music/happy-beats-business-moves-vol-1-by-ende-dot-app.mp3"></audio>
       <audio id="sfx1" data-start="0.2" data-duration="0.11" data-track-index="11" data-volume="0.7" src="assets/sfx/interface/drop_001.ogg"></audio>
@@ -438,62 +620,54 @@
       <audio id="sfx10" data-start="16.0" data-duration="1.2" data-track-index="20" data-volume="0.78" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
       <audio id="sfx11" data-start="18.2" data-duration="0.15" data-track-index="21" data-volume="0.7" src="assets/sfx/interface/drop_003.ogg"></audio>
       <audio id="sfx12" data-start="23.0" data-duration="0.18" data-track-index="22" data-volume="0.7" src="assets/sfx/impact/impactSoft_medium_002.ogg"></audio>
-      <audio id="sfx13" data-start="27.3" data-duration="0.5" data-track-index="23" data-volume="0.72" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
-      <audio id="sfx14" data-start="32.3" data-duration="0.5" data-track-index="24" data-volume="0.65" src="assets/sfx/casino/chips-collide-1.ogg"></audio>
-      <audio id="sfx15" data-start="36.5" data-duration="0.8" data-track-index="25" data-volume="0.75" src="assets/sfx/impact/impactBell_heavy_003.ogg"></audio>
+      <audio id="sfx13" data-start="27.3" data-duration="0.18" data-track-index="23" data-volume="0.72" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx14" data-start="32.3" data-duration="0.26" data-track-index="24" data-volume="0.65" src="assets/sfx/casino/chips-collide-1.ogg"></audio>
+      <audio id="sfx15" data-start="36.5" data-duration="0.65" data-track-index="25" data-volume="0.75" src="assets/sfx/impact/impactBell_heavy_003.ogg"></audio>
     </div>
 
     <script>
       window.__timelines = window.__timelines || {};
       const tl = gsap.timeline({ paused: true });
 
-      // ===== S1 0-4 =====
-      tl.fromTo("#p1", { y: 40, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0.05);
-      tl.fromTo("#h-title", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0.35);
-      tl.fromTo("#h-sub", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 0.55);
-      tl.fromTo("#h-search", { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power2.out" }, 0.75);
-      tl.fromTo("#cta1", { y: 14, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.5)" }, 1.05);
+      tl.fromTo("#p1", { y: 50, opacity: 0, scale: 0.94 }, { y: 0, opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 0.05);
+      tl.fromTo("#h-title", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0.4);
+      tl.fromTo("#h-sub", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 0.6);
+      tl.fromTo("#h-search", { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 0.8);
+      tl.fromTo("#cta1", { y: 14, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.5)" }, 1.1);
       tl.fromTo("#cta1", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.in" }, 2.4);
 
-      // ===== S2 4-9 =====
-      tl.fromTo("#p2", { x: 50, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 4.05);
+      tl.fromTo("#p2", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 4.05);
       tl.fromTo("#cats-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 4.2);
-      // beat-grid cats
       [4.5, 5.0, 5.5, 6.0].forEach(function (t, i) {
         tl.fromTo("#c" + (i + 1), { y: 24, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)" }, t);
       });
       tl.fromTo("#feat-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 6.5);
-      tl.fromTo("#pc1", { x: 30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 6.8);
-      tl.fromTo("#pc2", { x: 30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "power2.out" }, 7.15);
+      tl.fromTo("#pc1", { x: 24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35 }, 6.8);
+      tl.fromTo("#pc2", { x: 24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35 }, 7.15);
 
-      // ===== S3 9-14 =====
-      tl.fromTo("#p3a", { x: -40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.05);
-      tl.fromTo("#p3b", { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.15);
+      tl.fromTo("#p3a", { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.05);
+      tl.fromTo("#p3b", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.2);
       tl.to("#mdots span", { opacity: 0.35, duration: 0.3, stagger: { each: 0.12, repeat: 5, yoyo: true }, ease: "sine.inOut" }, 9.4);
-      tl.to("#match-state-a", { opacity: 0, y: -8, duration: 0.25, ease: "power1.in" }, 10.9);
-      tl.fromTo("#match-state-b", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, 11.0);
-      tl.fromTo("#accept", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.in" }, 12.4);
+      tl.to("#match-state-a", { opacity: 0, y: -8, duration: 0.25 }, 10.9);
+      tl.fromTo("#match-state-b", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35 }, 11.0);
+      tl.fromTo("#accept", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1 }, 12.4);
       tl.fromTo("#job", { backgroundColor: "#ffffff" }, { backgroundColor: "#ecfdf5", duration: 0.3 }, 12.55);
 
-      // ===== S4 14-22 =====
-      tl.fromTo("#p4", { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 14.05);
+      tl.fromTo("#p4", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 14.05);
       tl.fromTo("#map", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.4 }, 14.25);
       tl.fromTo("#pinp", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)" }, 14.55);
       tl.fromTo("#pinh", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)" }, 14.75);
-      tl.fromTo("#rline", { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 0.75, duration: 0.5, ease: "power2.out" }, 14.9);
+      tl.fromTo("#rline", { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 0.75, duration: 0.5 }, 14.9);
       tl.fromTo("#ldot", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.6)" }, 15.2);
       tl.fromTo("#tcopy", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 15.5);
-      // beat-locked chip ~16.0
       tl.fromTo("#chip", { y: 10, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.5)" }, 16.0);
       tl.fromTo("#eta", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 16.25);
       tl.fromTo("#srow", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 16.5);
       tl.fromTo("#gmini", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 17.0);
-      // push overlay
       tl.fromTo("#push", { y: -30, opacity: 0, scale: 0.95 }, { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.4)" }, 18.2);
-      tl.to("#push", { opacity: 0, y: -20, duration: 0.35, ease: "power1.in" }, 20.8);
+      tl.to("#push", { opacity: 0, y: -20, duration: 0.35 }, 20.8);
 
-      // ===== S5 22-27 =====
-      tl.fromTo("#p5", { x: -40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 22.05);
+      tl.fromTo("#p5", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 22.05);
       tl.fromTo("#trust-pro", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 22.25);
       tl.fromTo("#vbadge", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.6)" }, 22.55);
       tl.fromTo("#stars", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 22.8);
@@ -502,11 +676,9 @@
       tl.fromTo("#rev2", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 23.75);
       tl.fromTo("#rate", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 24.3);
 
-      // ===== S6 27-32 =====
       tl.fromTo("#ghero", { y: 30, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 27.1);
-      tl.to("#ghero", { opacity: 0, y: -40, scale: 0.95, duration: 0.3, ease: "power1.in" }, 29.15);
+      tl.to("#ghero", { opacity: 0, y: -40, scale: 0.95, duration: 0.3 }, 29.15);
       tl.set("#ghero", { autoAlpha: 0 }, 29.35);
-      // centered via xPercent/yPercent — avoid CSS transform conflict
       tl.fromTo(
         "#city",
         { xPercent: -50, yPercent: -50, y: 30, opacity: 0, scale: 0.96 },
@@ -514,12 +686,10 @@
         29.4
       );
 
-      // ===== S7 32-36 count-up =====
       tl.fromTo("#stats", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 32.1);
       ["#st1", "#st2", "#st3", "#st4"].forEach(function (sel, i) {
         tl.fromTo(sel, { y: 20, opacity: 0, scale: 0.94 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.3)" }, 32.3 + i * 0.15);
       });
-      // seek-safe count via discrete steps
       var targets = [
         { id: "n1", to: 58, suffix: "+" },
         { id: "n2", to: 24, suffix: "" },
@@ -533,23 +703,18 @@
             tl.call(function () {
               var el = document.getElementById(c.id);
               if (!el) return;
-              if (c.float) {
-                el.textContent = (c.to * (step / totalSteps)).toFixed(1);
-              } else {
-                el.textContent = Math.round(c.to * (step / totalSteps)) + (c.suffix || "");
-              }
+              if (c.float) el.textContent = (c.to * (step / totalSteps)).toFixed(1);
+              else el.textContent = Math.round(c.to * (step / totalSteps)) + (c.suffix || "");
             }, null, delayBase + step * 0.08);
           })(cfg, s, steps, 32.6 + ti * 0.05);
         }
       });
 
-      // ===== S8 36-40 =====
       tl.fromTo("#logo", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.5)" }, 36.4);
       tl.fromTo("#wm", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 }, 36.75);
       tl.fromTo("#tg", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 37.1);
       tl.to("#bg-music", { volume: 0.1, duration: 1.4, ease: "sine.out" }, 38.4);
 
-      // Audio-reactive hero glow (scene 1 only)
       if (window.AUDIO_DATA && window.AUDIO_DATA.frames) {
         var hero = document.getElementById("hero");
         var frames = window.AUDIO_DATA.frames;

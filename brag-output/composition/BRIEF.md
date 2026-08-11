@@ -2,25 +2,19 @@
 workflow: general-video
 flow: automation
 storyboard: no
-message: "Fixly finds a home-repair pro fast and tracks them live — Wolt for trades, in Hebrew."
+message: "Fixly Reels cut — vertical 9:16 marketplace launch with premium iPhone Pro frames."
 destination: social
-aspect: landscape
+aspect: portrait
 language: he
-audience: Israeli homeowners and side-project / product audiences
-length: 20s
-angle: Wolt for home repairs — show the Hebrew request → match → en-route flow
+audience: Instagram Reels, TikTok, YouTube Shorts, Google/Discover short video
+length: 40s
+angle: Wolt for home repairs — premium device mockup Reels
 ---
 
 ## Intent
 
-Short unnarrated app-store style launch brag for Fixly. RTL Hebrew UI moments from the real product: navy hero, category grid, matching wait, live en-route tracking, logo outro. Warm upbeat music bed with light UI SFX.
-
-## Assets
-
-- `assets/brand/fixly-icon.svg` — app icon (house + orange check)
-- `assets/music/happy-beats-business-moves-vol-1-by-ende-dot-app.mp3` — music bed
-- `../brag-plan.md` / `../composition-brief.md` — /brag creative contract
+Vertical 1080×1920 social Reels version of the Fixly brag. Premium iPhone Pro titanium frame with Dynamic Island, status bar, and home indicator. Same 40s feature tour.
 
 ## Notes
 
-Built via /brag workflow — skip hyperframes intent interview. Autonomous render after check passes.
+No html dir=rtl. Autonomous render after check.

@@ -29,7 +29,7 @@ Hero → quick request → multi-match race → live tracking → trust → loca
 - Creative direction: Premium Hebrew marketplace launch — denser feature tour, still readable
 - Interpretation: Faster cuts than v1, more product surfaces, higher marketing energy without chaotic tone
 
-## Format: landscape — 1920x1080
+## Format: vertical (Reels) — 1080x1920
 ## Duration: 40 seconds
 
 ## Visual identity (from the project)

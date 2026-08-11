@@ -6,7 +6,7 @@ Create a denser ~40s marketing brag for Fixly showing the full marketplace featu
 ## Output
 - Composition directory: `brag-output/composition/`
 - Rendered video: `brag-output/brag.mp4`
-- Format: landscape — 1920x1080
+- Format: vertical (Reels/Shorts) — 1080x1920
 - Duration: 40 seconds
 
 ## Creative Direction
