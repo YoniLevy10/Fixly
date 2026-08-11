@@ -13,6 +13,7 @@
 # misc
 .DS_Store
 *.pem
+.env
 .env*.local
 
 # BASE44 import scratch (extracted zip)

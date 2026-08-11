@@ -235,7 +235,7 @@ export default function ProDashboardScreen() {
         <div className="bg-white rounded-2xl border border-border p-4 mb-6">
           <div className="flex items-center justify-between gap-3 mb-3">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">מנוי</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('pro.proTier')}</p>
               <span
                 className={cn(
                   'inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold',
@@ -247,8 +247,8 @@ export default function ProDashboardScreen() {
               >
                 {proBilling.subscription_tier === 'pro' ||
                 proBilling.subscription_tier === 'pro_plus'
-                  ? 'Pro'
-                  : 'Free'}
+                  ? t('monetization.tierPro')
+                  : t('monetization.tierFree')}
               </span>
             </div>
             {proBilling.subscription_tier === 'pro' ||
@@ -258,24 +258,24 @@ export default function ProDashboardScreen() {
                 onClick={openBillingPortal}
                 className="text-sm font-semibold text-primary hover:underline"
               >
-                ניהול מנוי
+                {t('monetization.manageSubscription')}
               </button>
             ) : (
               <Link
                 href="/pro/pricing"
                 className="text-sm font-semibold bg-primary text-white px-3 py-2 rounded-xl"
               >
-                שדרוג ל-Pro
+                {t('monetization.upgradeToPro')}
               </Link>
             )}
           </div>
           <p className="text-sm">
-            קרדיטי לידים:{' '}
+            {t('monetization.leadCreditsThisMonth')}:{' '}
             <span className="font-bold">{proBilling.lead_credits}</span>
           </p>
           {proBilling.subscription_until && (
             <p className="text-xs text-muted-foreground mt-1">
-              בתוקף עד {formatDate(locale, proBilling.subscription_until)}
+              {t('monetization.until')} {formatDate(locale, proBilling.subscription_until)}
             </p>
           )}
         </div>

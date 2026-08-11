@@ -1,3 +1,5 @@
+// Note: Hebrew strings in metadata and UI here are intentional.
+// These are SEO landing pages targeting Hebrew-speaking Israeli users.
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import {

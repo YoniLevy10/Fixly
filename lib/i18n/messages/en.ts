@@ -195,6 +195,8 @@ export const en: MessageTree = {
     reject: 'Decline request',
     startWork: 'Start work',
     markCompleted: 'Mark completed',
+    proTier: 'Subscription',
+    freeTier: 'Free tier',
   },
   categories: {
     plumbing: 'Plumbing',
@@ -292,6 +294,27 @@ export const en: MessageTree = {
     checkoutError: 'Could not open checkout',
     completeAmount: 'Job amount (₪)',
     leadCharged: 'Lead fee {amount} ₪ accrued (charged when Stripe is active)',
+    until: 'Valid until',
+    upgradeToPro: 'Upgrade to Pro',
+    manageSubscription: 'Manage subscription',
+    leadCreditsThisMonth: 'Lead credits this month',
+  },
+  errors: {
+    somethingWentWrong: 'Something went wrong',
+    tryAgain: 'Try again',
+    teamNotified: 'Our team has been notified. Try refreshing the page.',
+    unauthorized: 'Please sign in',
+    notFound: 'Not found',
+  },
+  seo: {
+    defaultTitle: 'Fixly — Repairs & Professionals',
+    description: 'Find a home repair professional quickly — Fixly',
+    marketplaceHint: 'Local pros for home repairs',
+  },
+  quickRequest: {
+    title: 'Quick request',
+    subtitle: 'Describe the issue — we will match a pro',
+    submit: 'Send quick request',
   },
   contact: { whatsapp: 'WhatsApp' },
   trust: {

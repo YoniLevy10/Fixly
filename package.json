@@ -16,7 +16,7 @@
     "mobile:sync-version": "node scripts/sync-ios-version.mjs",
     "mobile:prepare": "npm run mobile:sync-version && npm run icons:generate && npm run mobile:check && npm run cap:sync:ios",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --import tsx --test tests/unit/bamakor-integration.test.ts",
+    "test:unit": "node --import tsx --test tests/unit/*.test.ts",
     "smoke:phase1": "FIXLY_JOBS_STORE=memory FIXLY_WEBHOOK_DRY_RUN=1 node --import tsx scripts/smoke-phase1.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
@@ -38,6 +38,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwind-merge": "^3.3.1",
+    "web-push": "^3.6.7",
     "zod": "^3.24.4"
   },
   "devDependencies": {
@@ -46,6 +47,7 @@
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "postcss": "^8.5.6",

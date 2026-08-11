@@ -5,8 +5,8 @@ import SWRegister from '@/components/pwa/SWRegister'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Fixly — תיקונים ואנשי מקצוע',
-  description: 'מצא איש מקצוע לתיקון הבית במהירות',
+  title: { default: 'Fixly — Repairs & Professionals', template: '%s | Fixly' },
+  description: 'Find a home repair professional quickly — Fixly',
   applicationName: 'Fixly',
   appleWebApp: {
     capable: true,

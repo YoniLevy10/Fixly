@@ -195,6 +195,8 @@ export const he: MessageTree = {
     reject: 'דחה בקשה',
     startWork: 'התחל עבודה',
     markCompleted: 'סמן כהושלם',
+    proTier: 'מנוי',
+    freeTier: 'מסלול חינם',
   },
   categories: {
     plumbing: 'אינסטלציה',
@@ -292,6 +294,27 @@ export const he: MessageTree = {
     checkoutError: 'לא ניתן לפתוח תשלום כרגע',
     completeAmount: 'סכום העבודה (₪)',
     leadCharged: 'חויב ליד של {amount} ₪ (ייגבה כש-Stripe פעיל)',
+    until: 'בתוקף עד',
+    upgradeToPro: 'שדרוג ל-Pro',
+    manageSubscription: 'ניהול מנוי',
+    leadCreditsThisMonth: 'קרדיטי לידים החודש',
+  },
+  errors: {
+    somethingWentWrong: 'משהו השתבש',
+    tryAgain: 'נסה שוב',
+    teamNotified: 'הצוות שלנו קיבל התראה. נסה לרענן את הדף.',
+    unauthorized: 'יש להתחבר',
+    notFound: 'לא נמצא',
+  },
+  seo: {
+    defaultTitle: 'Fixly — תיקונים ואנשי מקצוע',
+    description: 'מצא איש מקצוע לתיקון הבית במהירות — Fixly',
+    marketplaceHint: 'אנשי מקצוע לתיקוני בית באזורך',
+  },
+  quickRequest: {
+    title: 'בקשה מהירה',
+    subtitle: 'תאר את הבעיה — נמצא לך מקצוען',
+    submit: 'שלח בקשה מהירה',
   },
   contact: {
     whatsapp: 'WhatsApp',
