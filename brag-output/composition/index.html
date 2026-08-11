@@ -42,41 +42,41 @@
         overflow: hidden;
       }
 
-      /* ===== Premium iPhone Pro frame ===== */
+      /* ===== Premium iPhone Pro frame (real 15 Pro ratio ~70.6×146.6) ===== */
       .iphone {
         position: relative;
-        width: 560px;
-        height: 980px;
+        width: 430px;
+        height: 894px; /* 430 × 2.078 */
         flex-shrink: 0;
       }
-      .iphone.sm { width: 460px; height: 780px; }
+      .iphone.sm { width: 350px; height: 728px; }
       .iphone-shell {
         position: absolute; inset: 0;
-        border-radius: 78px;
+        border-radius: 60px;
         background:
           linear-gradient(160deg, #5c5c5e 0%, #2a2a2c 22%, #121214 55%, #1a1a1c 78%, #3d3d40 100%);
         box-shadow:
-          0 50px 120px rgba(15, 23, 41, 0.42),
+          0 40px 90px rgba(15, 23, 41, 0.4),
           0 0 0 1.5px rgba(255,255,255,0.14),
           0 2px 0 rgba(255,255,255,0.18) inset,
           0 -3px 8px rgba(0,0,0,0.55) inset;
       }
-      .iphone.sm .iphone-shell { border-radius: 66px; }
+      .iphone.sm .iphone-shell { border-radius: 50px; }
       .iphone-bezel {
         position: absolute;
-        inset: 11px;
-        border-radius: 68px;
+        inset: 9px;
+        border-radius: 52px;
         background: #050505;
         overflow: hidden;
         box-shadow:
           inset 0 0 0 1px rgba(255,255,255,0.1),
           inset 0 0 18px rgba(0,0,0,0.65);
       }
-      .iphone.sm .iphone-bezel { inset: 10px; border-radius: 57px; }
+      .iphone.sm .iphone-bezel { inset: 8px; border-radius: 44px; }
       .iphone-screen {
         position: absolute;
-        inset: 3px;
-        border-radius: 65px;
+        inset: 2.5px;
+        border-radius: 50px;
         background: #f2f4f7;
         overflow: hidden;
         display: flex;
@@ -84,66 +84,66 @@
         direction: rtl;
         text-align: right;
       }
-      .iphone.sm .iphone-screen { border-radius: 54px; }
+      .iphone.sm .iphone-screen { border-radius: 42px; }
 
       /* Side buttons — titanium */
       .btn-silent {
-        position: absolute; left: -4px; top: 170px; width: 5px; height: 34px;
+        position: absolute; left: -3px; top: 132px; width: 4px; height: 26px;
         border-radius: 2px 0 0 2px;
         background: linear-gradient(90deg, #6a6a6c, #2e2e30);
         box-shadow: -1px 0 0 rgba(255,255,255,0.15);
       }
       .btn-vol-up {
-        position: absolute; left: -4px; top: 240px; width: 5px; height: 68px;
+        position: absolute; left: -3px; top: 186px; width: 4px; height: 52px;
         border-radius: 2px 0 0 2px;
         background: linear-gradient(90deg, #6a6a6c, #2e2e30);
       }
       .btn-vol-down {
-        position: absolute; left: -4px; top: 324px; width: 5px; height: 68px;
+        position: absolute; left: -3px; top: 250px; width: 4px; height: 52px;
         border-radius: 2px 0 0 2px;
         background: linear-gradient(90deg, #6a6a6c, #2e2e30);
       }
       .btn-power {
-        position: absolute; right: -4px; top: 280px; width: 5px; height: 110px;
+        position: absolute; right: -3px; top: 216px; width: 4px; height: 84px;
         border-radius: 0 2px 2px 0;
         background: linear-gradient(270deg, #6a6a6c, #2e2e30);
       }
-      .iphone.sm .btn-silent { top: 140px; height: 28px; }
-      .iphone.sm .btn-vol-up { top: 198px; height: 56px; }
-      .iphone.sm .btn-vol-down { top: 268px; height: 56px; }
-      .iphone.sm .btn-power { top: 230px; height: 90px; }
+      .iphone.sm .btn-silent { top: 108px; height: 22px; }
+      .iphone.sm .btn-vol-up { top: 152px; height: 44px; }
+      .iphone.sm .btn-vol-down { top: 206px; height: 44px; }
+      .iphone.sm .btn-power { top: 178px; height: 70px; }
 
       /* Dynamic Island */
       .island {
         position: absolute;
-        top: 16px; left: 50%;
-        width: 136px; height: 38px;
-        margin-left: -68px;
+        top: 12px; left: 50%;
+        width: 104px; height: 30px;
+        margin-left: -52px;
         background: #000;
-        border-radius: 22px;
+        border-radius: 18px;
         z-index: 20;
         box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.4);
       }
-      .iphone.sm .island { top: 14px; width: 116px; height: 33px; margin-left: -58px; }
+      .iphone.sm .island { top: 11px; width: 90px; height: 26px; margin-left: -45px; }
       .island::after {
         content: "";
-        position: absolute; right: 16px; top: 12px;
-        width: 11px; height: 11px; border-radius: 999px;
+        position: absolute; right: 12px; top: 9px;
+        width: 9px; height: 9px; border-radius: 999px;
         background: radial-gradient(circle at 35% 35%, #2a5a8c, #071018 70%);
         box-shadow: inset 0 0 2px rgba(100,170,230,0.4);
       }
 
       /* iOS status bar */
       .status-bar {
-        height: 54px; flex-shrink: 0;
+        height: 44px; flex-shrink: 0;
         display: flex; align-items: flex-end; justify-content: space-between;
-        padding: 0 28px 8px; font-size: 15px; font-weight: 700; color: #0f1729;
+        padding: 0 22px 6px; font-size: 12px; font-weight: 700; color: #0f1729;
         position: relative; z-index: 5;
       }
-      .iphone.sm .status-bar { height: 48px; padding: 0 24px 6px; font-size: 13px; }
-      .status-icons { display: flex; align-items: center; gap: 6px; font-size: 13px; letter-spacing: -0.02em; }
+      .iphone.sm .status-bar { height: 40px; padding: 0 18px 5px; font-size: 11px; }
+      .status-icons { display: flex; align-items: center; gap: 5px; font-size: 11px; letter-spacing: -0.02em; }
       .bat {
-        width: 26px; height: 12px; border: 1.5px solid #0f1729; border-radius: 3px;
+        width: 22px; height: 11px; border: 1.5px solid #0f1729; border-radius: 3px;
         position: relative; opacity: 0.9;
       }
       .bat::before {
@@ -151,57 +151,57 @@
         background: #0f1729; border-radius: 1px;
       }
       .bat::after {
-        content: ""; position: absolute; right: -4px; top: 3px;
-        width: 2px; height: 5px; background: #0f1729; border-radius: 0 1px 1px 0; opacity: 0.7;
+        content: ""; position: absolute; right: -3px; top: 3px;
+        width: 2px; height: 4px; background: #0f1729; border-radius: 0 1px 1px 0; opacity: 0.7;
       }
 
       .home-ind {
-        position: absolute; bottom: 8px; left: 50%; width: 126px; height: 5px;
-        margin-left: -63px; background: #0f1729; border-radius: 99px; opacity: 0.35; z-index: 15;
+        position: absolute; bottom: 7px; left: 50%; width: 108px; height: 4px;
+        margin-left: -54px; background: #0f1729; border-radius: 99px; opacity: 0.35; z-index: 15;
       }
-      .iphone.sm .home-ind { width: 108px; margin-left: -54px; bottom: 7px; }
+      .iphone.sm .home-ind { width: 92px; margin-left: -46px; bottom: 6px; }
 
       .app-bar {
-        height: 44px; display: flex; align-items: center; justify-content: space-between;
-        padding: 0 16px; background: #fff; border-bottom: 1px solid rgba(15,23,41,0.06);
-        font-size: 14px; font-weight: 700; color: #0f1729; flex-shrink: 0;
+        height: 40px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 12px; background: #fff; border-bottom: 1px solid rgba(15,23,41,0.06);
+        font-size: 13px; font-weight: 700; color: #0f1729; flex-shrink: 0;
       }
       .avatar {
-        width: 30px; height: 30px; border-radius: 999px; background: #123563; color: #fff;
-        display: grid; place-items: center; font-weight: 800; font-size: 13px;
+        width: 26px; height: 26px; border-radius: 999px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 800; font-size: 12px;
       }
       .phone-body {
-        padding: 10px 12px 0; flex: 1; background: #f2f4f7; overflow: hidden;
+        padding: 8px 10px 0; flex: 1; background: #f2f4f7; overflow: hidden;
         display: flex; flex-direction: column; position: relative;
-        padding-bottom: 58px;
+        padding-bottom: 52px;
       }
-      .phone-body.no-nav { padding-bottom: 18px; }
+      .phone-body.no-nav { padding-bottom: 14px; }
       .scroll-fill { flex: 1; overflow: hidden; }
 
       /* Bottom nav — matches Fixly BottomNav */
       .bottom-nav {
         position: absolute; left: 0; right: 0; bottom: 0;
-        height: 58px; background: #fff;
+        height: 52px; background: #fff;
         border-top: 2px solid #e5e7eb;
         display: flex; align-items: center; justify-content: space-around;
-        padding: 0 6px 10px; z-index: 12;
+        padding: 0 4px 8px; z-index: 12;
         box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
       }
       .bn-item {
         display: flex; flex-direction: column; align-items: center; gap: 1px;
-        font-size: 10px; font-weight: 700; color: rgba(15,23,41,0.55); min-width: 52px;
+        font-size: 9px; font-weight: 700; color: rgba(15,23,41,0.55); min-width: 44px;
       }
       .bn-item.active { color: #123563; }
-      .bn-item .ico { font-size: 16px; line-height: 1; }
+      .bn-item .ico { font-size: 14px; line-height: 1; }
       .bn-fab-wrap {
-        display: flex; flex-direction: column; align-items: center; margin-top: -18px;
+        display: flex; flex-direction: column; align-items: center; margin-top: -16px;
       }
       .bn-fab {
-        width: 44px; height: 44px; border-radius: 999px; background: #f59e0b; color: #fff;
-        display: grid; place-items: center; font-size: 24px; font-weight: 800;
+        width: 40px; height: 40px; border-radius: 999px; background: #f59e0b; color: #fff;
+        display: grid; place-items: center; font-size: 22px; font-weight: 800;
         border: 3px solid #fff; box-shadow: 0 6px 16px rgba(245,158,11,0.45);
       }
-      .bn-fab-label { font-size: 9px; font-weight: 800; color: #c2410c; margin-top: 1px; }
+      .bn-fab-label { font-size: 8px; font-weight: 800; color: #c2410c; margin-top: 1px; }
 
       .loc-line {
         display: flex; align-items: center; justify-content: center; gap: 3px;
@@ -267,16 +267,16 @@
         display: flex; gap: 8px; overflow: hidden; margin-top: 4px;
       }
       .feat-card {
-        flex: 0 0 118px; background: #fff; border-radius: 14px; border: 1px solid #f3f4f6;
-        padding: 10px 8px; text-align: center; box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+        flex: 0 0 102px; background: #fff; border-radius: 14px; border: 1px solid #f3f4f6;
+        padding: 8px 6px; text-align: center; box-shadow: 0 2px 8px rgba(15,23,41,0.04);
       }
       .feat-av {
-        width: 44px; height: 44px; border-radius: 999px; background: #123563; color: #fff;
-        display: grid; place-items: center; font-weight: 900; font-size: 16px; margin: 0 auto 6px;
+        width: 38px; height: 38px; border-radius: 999px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 900; font-size: 14px; margin: 0 auto 5px;
       }
-      .feat-name { font-size: 11px; font-weight: 800; color: #0f1729; }
-      .feat-title { font-size: 9px; color: rgba(15,23,41,0.55); font-weight: 600; margin-top: 2px; }
-      .feat-stars { font-size: 9px; color: #f59e0b; margin-top: 3px; }
+      .feat-name { font-size: 10px; font-weight: 800; color: #0f1729; }
+      .feat-title { font-size: 8px; color: rgba(15,23,41,0.55); font-weight: 600; margin-top: 2px; }
+      .feat-stars { font-size: 8px; color: #f59e0b; margin-top: 3px; }
       .season-row { display: flex; gap: 6px; overflow: hidden; margin-bottom: 8px; }
       .season-chip {
         flex-shrink: 0; font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 999px;
@@ -323,21 +323,21 @@
       }
 
       .duo {
-        display: flex; flex-direction: column; gap: 18px; align-items: center;
+        display: flex; flex-direction: column; gap: 28px; align-items: center;
       }
       .push {
-        position: absolute; top: 86px; left: 50%; width: 480px; margin-left: -240px;
-        background: rgba(255,255,255,0.97); border-radius: 24px; padding: 18px 20px;
-        box-shadow: 0 22px 55px rgba(15,23,41,0.3); direction: rtl; text-align: right;
+        position: absolute; top: 120px; left: 50%; width: 400px; margin-left: -200px;
+        background: rgba(255,255,255,0.97); border-radius: 20px; padding: 14px 16px;
+        box-shadow: 0 18px 44px rgba(15,23,41,0.28); direction: rtl; text-align: right;
         border: 1px solid rgba(18,53,99,0.08); z-index: 30;
       }
 
       .hero {
-        background: #123563; border-radius: 16px; padding: 10px 12px; color: #fff;
-        position: relative; overflow: hidden; min-height: 0; margin-bottom: 7px;
+        background: #123563; border-radius: 14px; padding: 9px 10px; color: #fff;
+        position: relative; overflow: hidden; min-height: 0; margin-bottom: 6px;
       }
-      .hero h2 { font-size: 20px; font-weight: 900; line-height: 1.15; margin-bottom: 3px; }
-      .hero p { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.3; margin-bottom: 7px; }
+      .hero h2 { font-size: 17px; font-weight: 900; line-height: 1.15; margin-bottom: 3px; }
+      .hero p { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.3; margin-bottom: 6px; }
       .section-title { margin: 4px 2px 5px; font-size: 12px; font-weight: 800; color: #0f1729; }
       .cta-orange {
         margin-top: 0; margin-bottom: 7px; background: #b45309; color: #fff;
@@ -366,7 +366,7 @@
         border: 3px solid #f59e0b; position: relative;
       }
       .cta.green { background: #047857; border-color: #34d399; }
-      .map-panel { height: 150px !important; }
+      .map-panel { height: 128px !important; }
       .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .cat {
         background: #fff; border: 2px solid rgba(18,53,99,0.08); border-radius: 16px;
