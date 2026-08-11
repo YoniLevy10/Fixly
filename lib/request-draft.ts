@@ -13,9 +13,9 @@ export type RequestDraft = {
 
 export function loadRequestDraft(): RequestDraft | null {
   if (typeof window === 'undefined') return null
+  const raw = localStorage.getItem(DRAFT_KEY)
+  if (!raw) return null
   try {
-    const raw = localStorage.getItem(DRAFT_KEY)
-    if (!raw) return null
     return JSON.parse(raw) as RequestDraft
   } catch {
     return null

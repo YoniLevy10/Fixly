@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
-import { getReviewsByProfessionalId } from '@/mock/reviews'
 import {
   supabaseCreateReview,
   supabaseListReviewsByProfessional,
@@ -21,11 +20,7 @@ export async function GET(request: Request) {
     return NextResponse.json(reviews ?? [])
   }
 
-  if (resolveDataBackend() === 'mock') {
-    return NextResponse.json(getReviewsByProfessionalId(professionalId))
-  }
-
-  return NextResponse.json([])
+  return NextResponse.json({ error: 'No data backend' }, { status: 503 })
 }
 
 export async function POST(request: Request) {

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { getRequestById, updateRequestStatus } from '@/lib/data/request-store'
 import {
   supabaseGetRequestById,
   supabaseUpdateRequest,
@@ -19,6 +18,7 @@ import { trackError } from '@/lib/monitoring/track-error'
 import type { RequestStatus } from '@/shared/constants/request-status'
 import { emitWebhookForRequestId } from '@/lib/integrations/bamakor/jobs-service'
 import { toApiStatus } from '@/lib/integrations/bamakor/status-map'
+import { fulfillReferralReward } from '@/lib/referrals/fulfill-reward'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -30,14 +30,6 @@ export async function GET(_request: Request, context: RouteContext) {
     const fromSupabase = await supabaseGetRequestById(id)
     if (fromSupabase) return NextResponse.json(fromSupabase)
     return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
-  }
-
-  if (backend === 'mock') {
-    const item = getRequestById(id)
-    if (!item) {
-      return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
-    }
-    return NextResponse.json(item)
   }
 
   return NextResponse.json({ error: 'No data backend' }, { status: 503 })
@@ -82,6 +74,9 @@ export async function PATCH(request: Request, context: RouteContext) {
         if (status === 'accepted' && existing.professionalId) {
           await recordProResponseTime(existing.professionalId, existing.createdAt)
         }
+        if (status === 'completed' && existing.customerId) {
+          await fulfillReferralReward(existing.customerId, id)
+        }
         if (featureFlags.monetization && existing.professionalId) {
           if (status === 'accepted') {
             const lead = await handleLeadOnAccept(existing.professionalId, id)
@@ -107,24 +102,6 @@ export async function PATCH(request: Request, context: RouteContext) {
         return NextResponse.json({ ...fromSupabase, billing })
       }
       return NextResponse.json({ error: 'לא נמצא או אין הרשאה' }, { status: 404 })
-    }
-
-    if (backend === 'mock') {
-      const existing = getRequestById(id)
-      if (existing && !canTransition(existing.status as RequestStatus, status)) {
-        return NextResponse.json(
-          { error: `מעבר סטטוס לא חוקי: ${existing.status} → ${status}` },
-          { status: 409 },
-        )
-      }
-
-      const updated = updateRequestStatus(id, status, {
-        cancellationReason,
-      })
-      if (!updated) {
-        return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
-      }
-      return NextResponse.json(updated)
     }
 
     return NextResponse.json({ error: 'No data backend' }, { status: 503 })

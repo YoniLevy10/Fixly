@@ -6,15 +6,24 @@
   "secondaryCategory": "UTILITIES",
   "version": "0.1.0",
   "build": "1",
+  "copyright": "© 2026 Fixly. All rights reserved.",
   "privacyPolicyUrl": "https://fixly.vercel.app/privacy",
-  "supportUrl": "https://fixly.vercel.app/profile",
+  "supportUrl": "https://fixly.vercel.app/about",
   "marketingUrl": "https://fixly.vercel.app",
-  "descriptionHe": "מצא איש מקצוע לתיקון הבית, שלח בקשה ועקוב אחר הסטטוס בזמן אמת.",
-  "descriptionEn": "Find home repair professionals, submit requests, and track status in real time.",
-  "keywords": ["תיקונים", "אינסטלטור", "חשמלאי", "בית", "שירות"],
+  "descriptionHe": "Fixly מחברת בין לקוחות לאנשי מקצוע לתיקוני בית.\n\n• מצאו אינסטלטור, חשמלאי, טכנאי מזגנים ועוד\n• שלחו בקשת שירות עם תיאור ותמונות\n• עקבו אחרי הסטטוס והמיקום בזמן אמת\n• שוחחו עם איש המקצוע בצ'אט\n• שלמו בבטחה ודרגו את השירות\n\nהדרך המהירה והפשוטה לתקן את הבית.",
+  "descriptionEn": "Fixly connects customers with trusted home-repair professionals.\n\n• Find plumbers, electricians, AC techs, and more\n• Submit a service request with details and photos\n• Track status and live location in real time\n• Chat with your professional in-app\n• Pay securely and rate the job\n\nThe fast, simple way to get home fixes done.",
+  "keywords": ["תיקונים", "אינסטלטור", "חשמלאי", "בית", "שירות", "איש מקצוע", "טכנאי", "מתקן"],
   "screenshotsRequired": {
     "iphone67": "1290 x 2796 — minimum 3 screenshots",
     "iphone65": "1284 x 2778 — optional legacy size"
   },
-  "notes": "Fill URLs after production domain is final. Run npm run mobile:check before Archive."
+  "reviewerNotes": {
+    "demoAccount": {
+      "email": "reviewer@fixly.app",
+      "password": "SET_IN_APP_STORE_CONNECT",
+      "note": "Create this test user in App Store Connect / Supabase Auth before review. Sign in from the Profile tab."
+    },
+    "instructions": "Open the app, sign in with the demo account, browse professionals, create a request, and open tracking. Pro flows use the same account after claiming a professional profile."
+  },
+  "notes": "Fill URLs after production domain is final. Run npm run mobile:check before Archive. Configure TRANZILA_TERMINAL + TRANZILA_API_* in Vercel for billing."
 }

@@ -7,12 +7,18 @@ export type AnalyticsEvent =
   | 'pro_join_submitted'
   | 'language_changed'
   | 'share_request'
+  | 'job_checkout_started'
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void
+  }
+}
 
 export function track(event: AnalyticsEvent, props?: Record<string, string | number | boolean>) {
   if (!featureFlags.analytics) return
   if (typeof window !== 'undefined' && 'gtag' in window) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(window as any).gtag?.('event', event, props)
+    window.gtag?.('event', event, props)
   }
   if (process.env.NODE_ENV === 'development') {
     console.debug('[analytics]', event, props)

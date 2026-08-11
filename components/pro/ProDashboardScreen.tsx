@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   CheckCircle,
   XCircle,
@@ -56,6 +56,36 @@ export default function ProDashboardScreen() {
   const [selectedRequest, setSelectedRequest] = useState<MockRequest | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
+  const [proBilling, setProBilling] = useState<{
+    subscription_tier: string
+    lead_credits: number
+    subscription_until: string | null
+    stripe_customer_id: string | null
+  } | null>(null)
+
+  useEffect(() => {
+    if (user.role !== 'professional') return
+    let cancelled = false
+    fetch('/api/pro/billing-status')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setProBilling(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [user.role])
+
+  const openBillingPortal = async () => {
+    const res = await fetch('/api/billing/portal', { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.url) {
+      alert(data.error ?? 'שגיאה בפתיחת פורטל החיוב')
+      return
+    }
+    window.location.href = data.url
+  }
 
   const stats = useMemo(
     () => ({
@@ -200,6 +230,56 @@ export default function ProDashboardScreen() {
           <p className="text-xs text-green-600 mt-0.5">{t('pro.statCompleted')}</p>
         </div>
       </div>
+
+      {proBilling && (
+        <div className="bg-white rounded-2xl border border-border p-4 mb-6">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">{t('pro.proTier')}</p>
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-bold',
+                  proBilling.subscription_tier === 'pro' ||
+                    proBilling.subscription_tier === 'pro_plus'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-foreground/70',
+                )}
+              >
+                {proBilling.subscription_tier === 'pro' ||
+                proBilling.subscription_tier === 'pro_plus'
+                  ? t('monetization.tierPro')
+                  : t('monetization.tierFree')}
+              </span>
+            </div>
+            {proBilling.subscription_tier === 'pro' ||
+            proBilling.subscription_tier === 'pro_plus' ? (
+              <button
+                type="button"
+                onClick={openBillingPortal}
+                className="text-sm font-semibold text-primary hover:underline"
+              >
+                {t('monetization.manageSubscription')}
+              </button>
+            ) : (
+              <Link
+                href="/pro/pricing"
+                className="text-sm font-semibold bg-primary text-white px-3 py-2 rounded-xl"
+              >
+                {t('monetization.upgradeToPro')}
+              </Link>
+            )}
+          </div>
+          <p className="text-sm">
+            {t('monetization.leadCreditsThisMonth')}:{' '}
+            <span className="font-bold">{proBilling.lead_credits}</span>
+          </p>
+          {proBilling.subscription_until && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('monetization.until')} {formatDate(locale, proBilling.subscription_until)}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="flex gap-1 bg-muted rounded-xl p-1 mb-5 overflow-x-auto">
         {TABS.map((tab) => (

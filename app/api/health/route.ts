@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { isSupabaseEnabled, shouldUseMockFallback } from '@/lib/data/config'
+import { isSupabaseEnabled } from '@/lib/data/config'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic'
 
 type Check = { ok: boolean; detail?: string }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const verbose = new URL(request.url).searchParams.get('verbose') === '1'
   const backend = resolveDataBackend()
   const envValidation = validateProductionEnv()
   const checks: Record<string, Check> = {
@@ -17,9 +18,7 @@ export async function GET() {
       ok: isSupabaseEnabled(),
       detail: isSupabaseEnabled()
         ? 'NEXT_PUBLIC_SUPABASE_URL + ANON_KEY'
-        : shouldUseMockFallback()
-          ? 'dev mock fallback'
-          : 'missing env',
+        : 'missing env',
     },
     demo_mode: {
       ok: !isDemoDataMode(),
@@ -33,10 +32,16 @@ export async function GET() {
       ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
       detail: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'missing',
     },
-    stripe: {
-      ok: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
+    tranzila: {
+      ok: Boolean(
+        process.env.TRANZILA_TERMINAL &&
+          process.env.TRANZILA_API_APP_KEY &&
+          process.env.TRANZILA_API_SECRET_KEY,
+      ),
       detail:
-        process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET
+        process.env.TRANZILA_TERMINAL &&
+        process.env.TRANZILA_API_APP_KEY &&
+        process.env.TRANZILA_API_SECRET_KEY
           ? 'configured'
           : 'partial or missing',
     },
@@ -72,8 +77,10 @@ export async function GET() {
   }
 
   if (backend !== 'supabase') {
+    const status = backend === 'mock' ? 'degraded' : 'error'
+    if (!verbose) return NextResponse.json({ status })
     return NextResponse.json({
-      status: backend === 'mock' ? 'degraded' : 'error',
+      status,
       mode: backend,
       demoMode: isDemoDataMode(),
       checks,
@@ -83,6 +90,9 @@ export async function GET() {
 
   const supabase = await createServerSupabaseClient()
   if (!supabase) {
+    if (!verbose) {
+      return NextResponse.json({ status: 'error' }, { status: 500 })
+    }
     return NextResponse.json({ status: 'error', mode: 'none', checks }, { status: 500 })
   }
 
@@ -151,9 +161,14 @@ export async function GET() {
     checks.supabase.ok
 
   const allOk = Object.values(checks).every((c) => c.ok)
+  const status = criticalOk ? (allOk ? 'ok' : 'degraded') : 'error'
+
+  if (!verbose) {
+    return NextResponse.json({ status })
+  }
 
   return NextResponse.json({
-    status: criticalOk ? (allOk ? 'ok' : 'degraded') : 'error',
+    status,
     mode: 'supabase',
     backend,
     demoMode: isDemoDataMode(),

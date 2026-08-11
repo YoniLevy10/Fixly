@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Fixly — תיקונים ואנשי מקצוע',
+    name: 'Fixly — Repairs & Professionals',
     short_name: 'Fixly',
-    description: 'מצא איש מקצוע לתיקון הבית במהירות',
+    description: 'Find a home repair professional quickly',
     start_url: '/',
     display: 'standalone',
     background_color: '#fafafa',

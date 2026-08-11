@@ -114,6 +114,9 @@ export async function handleStripeWebhookEvent(
         subscription_tier: 'pro',
         subscription_until: until.toISOString(),
         lead_credits: monetizationConfig.freeLeadCreditsPerMonth,
+        ...(asString(object.customer)
+          ? { stripe_customer_id: asString(object.customer) }
+          : {}),
       })
       .eq('id', professionalId)
 
@@ -139,6 +142,9 @@ export async function handleStripeWebhookEvent(
         subscription_tier: active ? 'pro' : 'free',
         subscription_until: active ? periodEndIso(object) : null,
         lead_credits: active ? monetizationConfig.freeLeadCreditsPerMonth : 0,
+        ...(asString(object.customer)
+          ? { stripe_customer_id: asString(object.customer) }
+          : {}),
       })
       .eq('id', professionalId)
 

@@ -16,11 +16,18 @@ if (!HAS_UPSTASH && process.env.NODE_ENV === 'production') {
 }
 
 export function getClientIp(request: Request): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    'unknown'
-  )
+  const vercelForwarded = request.headers.get('x-vercel-forwarded-for')?.trim()
+  if (vercelForwarded) {
+    return vercelForwarded.split(',')[0]?.trim() || vercelForwarded
+  }
+
+  const forwarded = request.headers.get('x-forwarded-for')
+  if (forwarded) {
+    const parts = forwarded.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length > 0) return parts[parts.length - 1]
+  }
+
+  return request.headers.get('x-real-ip') || 'unknown'
 }
 
 export function checkMemoryRateLimit(key: string, limit: number, windowMs: number) {

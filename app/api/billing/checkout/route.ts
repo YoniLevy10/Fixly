@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { createProSubscriptionCheckout } from '@/lib/stripe/checkout'
+import { createProSubscriptionCheckout } from '@/lib/tranzila/checkout'
 import { publicEnv } from '@/lib/env/public-env'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
@@ -19,14 +19,14 @@ export async function POST(request: Request) {
 
   const supabase = await createServerSupabaseClient()
   if (!supabase) {
-    return NextResponse.json({ error: 'Supabase לא מוגדר' }, { status: 503 })
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 })
   }
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'יש להתחבר' }, { status: 401 })
+    return NextResponse.json({ error: 'Please log in' }, { status: 401 })
   }
 
   const { data: pro } = await supabase
@@ -37,18 +37,18 @@ export async function POST(request: Request) {
 
   if (!pro?.id) {
     return NextResponse.json(
-      { error: 'יש לקשר פרופיל מקצוע לפני רכישת מנוי' },
+      { error: 'Link a professional profile before subscribing' },
       { status: 400 }
     )
   }
 
   try {
     const base = publicEnv.appUrl || new URL(request.url).origin
-    const result = await createProSubscriptionCheckout(
-      pro.id,
-      `${base}/pro/pricing?success=1`,
-      `${base}/pro/pricing?canceled=1`,
-    )
+    const result = await createProSubscriptionCheckout({
+      professionalId: pro.id,
+      successUrl: `${base}/pro/pricing?success=1`,
+      cancelUrl: `${base}/pro/pricing?canceled=1`,
+    })
 
     if (!result.configured) {
       return NextResponse.json({
@@ -60,6 +60,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ configured: true, url: result.url })
   } catch (error) {
     trackError(error, { route: 'POST /api/billing/checkout' })
-    return NextResponse.json({ error: 'שגיאה ביצירת תשלום' }, { status: 500 })
+    return NextResponse.json({ error: 'Checkout creation failed' }, { status: 500 })
   }
 }

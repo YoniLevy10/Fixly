@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
 
 /** Parse FIXLY_API_KEYS (comma-separated) or single FIXLY_API_KEY */
@@ -22,31 +23,34 @@ export function extractApiKey(request: Request): string | null {
   return null
 }
 
+function safeKeyCompare(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a)
+  const bBuf = Buffer.from(b)
+  if (aBuf.length !== bBuf.length) return false
+  try {
+    return timingSafeEqual(aBuf, bBuf)
+  } catch {
+    return false
+  }
+}
+
 export function assertApiKey(request: Request):
   | { ok: true; key: string; bamakorClientId: string | null }
   | { ok: false; response: NextResponse } {
   const keys = getConfiguredApiKeys()
   const provided = extractApiKey(request)
 
-  // Dev / test: allow when no keys configured and not production
   if (keys.length === 0) {
-    if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
-      return {
-        ok: false,
-        response: NextResponse.json(
-          { ok: false, error: 'FIXLY_API_KEYS not configured' },
-          { status: 503 },
-        ),
-      }
-    }
     return {
-      ok: true,
-      key: provided ?? 'dev',
-      bamakorClientId: request.headers.get('x-bamakor-client-id'),
+      ok: false,
+      response: NextResponse.json(
+        { ok: false, error: 'FIXLY_API_KEYS not configured' },
+        { status: 503 },
+      ),
     }
   }
 
-  if (!provided || !keys.includes(provided)) {
+  if (!provided || !keys.some((k) => safeKeyCompare(k, provided))) {
     return {
       ok: false,
       response: NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 }),

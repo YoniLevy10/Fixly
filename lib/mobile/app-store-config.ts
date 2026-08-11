@@ -13,6 +13,7 @@ export const APP_STORE_CONFIG = {
   /** Public privacy URL for App Store Connect (must be HTTPS in production) */
   privacyPolicyPath: '/privacy',
   termsPath: '/terms',
+  supportPath: '/about',
   /** Domains the WebView may navigate to (auth, API, CDN) */
   allowedNavigationHosts: [
     'fixly.vercel.app',
@@ -30,4 +31,9 @@ export function privacyPolicyUrl(baseUrl: string): string {
 export function termsUrl(baseUrl: string): string {
   const base = baseUrl.replace(/\/$/, '')
   return `${base}${APP_STORE_CONFIG.termsPath}`
+}
+
+export function supportUrl(baseUrl: string): string {
+  const base = baseUrl.replace(/\/$/, '')
+  return `${base}${APP_STORE_CONFIG.supportPath}`
 }

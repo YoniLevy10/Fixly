@@ -68,11 +68,11 @@ export default function QuickRequestPage() {
             onChange={(e) => setCategorySlug(e.target.value)}
             className="mt-1 w-full border border-border rounded-xl px-3 py-2"
           >
-            <option value="plumbing">אינסטלטור</option>
-            <option value="electricity">חשמלאי</option>
-            <option value="ac">מיזוג</option>
-            <option value="cleaning">ניקיון</option>
-            <option value="painting">צבעי</option>
+            <option value="plumbing">{t('categories.plumbing')}</option>
+            <option value="electricity">{t('categories.electricity')}</option>
+            <option value="ac">{t('categories.ac')}</option>
+            <option value="cleaning">{t('categories.cleaning')}</option>
+            <option value="painting">{t('categories.painting')}</option>
           </select>
         </div>
         <div>
