@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server'
 import {
-  createRequest,
-  listRequests,
-  listRequestsByCustomer,
-  listRequestsByProfessional,
-} from '@/lib/data/request-store'
-import {
   supabaseCreateRequest,
   supabaseListRequests,
 } from '@/lib/data/supabase-requests'
@@ -81,19 +75,6 @@ export async function GET(request: Request) {
     return NextResponse.json(rows)
   }
 
-  if (backend === 'mock') {
-    let data = listRequests()
-    if (customerId) data = listRequestsByCustomer(customerId)
-    if (professionalId) data = listRequestsByProfessional(professionalId)
-    if (limit > 0) {
-      const slice = data.slice(offset, offset + limit + 1)
-      const hasMore = slice.length > limit
-      const items = hasMore ? slice.slice(0, limit) : slice
-      return NextResponse.json({ items, hasMore, offset })
-    }
-    return NextResponse.json(data)
-  }
-
   return NextResponse.json({ error: 'No data backend' }, { status: 503 })
 }
 
@@ -125,15 +106,6 @@ export async function POST(request: Request) {
         return NextResponse.json(fromSupabase, { status: 201 })
       }
       return NextResponse.json({ error: 'יש להתחבר כדי לשלוח בקשה' }, { status: 401 })
-    }
-
-    if (backend === 'mock') {
-      const created = createRequest({
-        ...body,
-        customerId: body.customerId || 'guest@fixly.app',
-        customerName: body.customerName || 'אורח',
-      })
-      return NextResponse.json(created, { status: 201 })
     }
 
     return NextResponse.json({ error: 'No data backend' }, { status: 503 })

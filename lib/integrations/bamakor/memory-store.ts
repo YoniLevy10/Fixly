@@ -61,19 +61,22 @@ type MemJob = {
   updated_at: string
 }
 
-const g = globalThis as unknown as {
-  __fixlyJobMem?: {
-    categories: MemCategory[]
-    providers: MemProvider[]
-    jobs: Map<string, MemJob>
-    offers: MemOffer[]
-    events: MemEvent[]
-  }
+declare global {
+  // eslint-disable-next-line no-var
+  var __fixlyJobMem:
+    | {
+        categories: MemCategory[]
+        providers: MemProvider[]
+        jobs: Map<string, MemJob>
+        offers: MemOffer[]
+        events: MemEvent[]
+      }
+    | undefined
 }
 
 function store() {
-  if (!g.__fixlyJobMem) {
-    g.__fixlyJobMem = {
+  if (!globalThis.__fixlyJobMem) {
+    globalThis.__fixlyJobMem = {
       categories: PHASE1_CATEGORY_SEEDS.map((c) => ({
         id: randomUUID(),
         slug: c.slug,
@@ -85,11 +88,11 @@ function store() {
       events: [],
     }
   }
-  return g.__fixlyJobMem
+  return globalThis.__fixlyJobMem
 }
 
 export function memoryReset() {
-  g.__fixlyJobMem = undefined
+  globalThis.__fixlyJobMem = undefined
   store()
 }
 

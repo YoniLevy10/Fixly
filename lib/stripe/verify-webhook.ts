@@ -52,6 +52,6 @@ export function verifyStripeWebhook(
     const event = JSON.parse(payload) as Record<string, unknown>
     return { ok: true, event }
   } catch {
-    return { ok: false, error: 'invalid JSON payload' }
+    return { ok: false, error: 'Invalid JSON payload' }
   }
 }

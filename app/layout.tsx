@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import AppLayout from '@/components/layout/AppLayout'
 import AppProviders from '@/components/providers/AppProviders'
+import SWRegister from '@/components/pwa/SWRegister'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({
         <AppProviders>
           <AppLayout>{children}</AppLayout>
         </AppProviders>
+        <SWRegister />
       </body>
     </html>
   )

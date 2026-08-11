@@ -31,6 +31,28 @@ export async function POST(_request: Request, context: RouteContext) {
   const admin = getAdminSupabaseClient()
   if (!admin) return NextResponse.json({ error: 'Server config' }, { status: 503 })
 
+  const { data: billing } = await admin
+    .from('professionals')
+    .select('subscription_tier, lead_credits, subscription_until')
+    .eq('id', pro.id)
+    .maybeSingle()
+
+  if (billing) {
+    const tier = (billing.subscription_tier as string) || 'free'
+    const subActive =
+      billing.subscription_until &&
+      new Date(billing.subscription_until as string) > new Date()
+    const credits = (billing.lead_credits as number) ?? 0
+    const isPaidTier = tier === 'pro' || tier === 'pro_plus'
+
+    if (!isPaidTier && !subActive && credits <= 0) {
+      return NextResponse.json(
+        { error: 'אין קרדיטי לידים — יש לשדרג מנוי', upgradeUrl: '/pro/pricing' },
+        { status: 402 },
+      )
+    }
+  }
+
   const { data: req } = await admin
     .from('requests')
     .select('id, status, match_mode, created_at, professional_id, callback_url')

@@ -19,16 +19,12 @@ const config: CapacitorConfig = {
         url: serverUrl,
         cleartext: serverUrl!.startsWith('http://'),
         androidScheme: 'https',
-        allowNavigation: APP_STORE_CONFIG.allowedNavigationHosts.map(
-          (h) => `https://${h}`
-        ),
+        allowNavigation: [...APP_STORE_CONFIG.allowedNavigationHosts],
       }
     : {
         url: productionUrl,
         cleartext: false,
-        allowNavigation: APP_STORE_CONFIG.allowedNavigationHosts.map(
-          (h) => `https://${h}`
-        ),
+        allowNavigation: [...APP_STORE_CONFIG.allowedNavigationHosts],
       },
   ios: {
     contentInset: 'automatic',

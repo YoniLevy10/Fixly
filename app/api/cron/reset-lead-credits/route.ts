@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET
   const authHeader = request.headers.get('authorization')
 
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  if (!secret || authHeader !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { error } = await supabase.rpc('reset_monthly_lead_credits')
+    const { error } = await (supabase.rpc as any)('reset_monthly_lead_credits')
     if (error) {
       trackError(error, { route: 'GET /api/cron/reset-lead-credits' })
       return NextResponse.json({ error: error.message }, { status: 500 })
