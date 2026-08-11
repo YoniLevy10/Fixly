@@ -46,10 +46,10 @@
       .iphone {
         position: relative;
         width: 560px;
-        height: 1020px;
+        height: 980px;
         flex-shrink: 0;
       }
-      .iphone.sm { width: 460px; height: 820px; }
+      .iphone.sm { width: 460px; height: 780px; }
       .iphone-shell {
         position: absolute; inset: 0;
         border-radius: 78px;
@@ -900,6 +900,12 @@
                       <div class="action-btn">בקשה חדשה</div>
                       <div class="action-btn">שמור מועדף</div>
                     </div>
+                    <div class="section-title">מקצוענים דומים</div>
+                    <div class="feat-row">
+                      <div class="feat-card"><div class="feat-av" style="background:#047857">א</div><div class="feat-name">אבי צנרת</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★★ 4.7</div></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#c2410c">ר</div><div class="feat-name">רון תיקונים</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★☆ 4.6</div></div>
+                      <div class="feat-card"><div class="feat-av">י</div><div class="feat-name">יוסי ברזים</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★★ 4.8</div></div>
+                    </div>
                   </div>
 
                 <div class="bottom-nav">
@@ -985,13 +991,13 @@
       tl.fromTo("#cta1", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.in" }, 2.4);
 
       tl.fromTo("#p2", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 4.05);
-      tl.fromTo("#cats-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 4.2);
-      [4.5, 5.0, 5.5, 6.0].forEach(function (t, i) {
-        tl.fromTo("#c" + (i + 1), { y: 24, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.4)" }, t);
+      tl.fromTo("#cats-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 4.15);
+      [4.35, 4.5, 4.65, 4.8].forEach(function (t, i) {
+        tl.fromTo("#c" + (i + 1), { y: 18, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 0.28, ease: "back.out(1.4)" }, t);
       });
-      tl.fromTo("#feat-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 6.5);
-      tl.fromTo("#pc1", { x: 24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35 }, 6.8);
-      tl.fromTo("#pc2", { x: 24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35 }, 7.15);
+      tl.fromTo("#feat-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.28 }, 5.0);
+      tl.fromTo("#pc1", { x: 18, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3 }, 5.15);
+      tl.fromTo("#pc2", { x: 18, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3 }, 5.35);
 
       tl.fromTo("#p3a", { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.05);
       tl.fromTo("#p3b", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.2);
@@ -1010,8 +1016,8 @@
       tl.fromTo("#tcopy", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 15.5);
       tl.fromTo("#chip", { y: 10, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.5)" }, 16.0);
       tl.fromTo("#eta", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 16.25);
-      tl.fromTo("#srow", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 16.5);
-      tl.fromTo("#gmini", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 17.0);
+      tl.fromTo("#srow", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 15.8);
+      tl.fromTo("#gmini", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 16.2);
       tl.fromTo("#push", { y: -30, opacity: 0, scale: 0.95 }, { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.4)" }, 18.2);
       tl.to("#push", { opacity: 0, y: -20, duration: 0.35 }, 20.8);
 
