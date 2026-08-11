@@ -37,3 +37,8 @@ next-env.d.ts
 ios/App/Pods/
 ios/App/build/
 ios/DerivedData/
+
+# /brag local renders & Hyperframes scratch
+brag-output/composition/snapshots/
+brag-output/composition/.hyperframes/
+brag-output/*.poster.mp4

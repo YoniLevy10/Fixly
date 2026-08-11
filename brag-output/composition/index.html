@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="he" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Fixly — Reels /brag</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="assets/music/audio-data.js"></script>
+    <style>
+      @font-face {
+        font-family: "Heebo";
+        font-style: normal;
+        font-weight: 400 900;
+        font-display: swap;
+        src: url("assets/fonts/heebo-hebrew.woff2") format("woff2");
+        unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+      }
+      @font-face {
+        font-family: "Heebo";
+        font-style: normal;
+        font-weight: 400 900;
+        font-display: swap;
+        src: url("assets/fonts/heebo-latin.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #000;
+      }
+      body { font-family: "Heebo", sans-serif; }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; }
+      .stage-bg {
+        position: absolute; inset: 0;
+        background:
+          radial-gradient(ellipse at 50% 18%, rgba(18,53,99,0.18), transparent 52%),
+          radial-gradient(ellipse at 50% 88%, rgba(245,158,11,0.12), transparent 48%),
+          linear-gradient(180deg, #e8eef6 0%, #f2f4f7 42%, #e9edf3 100%);
+      }
+      .clip {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+      }
+
+      /* ===== Premium iPhone Pro frame (real 15 Pro ratio ~70.6×146.6) ===== */
+      .iphone {
+        position: relative;
+        width: 430px;
+        height: 894px; /* 430 × 2.078 */
+        flex-shrink: 0;
+      }
+      .iphone.sm { width: 350px; height: 728px; }
+      .iphone-shell {
+        position: absolute; inset: 0;
+        border-radius: 60px;
+        background:
+          linear-gradient(160deg, #5c5c5e 0%, #2a2a2c 22%, #121214 55%, #1a1a1c 78%, #3d3d40 100%);
+        box-shadow:
+          0 40px 90px rgba(15, 23, 41, 0.4),
+          0 0 0 1.5px rgba(255,255,255,0.14),
+          0 2px 0 rgba(255,255,255,0.18) inset,
+          0 -3px 8px rgba(0,0,0,0.55) inset;
+      }
+      .iphone.sm .iphone-shell { border-radius: 50px; }
+      .iphone-bezel {
+        position: absolute;
+        inset: 9px;
+        border-radius: 52px;
+        background: #050505;
+        overflow: hidden;
+        box-shadow:
+          inset 0 0 0 1px rgba(255,255,255,0.1),
+          inset 0 0 18px rgba(0,0,0,0.65);
+      }
+      .iphone.sm .iphone-bezel { inset: 8px; border-radius: 44px; }
+      .iphone-screen {
+        position: absolute;
+        inset: 2.5px;
+        border-radius: 50px;
+        background: #f2f4f7;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        direction: rtl;
+        text-align: right;
+      }
+      .iphone.sm .iphone-screen { border-radius: 42px; }
+
+      /* Side buttons — titanium */
+      .btn-silent {
+        position: absolute; left: -3px; top: 132px; width: 4px; height: 26px;
+        border-radius: 2px 0 0 2px;
+        background: linear-gradient(90deg, #6a6a6c, #2e2e30);
+        box-shadow: -1px 0 0 rgba(255,255,255,0.15);
+      }
+      .btn-vol-up {
+        position: absolute; left: -3px; top: 186px; width: 4px; height: 52px;
+        border-radius: 2px 0 0 2px;
+        background: linear-gradient(90deg, #6a6a6c, #2e2e30);
+      }
+      .btn-vol-down {
+        position: absolute; left: -3px; top: 250px; width: 4px; height: 52px;
+        border-radius: 2px 0 0 2px;
+        background: linear-gradient(90deg, #6a6a6c, #2e2e30);
+      }
+      .btn-power {
+        position: absolute; right: -3px; top: 216px; width: 4px; height: 84px;
+        border-radius: 0 2px 2px 0;
+        background: linear-gradient(270deg, #6a6a6c, #2e2e30);
+      }
+      .iphone.sm .btn-silent { top: 108px; height: 22px; }
+      .iphone.sm .btn-vol-up { top: 152px; height: 44px; }
+      .iphone.sm .btn-vol-down { top: 206px; height: 44px; }
+      .iphone.sm .btn-power { top: 178px; height: 70px; }
+
+      /* Dynamic Island */
+      .island {
+        position: absolute;
+        top: 12px; left: 50%;
+        width: 104px; height: 30px;
+        margin-left: -52px;
+        background: #000;
+        border-radius: 18px;
+        z-index: 20;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 2px 8px rgba(0,0,0,0.4);
+      }
+      .iphone.sm .island { top: 11px; width: 90px; height: 26px; margin-left: -45px; }
+      .island::after {
+        content: "";
+        position: absolute; right: 12px; top: 9px;
+        width: 9px; height: 9px; border-radius: 999px;
+        background: radial-gradient(circle at 35% 35%, #2a5a8c, #071018 70%);
+        box-shadow: inset 0 0 2px rgba(100,170,230,0.4);
+      }
+
+      /* iOS status bar */
+      .status-bar {
+        height: 44px; flex-shrink: 0;
+        display: flex; align-items: flex-end; justify-content: space-between;
+        padding: 0 22px 6px; font-size: 12px; font-weight: 700; color: #0f1729;
+        position: relative; z-index: 5;
+      }
+      .iphone.sm .status-bar { height: 40px; padding: 0 18px 5px; font-size: 11px; }
+      .status-icons { display: flex; align-items: center; gap: 5px; font-size: 11px; letter-spacing: -0.02em; }
+      .bat {
+        width: 22px; height: 11px; border: 1.5px solid #0f1729; border-radius: 3px;
+        position: relative; opacity: 0.9;
+      }
+      .bat::before {
+        content: ""; position: absolute; inset: 1.5px; right: auto; width: 70%;
+        background: #0f1729; border-radius: 1px;
+      }
+      .bat::after {
+        content: ""; position: absolute; right: -3px; top: 3px;
+        width: 2px; height: 4px; background: #0f1729; border-radius: 0 1px 1px 0; opacity: 0.7;
+      }
+
+      .home-ind {
+        position: absolute; bottom: 7px; left: 50%; width: 108px; height: 4px;
+        margin-left: -54px; background: #0f1729; border-radius: 99px; opacity: 0.35; z-index: 15;
+      }
+      .iphone.sm .home-ind { width: 92px; margin-left: -46px; bottom: 6px; }
+
+      .app-bar {
+        height: 40px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 12px; background: #fff; border-bottom: 1px solid rgba(15,23,41,0.06);
+        font-size: 13px; font-weight: 700; color: #0f1729; flex-shrink: 0;
+      }
+      .avatar {
+        width: 26px; height: 26px; border-radius: 999px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 800; font-size: 12px;
+      }
+      .phone-body {
+        padding: 8px 10px 0; flex: 1; background: #f2f4f7; overflow: hidden;
+        display: flex; flex-direction: column; position: relative;
+        padding-bottom: 52px;
+      }
+      .phone-body.no-nav { padding-bottom: 14px; }
+      .scroll-fill { flex: 1; overflow: hidden; }
+
+      /* Bottom nav — matches Fixly BottomNav */
+      .bottom-nav {
+        position: absolute; left: 0; right: 0; bottom: 0;
+        height: 52px; background: #fff;
+        border-top: 2px solid #e5e7eb;
+        display: flex; align-items: center; justify-content: space-around;
+        padding: 0 4px 8px; z-index: 12;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+      }
+      .bn-item {
+        display: flex; flex-direction: column; align-items: center; gap: 1px;
+        font-size: 9px; font-weight: 700; color: rgba(15,23,41,0.55); min-width: 44px;
+      }
+      .bn-item.active { color: #123563; }
+      .bn-item .ico { font-size: 14px; line-height: 1; }
+      .bn-fab-wrap {
+        display: flex; flex-direction: column; align-items: center; margin-top: -16px;
+      }
+      .bn-fab {
+        width: 40px; height: 40px; border-radius: 999px; background: #f59e0b; color: #fff;
+        display: grid; place-items: center; font-size: 22px; font-weight: 800;
+        border: 3px solid #fff; box-shadow: 0 6px 16px rgba(245,158,11,0.45);
+      }
+      .bn-fab-label { font-size: 8px; font-weight: 800; color: #c2410c; margin-top: 1px; }
+
+      .loc-line {
+        display: flex; align-items: center; justify-content: center; gap: 3px;
+        font-size: 10px; font-weight: 600; color: rgba(15,23,41,0.65); margin-top: 1px;
+      }
+      .cta-orange {
+        margin-top: 0; margin-bottom: 8px; background: #b45309; color: #fff;
+        border-radius: 12px; text-align: center; padding: 11px; font-size: 14px; font-weight: 800;
+        border: none; box-shadow: 0 6px 14px rgba(245,158,11,0.28);
+      }
+      .cat-grid-3 {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;
+      }
+      .cat-grid-3 .cat { padding: 10px 4px; gap: 4px; }
+      .cat-grid-3 .cat-icon { width: 36px; height: 36px; font-size: 18px; border-radius: 10px; }
+      .cat-grid-3 .cat-label { font-size: 10px; }
+      .more-cats {
+        margin-top: 7px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 14px;
+        padding: 8px; text-align: center; font-size: 11px; font-weight: 800; color: #0f1729;
+      }
+      .demo-stats {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 8px;
+      }
+      .demo-stat {
+        background: #fff; border: 2px solid rgba(18,53,99,0.18); border-radius: 14px;
+        padding: 10px 9px; display: flex; align-items: center; gap: 8px;
+        box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+      }
+      .demo-stat-ico {
+        width: 34px; height: 34px; border-radius: 10px; background: rgba(18,53,99,0.12);
+        display: grid; place-items: center; font-size: 15px; flex-shrink: 0;
+      }
+      .demo-stat-n { font-size: 16px; font-weight: 900; color: #0f1729; line-height: 1; }
+      .demo-stat-l { font-size: 10px; font-weight: 700; color: rgba(15,23,41,0.55); margin-top: 2px; }
+      .how-row {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0 4px;
+      }
+      .how-step {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 8px 6px;
+        text-align: center; box-shadow: 0 2px 6px rgba(15,23,41,0.04);
+      }
+      .how-n {
+        width: 22px; height: 22px; border-radius: 999px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-size: 11px; font-weight: 900; margin: 0 auto 4px;
+      }
+      .how-t { font-size: 10px; font-weight: 800; color: #0f1729; line-height: 1.25; }
+      .city-browse { margin-top: 8px; margin-bottom: 4px; }
+      .city-browse-row { display: flex; gap: 6px; overflow: hidden; }
+      .city-browse-chip {
+        flex-shrink: 0; background: #fff; border: 2px solid #e5e7eb; border-radius: 999px;
+        padding: 6px 11px; font-size: 10px; font-weight: 800; color: #123563;
+      }
+      .status-card {
+        margin-top: 8px; background: #fff; border: 1px solid #f3f4f6; border-radius: 14px;
+        padding: 10px 12px; box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+      }
+      .status-card h4 { font-size: 13px; font-weight: 800; color: #0f1729; margin-bottom: 8px; }
+      .share-btn {
+        margin-top: 8px; background: #fff; border: 2px solid #e5e7eb; border-radius: 12px;
+        text-align: center; padding: 9px; font-size: 12px; font-weight: 800; color: #123563;
+      }
+      .feat-row {
+        display: flex; gap: 8px; overflow: hidden; margin-top: 4px;
+      }
+      .feat-card {
+        flex: 0 0 102px; background: #fff; border-radius: 14px; border: 1px solid #f3f4f6;
+        padding: 8px 6px; text-align: center; box-shadow: 0 2px 8px rgba(15,23,41,0.04);
+      }
+      .feat-av {
+        width: 38px; height: 38px; border-radius: 999px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 900; font-size: 14px; margin: 0 auto 5px;
+      }
+      .feat-name { font-size: 10px; font-weight: 800; color: #0f1729; }
+      .feat-title { font-size: 8px; color: rgba(15,23,41,0.55); font-weight: 600; margin-top: 2px; }
+      .feat-stars { font-size: 8px; color: #f59e0b; margin-top: 3px; }
+      .season-row { display: flex; gap: 6px; overflow: hidden; margin-bottom: 8px; }
+      .season-chip {
+        flex-shrink: 0; font-size: 10px; font-weight: 800; padding: 6px 10px; border-radius: 999px;
+        border: 2px solid #bfdbfe; background: #eff6ff; color: #1e3a8a;
+      }
+      .req-card {
+        background: #fff; border: 2px solid #e5e7eb; border-radius: 14px; padding: 12px;
+        box-shadow: 0 4px 12px rgba(15,23,41,0.05); margin-bottom: 8px; text-align: right;
+      }
+      .req-cat { font-size: 10px; font-weight: 800; color: #0369a1; margin-bottom: 2px; }
+      .req-title { font-size: 13px; font-weight: 800; color: #0f1729; }
+      .req-loc { font-size: 11px; font-weight: 600; color: rgba(15,23,41,0.6); margin-top: 2px; }
+      .progress {
+        margin-top: 8px; height: 8px; background: #e5e7eb; border-radius: 99px; overflow: hidden;
+      }
+      .progress > i {
+        display: block; height: 100%; width: 60%;
+        background: linear-gradient(90deg, #22c55e, #123563, #f59e0b);
+      }
+      .cand-list { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
+      .cand {
+        background: #fff; border-radius: 10px; padding: 8px 10px; display: flex;
+        justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700;
+      }
+      .steps-v { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+      .step-row { display: flex; align-items: center; gap: 8px; }
+      .step-dot {
+        width: 26px; height: 26px; border-radius: 999px; display: grid; place-items: center;
+        font-size: 11px; font-weight: 800; flex-shrink: 0;
+      }
+      .step-dot.done { background: #059669; color: #fff; }
+      .step-dot.on { background: #c2410c; color: #fff; }
+      .step-dot.wait { background: #e5e7eb; color: #4b5563; }
+      .step-label { font-size: 12px; font-weight: 700; color: #0f1729; }
+      .step-label.muted { color: rgba(15,23,41,0.55); }
+      .wa-btn {
+        margin-top: 8px; background: #128c7e; color: #fff; border-radius: 12px;
+        text-align: center; padding: 10px; font-size: 13px; font-weight: 800;
+      }
+      .action-row { display: flex; gap: 6px; margin-top: 8px; }
+      .action-btn {
+        flex: 1; background: #fff; border: 2px solid #e5e7eb; border-radius: 12px;
+        padding: 9px 6px; text-align: center; font-size: 11px; font-weight: 800; color: #123563;
+      }
+
+      .duo {
+        display: flex; flex-direction: column; gap: 28px; align-items: center;
+      }
+      .push {
+        position: absolute; top: 120px; left: 50%; width: 400px; margin-left: -200px;
+        background: rgba(255,255,255,0.97); border-radius: 20px; padding: 14px 16px;
+        box-shadow: 0 18px 44px rgba(15,23,41,0.28); direction: rtl; text-align: right;
+        border: 1px solid rgba(18,53,99,0.08); z-index: 30;
+      }
+
+      .hero {
+        background: #123563; border-radius: 14px; padding: 9px 10px; color: #fff;
+        position: relative; overflow: hidden; min-height: 0; margin-bottom: 6px;
+      }
+      .hero h2 { font-size: 17px; font-weight: 900; line-height: 1.15; margin-bottom: 3px; }
+      .hero p { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.92); line-height: 1.3; margin-bottom: 6px; }
+      .section-title { margin: 4px 2px 5px; font-size: 12px; font-weight: 800; color: #0f1729; }
+      .cta-orange {
+        margin-top: 0; margin-bottom: 7px; background: #b45309; color: #fff;
+        border-radius: 12px; text-align: center; padding: 10px; font-size: 13px; font-weight: 800;
+        border: none; box-shadow: 0 6px 14px rgba(245,158,11,0.28);
+      }
+      .cat-grid-3 .cat { padding: 8px 4px; gap: 3px; }
+      .more-cats {
+        margin-top: 6px; background: #f3f4f6; border: 2px solid #e5e7eb; border-radius: 12px;
+        padding: 7px; text-align: center; font-size: 11px; font-weight: 800; color: #0f1729;
+      }
+      .guarantee {
+        margin-top: 8px; background: #ecfdf5; border: 2px solid #a7f3d0; border-radius: 12px;
+        padding: 9px 10px; text-align: center; font-size: 12px; font-weight: 800; color: #065f46;
+      }
+      .search {
+        background: #fff; border-radius: 10px; padding: 8px 10px; color: #4b5563;
+        font-size: 12px; font-weight: 600; position: relative; z-index: 2;
+      }
+      .hero-emoji {
+        position: absolute; left: 4px; bottom: 0; font-size: 42px; opacity: 0.45; z-index: 1;
+      }
+      .cta {
+        margin-top: 8px; background: #123563; color: #fff; border-radius: 12px;
+        text-align: center; padding: 11px; font-size: 14px; font-weight: 800;
+        border: 3px solid #f59e0b; position: relative;
+      }
+      .cta.green { background: #047857; border-color: #34d399; }
+      .map-panel { height: 128px !important; }
+      .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .cat {
+        background: #fff; border: 2px solid rgba(18,53,99,0.08); border-radius: 16px;
+        padding: 14px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+        box-shadow: 0 4px 12px rgba(15,23,41,0.05);
+      }
+      .cat-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; }
+      .cat-label { font-size: 13px; font-weight: 700; color: #0f1729; }
+      .pro-card {
+        background: #fff; border-radius: 16px; padding: 12px; display: flex; gap: 10px; align-items: center;
+        box-shadow: 0 4px 14px rgba(15,23,41,0.06); margin-bottom: 8px; border: 1px solid rgba(18,53,99,0.06);
+      }
+      .pro-av {
+        width: 46px; height: 46px; border-radius: 14px; background: #123563; color: #fff;
+        display: grid; place-items: center; font-weight: 900; font-size: 17px; flex-shrink: 0;
+      }
+      .pro-meta { flex: 1; min-width: 0; }
+      .pro-name { font-size: 14px; font-weight: 800; color: #0f1729; }
+      .pro-sub { font-size: 11px; font-weight: 600; color: rgba(15,23,41,0.65); margin-top: 2px; }
+      .badge {
+        display: inline-flex; align-items: center; gap: 4px; background: #dbeafe; color: #1e3a8a;
+        font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; margin-top: 4px;
+      }
+      .avail { color: #059669; font-size: 11px; font-weight: 800; }
+      .match-card {
+        margin-top: 8px; background: #fff7ed; border: 2px solid #fdba74; border-radius: 16px;
+        padding: 12px 12px; text-align: center; position: relative; min-height: 0;
+      }
+      .match-dots { display: flex; justify-content: center; gap: 7px; margin-bottom: 12px; }
+      .match-dots span { width: 9px; height: 9px; border-radius: 999px; background: #f59e0b; }
+      .match-title { font-size: 14px; font-weight: 800; color: #9a3412; margin-bottom: 4px; }
+      .match-sub { font-size: 11px; font-weight: 600; color: #c2410c; line-height: 1.35; }
+      #match-state-b { position: absolute; left: 12px; right: 12px; top: 40px; opacity: 0; }
+      .map-panel {
+        height: 210px; border-radius: 18px; position: relative; overflow: hidden;
+        border: 1px solid rgba(18,53,99,0.08);
+        background:
+          radial-gradient(circle at 28% 38%, rgba(18,53,99,0.14), transparent 42%),
+          radial-gradient(circle at 72% 68%, rgba(245,158,11,0.2), transparent 38%),
+          linear-gradient(160deg, #dbe7f5 0%, #eef2f7 55%, #e2e8f0 100%);
+      }
+      .road {
+        position: absolute; top: 44%; left: 10%; right: 10%; height: 14px;
+        background: rgba(18,53,99,0.12); transform: rotate(-12deg);
+      }
+      .pin {
+        position: absolute; width: 24px; height: 24px; border-radius: 999px 999px 999px 4px;
+        background: #123563; transform: rotate(-45deg); box-shadow: 0 6px 14px rgba(18,53,99,0.25);
+      }
+      .pin.home { top: 58%; right: 26%; background: #f59e0b; }
+      .pin.pro { top: 26%; left: 32%; }
+      .route-line {
+        position: absolute; top: 34%; left: 36%; width: 130px; height: 3px;
+        background: repeating-linear-gradient(90deg, #123563 0 9px, transparent 9px 16px);
+        transform: rotate(28deg); transform-origin: left center; opacity: 0.7;
+      }
+      .live-dot {
+        position: absolute; top: 28%; left: 34%; width: 14px; height: 14px; border-radius: 999px;
+        background: #f59e0b; box-shadow: 0 0 0 6px rgba(245,158,11,0.25);
+      }
+      .track-copy {
+        margin-top: 12px; background: #fff; border-radius: 16px; padding: 14px 12px;
+        box-shadow: 0 6px 16px rgba(15,23,41,0.06);
+      }
+      .track-copy h3 { font-size: 17px; font-weight: 900; color: #0f1729; margin-bottom: 4px; }
+      .track-copy p { font-size: 12px; font-weight: 600; color: rgba(15,23,41,0.7); line-height: 1.35; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 5px; margin-top: 10px;
+        background: #123563; color: #fff; border-radius: 999px; padding: 6px 12px;
+        font-size: 12px; font-weight: 800;
+      }
+      .eta {
+        display: inline-flex; margin-inline-start: 6px; background: #fff7ed; color: #9a3412;
+        border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 800;
+      }
+      .guarantee {
+        margin-top: 10px; background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46;
+        border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 800; text-align: center;
+      }
+      .push-app { font-size: 11px; font-weight: 800; color: #123563; margin-bottom: 4px; }
+      .push-title { font-size: 17px; font-weight: 900; color: #0f1729; }
+      .push-body { font-size: 13px; font-weight: 600; color: rgba(15,23,41,0.7); margin-top: 2px; }
+      .status-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+      .st {
+        font-size: 11px; font-weight: 800; padding: 5px 9px; border-radius: 999px;
+        background: #e5e7eb; color: #374151;
+      }
+      .st.on { background: #123563; color: #fff; }
+      .st.done { background: #d1fae5; color: #065f46; }
+      .review {
+        background: #fff; border-radius: 14px; padding: 12px; margin-top: 8px;
+        box-shadow: 0 4px 12px rgba(15,23,41,0.05); font-size: 13px; font-weight: 600; color: #0f1729;
+      }
+      .stars { color: #f59e0b; letter-spacing: 1px; font-size: 16px; margin-bottom: 4px; }
+      .guarantee-hero {
+        width: 860px; background: #ecfdf5; border: 2px solid #6ee7b7; border-radius: 32px;
+        padding: 48px 44px; direction: rtl; text-align: right;
+        box-shadow: 0 24px 60px rgba(6,95,70,0.14);
+      }
+      .guarantee-hero h2 { font-size: 52px; font-weight: 900; color: #065f46; margin-bottom: 16px; }
+      .guarantee-hero p { font-size: 26px; font-weight: 600; color: #047857; line-height: 1.45; }
+      .city-frame {
+        width: 900px; background: #fff; border-radius: 32px; padding: 48px 44px;
+        direction: rtl; text-align: right; box-shadow: 0 28px 70px rgba(15,23,41,0.14);
+      }
+      .city-frame h2 { font-size: 48px; font-weight: 900; color: #123563; margin-bottom: 12px; }
+      .city-frame .sub { font-size: 20px; font-weight: 600; color: rgba(15,23,41,0.7); margin-bottom: 22px; }
+      .city-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+      .city-chip {
+        background: #dbeafe; color: #1e3a8a; font-size: 16px; font-weight: 800;
+        padding: 10px 16px; border-radius: 999px;
+      }
+      .city-cta {
+        display: inline-block; background: #123563; color: #fff; font-size: 20px; font-weight: 800;
+        padding: 16px 24px; border-radius: 16px; border: 3px solid #f59e0b;
+      }
+      .stats {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 18px; width: 880px; direction: rtl;
+      }
+      .stat {
+        background: #fff; border-radius: 24px; padding: 36px 22px; text-align: center;
+        box-shadow: 0 18px 44px rgba(15,23,41,0.1); border: 1px solid rgba(18,53,99,0.06);
+      }
+      .stat-num { font-size: 64px; font-weight: 900; color: #123563; line-height: 1; }
+      .stat-label { font-size: 20px; font-weight: 700; color: rgba(15,23,41,0.7); margin-top: 12px; }
+      .outro { display: flex; flex-direction: column; align-items: center; gap: 22px; direction: rtl; text-align: center; }
+      .logo-wrap {
+        width: 240px; height: 240px; border-radius: 54px; overflow: hidden;
+        box-shadow: 0 28px 70px rgba(18,53,99,0.32);
+      }
+      .logo-wrap img { width: 100%; height: 100%; display: block; }
+      .wordmark { font-size: 96px; font-weight: 900; color: #123563; line-height: 1; }
+      .tagline { font-size: 32px; font-weight: 700; color: #0f1729; }
+      .job-row {
+        background: #fff; border-radius: 14px; padding: 12px; margin-top: 10px;
+        box-shadow: 0 4px 12px rgba(15,23,41,0.05); text-align: right;
+      }
+      .job-row .t { font-size: 14px; font-weight: 800; color: #0f1729; }
+      .job-row .s { font-size: 12px; font-weight: 600; color: rgba(15,23,41,0.6); margin-top: 2px; }
+      .dash-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+      .dash-stat { border-radius: 12px; padding: 12px 8px; text-align: center; color: #fff; font-weight: 800; }
+      .dash-stat .n { font-size: 20px; }
+      .dash-stat .l { font-size: 11px; margin-top: 2px; color: #fff; }
+      .y { background: #d97706; } .b { background: #123563; } .g { background: #047857; }
+      .reel-caption {
+        position: absolute; bottom: 72px; left: 48px; right: 48px;
+        text-align: center; direction: rtl;
+        font-size: 28px; font-weight: 900; color: #123563;
+        text-shadow: 0 2px 12px rgba(242,244,247,0.9);
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="40" data-width="1080" data-height="1920">
+      <div class="stage-bg" id="stage-bg"></div>
+
+      <!-- S1 Hook 0-4 -->
+      <section id="s1" class="clip" data-start="0" data-duration="4" data-track-index="1">
+        <div class="iphone" id="p1">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar" style="flex-direction:column;height:auto;padding:8px 14px 6px;gap:0;align-items:stretch">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <div class="avatar">י</div>
+                    <div style="text-align:center">
+                      <div style="font-size:13px;font-weight:800">👋 שלום, יוני</div>
+                      <div class="loc-line">📍 תל אביב</div>
+                    </div>
+                    <div style="width:30px;height:30px;border-radius:8px;background:#eff6ff;display:grid;place-items:center;font-size:12px">עב</div>
+                  </div>
+                </div>
+                <div class="phone-body">
+                  <div class="scroll-fill">
+                    <div class="hero" id="hero">
+                      <div class="hero-emoji" data-layout-allow-occlusion>👷</div>
+                      <h2 id="h-title">זקוקים לתיקון?</h2>
+                      <p id="h-sub">מצא את איש המקצוע המתאים<br />במהירות ובקלות</p>
+                      <div class="search" id="h-search">🔍 מה צריך לתקן?</div>
+                    </div>
+                    <div class="demo-stats" id="h-stats">
+                      <div class="demo-stat"><div class="demo-stat-ico">👥</div><div><div class="demo-stat-n">58</div><div class="demo-stat-l">אנשי מקצוע</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">📋</div><div><div class="demo-stat-n">54</div><div class="demo-stat-l">בקשות פעילות</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">🛠</div><div><div class="demo-stat-n">36.5K</div><div class="demo-stat-l">עבודות שהושלמו</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">★</div><div><div class="demo-stat-n">4.8</div><div class="demo-stat-l">דירוג ממוצע</div></div></div>
+                    </div>
+                    <div class="cta-orange" id="cta1">בקשה מהירה</div>
+                    <div class="section-title">בחרו קטגוריה</div>
+                    <div class="cat-grid-3">
+                      <div class="cat"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#dbeafe">🚿</div><div class="cat-label">אינסטלטור</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fef3c7">💡</div><div class="cat-label">חשמלאי</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fce7f3">🔐</div><div class="cat-label">מנעולן</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ffedd5">🎨</div><div class="cat-label">צבעי</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ecfdf5">🧹</div><div class="cat-label">ניקיון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ffedd5">🪚</div><div class="cat-label">נגרות</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#dcfce7">🌿</div><div class="cat-label">גינון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#e2e8f0">🏗️</div><div class="cat-label">ריצוף</div></div>
+                    </div>
+                    <div class="more-cats">עוד קטגוריות ▾</div>
+                    <div class="section-title">איך זה עובד?</div>
+                    <div class="how-row">
+                      <div class="how-step"><div class="how-n">1</div><div class="how-t">פרסמו תקלה</div></div>
+                      <div class="how-step"><div class="how-n">2</div><div class="how-t">קבלו הצעות</div></div>
+                      <div class="how-step"><div class="how-n">3</div><div class="how-t">עקבו בזמן אמת</div></div>
+                    </div>
+                    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+                      <span style="font-size:11px;font-weight:700;color:#123563">הצג הכל ‹</span>
+                      <span>אנשי מקצוע מומלצים</span>
+                    </div>
+                    <div class="feat-row">
+                      <div class="feat-card"><div class="feat-av">ד</div><div class="feat-name">דני אינסטלציה</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★★ 4.9</div><div class="avail" style="margin-top:4px;font-size:10px">● זמין עכשיו</div></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#c2410c">מ</div><div class="feat-name">מיכל חשמל</div><div class="feat-title">חשמלאית</div><div class="feat-stars">★★★★★ 4.8</div><div class="avail" style="margin-top:4px;font-size:10px">● זמין היום</div></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#047857">א</div><div class="feat-name">אורי מיזוג</div><div class="feat-title">טכנאי מזגנים</div><div class="feat-stars">★★★★☆ 4.7</div><div class="avail" style="margin-top:4px;font-size:10px">● זמין עכשיו</div></div>
+                    </div>
+                    <div class="city-browse">
+                      <div class="section-title">עיון לפי עיר</div>
+                      <div class="city-browse-row">
+                        <span class="city-browse-chip">תל אביב</span>
+                        <span class="city-browse-chip">חיפה</span>
+                        <span class="city-browse-chip">ירושלים</span>
+                        <span class="city-browse-chip">באר שבע</span>
+                      </div>
+                    </div>
+                  </div>
+
+                <div class="bottom-nav">
+                  <div class="bn-item active"><div class="ico">🏠</div>בית</div>
+                  <div class="bn-item "><div class="ico">🔍</div>חיפוש</div>
+                  <div class="bn-fab-wrap"><div class="bn-fab">+</div><div class="bn-fab-label">פרסם תקלה</div></div>
+                  <div class="bn-item "><div class="ico">📋</div>הבקשות</div>
+                  <div class="bn-item "><div class="ico">👤</div>פרופיל</div>
+                </div>
+                </div>
+                <div class="home-ind"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S2 Categories 4-9 -->
+      <section id="s2" class="clip" data-start="4" data-duration="5" data-track-index="2">
+        <div class="iphone" id="p2">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>Fixly</span><div class="avatar">י</div></div>
+                <div class="phone-body">
+                  <div class="scroll-fill">
+                    <div class="section-title" id="cats-t">מומלץ העונה</div>
+                    <div class="season-row">
+                      <span class="season-chip">❄️ מיזוג אוויר</span>
+                      <span class="season-chip">🚿 אינסטלציה</span>
+                      <span class="season-chip">💡 חשמל</span>
+                    </div>
+                    <div class="section-title">בחרו קטגוריה</div>
+                    <div class="cat-grid-3">
+                      <div class="cat" id="c1"><div class="cat-icon" style="background:#dbeafe">🚿</div><div class="cat-label">אינסטלציה</div></div>
+                      <div class="cat" id="c2"><div class="cat-icon" style="background:#fef3c7">💡</div><div class="cat-label">חשמל</div></div>
+                      <div class="cat" id="c3"><div class="cat-icon" style="background:#e0f2fe">❄️</div><div class="cat-label">מיזוג</div></div>
+                      <div class="cat" id="c4"><div class="cat-icon" style="background:#ffedd5">🪚</div><div class="cat-label">נגרות</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fce7f3">🔐</div><div class="cat-label">מנעולן</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#ecfdf5">🧹</div><div class="cat-label">ניקיון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#fef3c7">🎨</div><div class="cat-label">צביעה</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#dcfce7">🌿</div><div class="cat-label">גינון</div></div>
+                      <div class="cat"><div class="cat-icon" style="background:#e2e8f0">🏗️</div><div class="cat-label">ריצוף</div></div>
+                    </div>
+                    <div class="section-title" id="feat-t" style="display:flex;justify-content:space-between"><span style="font-size:11px;color:#123563;font-weight:700">הצג הכל ‹</span><span>אנשי מקצוע מומלצים</span></div>
+                    <div class="feat-row">
+                      <div class="feat-card" id="pc1"><div class="feat-av">ד</div><div class="feat-name">דני אינסטלציה</div><div class="feat-title">אינסטלטור · ת״א</div><div class="feat-stars">★★★★★ 4.9</div><span class="badge">✓ מאומת</span></div>
+                      <div class="feat-card" id="pc2"><div class="feat-av" style="background:#c2410c">מ</div><div class="feat-name">מיכל חשמל</div><div class="feat-title">חשמלאית · ר״ג</div><div class="feat-stars">★★★★★ 4.8</div><span class="badge">✓ מאומת</span></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#047857">י</div><div class="feat-name">יוסי צבע</div><div class="feat-title">צבעי · Holon</div><div class="feat-stars">★★★★☆ 4.6</div><span class="badge">✓ מאומת</span></div>
+                    </div>
+                    <div class="demo-stats" style="margin-top:10px">
+                      <div class="demo-stat"><div class="demo-stat-ico">👥</div><div><div class="demo-stat-n">58</div><div class="demo-stat-l">אנשי מקצוע</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">★</div><div><div class="demo-stat-n">4.8</div><div class="demo-stat-l">דירוג ממוצע</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">📋</div><div><div class="demo-stat-n">54</div><div class="demo-stat-l">בקשות פעילות</div></div></div>
+                      <div class="demo-stat"><div class="demo-stat-ico">🛠</div><div><div class="demo-stat-n">36.5K</div><div class="demo-stat-l">עבודות שהושלמו</div></div></div>
+                    </div>
+                    <div class="city-browse">
+                      <div class="section-title">עיון לפי עיר</div>
+                      <div class="city-browse-row">
+                        <span class="city-browse-chip">תל אביב</span>
+                        <span class="city-browse-chip">רמת גן</span>
+                        <span class="city-browse-chip">חולון</span>
+                        <span class="city-browse-chip">חיפה</span>
+                      </div>
+                    </div>
+                    <div class="cta-orange" style="margin-top:8px;margin-bottom:4px">בקשה מהירה באזור שלך</div>
+                  </div>
+
+                <div class="bottom-nav">
+                  <div class="bn-item active"><div class="ico">🏠</div>בית</div>
+                  <div class="bn-item "><div class="ico">🔍</div>חיפוש</div>
+                  <div class="bn-fab-wrap"><div class="bn-fab">+</div><div class="bn-fab-label">פרסם תקלה</div></div>
+                  <div class="bn-item "><div class="ico">📋</div>הבקשות</div>
+                  <div class="bn-item "><div class="ico">👤</div>פרופיל</div>
+                </div></div>
+                <div class="home-ind"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S3 Match race 9-14 — stacked phones for Reels -->
+      <section id="s3" class="clip" data-start="9" data-duration="5" data-track-index="3">
+        <div class="duo">
+          <div class="iphone sm" id="p3a">
+            <div class="iphone-shell">
+              <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+              <div class="iphone-bezel">
+                <div class="island"></div>
+                <div class="iphone-screen">
+                  <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><div class="bat"></div></div></div>
+                  <div class="app-bar"><span>מעקב בקשה</span><div class="avatar">י</div></div>
+                  <div class="phone-body no-nav">
+                  <div class="scroll-fill" style="padding-bottom:8px">
+                    <div class="req-card">
+                      <div class="req-cat">אינסטלציה</div>
+                      <div class="req-title">נזילה בכיור המטבח</div>
+                      <div class="req-loc">📍 תל אביב · דיזנגוף 120</div>
+                      <div class="progress"><i></i></div>
+                    </div>
+                    <div class="match-card" id="match-card">
+                      <div class="match-dots" id="mdots"><span></span><span></span><span></span></div>
+                      <div id="match-state-a">
+                        <div class="match-title">מחפשים מקצוענים...</div>
+                        <div class="match-sub">שולחים את הבקשה לאנשי מקצוע באזור</div>
+                      </div>
+                      <div id="match-state-b">
+                        <div class="match-title">3 מקצוענים קיבלו את הבקשה</div>
+                        <div class="match-sub">הראשון שמאשר יקבל</div>
+                      </div>
+                      <div class="cand-list">
+                        <div class="cand"><span>דני אינסטלציה</span><span style="color:#92400e">★ 4.9</span></div>
+                        <div class="cand"><span>אבי צנרת</span><span style="color:#92400e">★ 4.7</span></div>
+                        <div class="cand"><span>רון תיקונים</span><span style="color:#92400e">★ 4.8</span></div>
+                      </div>
+                    </div>
+                    <div class="status-card" style="margin-top:8px">
+                      <h4>סטטוס</h4>
+                      <div class="steps-v" style="margin-top:0;gap:5px">
+                        <div class="step-row"><div class="step-dot on">●</div><div class="step-label">ממתין לאישור</div></div>
+                        <div class="step-row"><div class="step-dot wait">2</div><div class="step-label muted">אושר</div></div>
+                        <div class="step-row"><div class="step-dot wait">3</div><div class="step-label muted">בדרך</div></div>
+                      </div>
+                    </div>
+                    <div class="guarantee">✓ מכוסה באחריות Fixly</div>
+                    <div class="share-btn">↗ שתף בקשה</div>
+                    <div class="wa-btn" style="margin-top:6px">WhatsApp למועמדים</div>
+                  </div>
+</div>
+                  <div class="home-ind"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="iphone sm" id="p3b">
+            <div class="iphone-shell">
+              <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+              <div class="iphone-bezel">
+                <div class="island"></div>
+                <div class="iphone-screen">
+                  <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><div class="bat"></div></div></div>
+                  <div class="app-bar"><span>דשבורד מקצועי</span><div class="avatar">ד</div></div>
+                  <div class="phone-body no-nav">
+                  <div class="scroll-fill" style="padding-bottom:8px">
+                    <div class="dash-stats">
+                      <div class="dash-stat y"><div class="n">2</div><div class="l">ממתינות</div></div>
+                      <div class="dash-stat b"><div class="n">1</div><div class="l">פעילות</div></div>
+                      <div class="dash-stat g"><div class="n">47</div><div class="l">הושלמו</div></div>
+                    </div>
+                    <div class="section-title">ממתינות לאישור</div>
+                    <div class="job-row" id="job" style="border:2px solid #f59e0b">
+                      <div class="t">נזילה בכיור · תל אביב</div>
+                      <div class="s">בקשה מהירה · לפני דקה · ~3 ק״מ</div>
+                    </div>
+                    <div class="job-row">
+                      <div class="t">סתימה באמבטיה · רמת גן</div>
+                      <div class="s">לפני 8 דק׳ · ~5 ק״מ</div>
+                    </div>
+                    <div class="cta green" id="accept">קבל בקשה</div>
+                    <div class="action-row">
+                      <div class="action-btn">דחה</div>
+                      <div class="action-btn">פרטים</div>
+                    </div>
+                    <div class="section-title">פעילות אחרונה</div>
+                    <div class="job-row">
+                      <div class="t">תיקון ברז · הושלם</div>
+                      <div class="s">אתמול · ★★★★★</div>
+                    </div>
+                    <div class="job-row">
+                      <div class="t">החלפת אסלה · הושלם</div>
+                      <div class="s">לפני 3 ימים · ★★★★★</div>
+                    </div>
+                    <div class="guarantee">דירוג ממוצע 4.9 · מאומת Fixly</div>
+                  </div>
+</div>
+                  <div class="home-ind"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S4 Live track 14-22 -->
+      <section id="s4" class="clip" data-start="14" data-duration="8" data-track-index="4">
+        <div class="iphone" id="p4">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>מעקב בקשה</span><span class="chip" style="margin:0;padding:4px 8px;font-size:10px">● בדרך</span></div>
+                <div class="phone-body no-nav">
+                  <div class="scroll-fill" style="padding-bottom:8px">
+                    <div class="req-card">
+                      <div class="req-cat">אינסטלציה</div>
+                      <div class="req-title">נזילה בכיור המטבח</div>
+                      <div class="req-loc">📍 תל אביב · דיזנגוף 120</div>
+                      <div style="font-size:10px;font-weight:800;margin-top:6px;margin-bottom:3px">התקדמות</div>
+                      <div class="progress"><i style="width:60%"></i></div>
+                      <div class="share-btn">↗ שתף בקשה</div>
+                    </div>
+                    <div class="map-panel" id="map">
+                      <div class="road"></div>
+                      <div class="route-line" id="rline"></div>
+                      <div class="pin pro" id="pinp"></div>
+                      <div class="pin home" id="pinh"></div>
+                      <div class="live-dot" id="ldot"></div>
+                    </div>
+                    <div class="track-copy" id="tcopy" style="margin-top:8px;padding:10px">
+                      <h3 style="font-size:15px">איש המקצוע בדרך אליך</h3>
+                      <p>המיקום מתעדכן בזמן אמת (כמו Wolt)</p>
+                      <div>
+                        <span class="chip" id="chip">● בדרך</span>
+                        <span class="eta" id="eta">ETA · 12 דק׳</span>
+                      </div>
+                    </div>
+                    <div class="pro-card" style="margin-top:8px">
+                      <div class="pro-av">ד</div>
+                      <div class="pro-meta">
+                        <div class="pro-name">דני אינסטלציה <span class="badge">✓ מאומת</span></div>
+                        <div class="pro-sub">★ 4.9 · מגיב תוך 8 דק׳</div>
+                      </div>
+                    </div>
+                    <div class="status-card" id="srow">
+                      <h4>סטטוס הבקשה</h4>
+                      <div class="steps-v" style="margin-top:0;gap:6px">
+                        <div class="step-row"><div class="step-dot done">✓</div><div class="step-label">ממתין לאישור</div></div>
+                        <div class="step-row"><div class="step-dot done">✓</div><div class="step-label">אושר</div></div>
+                        <div class="step-row"><div class="step-dot on">●</div><div class="step-label">בדרך</div></div>
+                        <div class="step-row"><div class="step-dot wait">4</div><div class="step-label muted">בתהליך</div></div>
+                        <div class="step-row"><div class="step-dot wait">5</div><div class="step-label muted">הושלם</div></div>
+                      </div>
+                    </div>
+                    <div class="guarantee" id="gmini">✓ מכוסה באחריות Fixly</div>
+                    <div class="wa-btn">WhatsApp לדני</div>
+                    <div class="action-row">
+                      <div class="action-btn">📞 התקשר</div>
+                      <div class="action-btn">בטל בקשה</div>
+                    </div>
+                  </div>
+</div>
+                <div class="home-ind"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="push" id="push" data-layout-allow-occlusion data-layout-allow-overlap>
+          <div class="push-app">FIXLY</div>
+          <div class="push-title">איש המקצוע בדרך!</div>
+          <div class="push-body">דני יצא לכיוון שלך — עקוב במפה</div>
+        </div>
+      </section>
+
+      <!-- S5 Trust 22-27 -->
+      <section id="s5" class="clip" data-start="22" data-duration="5" data-track-index="5">
+        <div class="iphone" id="p5">
+          <div class="iphone-shell">
+            <div class="btn-silent"></div><div class="btn-vol-up"></div><div class="btn-vol-down"></div><div class="btn-power"></div>
+            <div class="iphone-bezel">
+              <div class="island"></div>
+              <div class="iphone-screen">
+                <div class="status-bar"><span>9:41</span><div class="status-icons"><span>▌▌▌</span><span>Wi‑Fi</span><div class="bat"></div></div></div>
+                <div class="app-bar"><span>פרופיל מקצוען</span><div class="avatar">י</div></div>
+                <div class="phone-body">
+                  <div class="scroll-fill">
+                    <div class="pro-card" id="trust-pro" style="flex-direction:column;align-items:flex-start;gap:8px;padding:14px">
+                      <div style="display:flex;gap:10px;align-items:center;width:100%">
+                        <div class="pro-av" style="width:52px;height:52px;font-size:20px">ד</div>
+                        <div style="flex:1">
+                          <div class="pro-name" style="font-size:15px">דני אינסטלציה</div>
+                          <div class="pro-sub">תל אביב · אינסטלטור מוסמך</div>
+                          <span class="badge" id="vbadge">✓ מאומת Fixly</span>
+                        </div>
+                      </div>
+                      <div class="stars" id="stars">★★★★★ 4.9 (128 ביקורות)</div>
+                      <div class="dash-stats" style="width:100%">
+                        <div class="dash-stat b"><div class="n">312</div><div class="l">עבודות</div></div>
+                        <div class="dash-stat g"><div class="n">8׳</div><div class="l">תגובה</div></div>
+                        <div class="dash-stat y"><div class="n">98%</div><div class="l">שביעות</div></div>
+                      </div>
+                    </div>
+                    <div class="section-title" id="rev-t">ביקורות</div>
+                    <div class="review" id="rev1"><div class="stars">★★★★★</div>הגיע מהר, תיקן את הנזילה במקצועיות. ממליצה בחום!</div>
+                    <div class="review" id="rev2"><div class="stars">★★★★★</div>שירות אדיב ומחיר הוגן. Fixly עשו את זה קל.</div>
+                    <div class="review"><div class="stars">★★★★☆</div>עבודה איכותית, קצת איחור אבל שווה.</div>
+                    <div class="section-title">שירותים</div>
+                    <div class="city-browse-row" style="flex-wrap:wrap;margin-bottom:8px">
+                      <span class="city-browse-chip">סתימות</span>
+                      <span class="city-browse-chip">נזילות</span>
+                      <span class="city-browse-chip">דודי שמש</span>
+                      <span class="city-browse-chip">החלפת ברזים</span>
+                    </div>
+                    <div class="guarantee">✓ מכוסה באחריות Fixly</div>
+                    <div class="cta" id="rate" style="margin-top:8px">דרג את איש המקצוע</div>
+                    <div class="wa-btn">שלח הודעה</div>
+                    <div class="action-row">
+                      <div class="action-btn">בקשה חדשה</div>
+                      <div class="action-btn">שמור מועדף</div>
+                    </div>
+                    <div class="section-title">מקצוענים דומים</div>
+                    <div class="feat-row">
+                      <div class="feat-card"><div class="feat-av" style="background:#047857">א</div><div class="feat-name">אבי צנרת</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★★ 4.7</div></div>
+                      <div class="feat-card"><div class="feat-av" style="background:#c2410c">ר</div><div class="feat-name">רון תיקונים</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★☆ 4.6</div></div>
+                      <div class="feat-card"><div class="feat-av">י</div><div class="feat-name">יוסי ברזים</div><div class="feat-title">אינסטלטור</div><div class="feat-stars">★★★★★ 4.8</div></div>
+                    </div>
+                  </div>
+
+                <div class="bottom-nav">
+                  <div class="bn-item "><div class="ico">🏠</div>בית</div>
+                  <div class="bn-item active"><div class="ico">🔍</div>חיפוש</div>
+                  <div class="bn-fab-wrap"><div class="bn-fab">+</div><div class="bn-fab-label">פרסם תקלה</div></div>
+                  <div class="bn-item "><div class="ico">📋</div>הבקשות</div>
+                  <div class="bn-item "><div class="ico">👤</div>פרופיל</div>
+                </div></div>
+                <div class="home-ind"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S6 Guarantee + city 27-32 -->
+      <section id="s6" class="clip" data-start="27" data-duration="5" data-track-index="6">
+        <div class="guarantee-hero" id="ghero">
+          <h2>אחריות Fixly</h2>
+          <p>לא מרוצה מהעבודה? נעזור לפתור — או נשלח מקצוען חלופי.</p>
+        </div>
+        <div class="city-frame" id="city" style="position:absolute;left:50%;top:50%;opacity:0">
+          <h2>אינסטלטור בתל אביב</h2>
+          <div class="sub">48+ אנשי מקצוע זמינים · בקשה חינם · מעקב חי</div>
+          <div class="city-chips">
+            <span class="city-chip">תל אביב</span>
+            <span class="city-chip">חיפה</span>
+            <span class="city-chip">ירושלים</span>
+            <span class="city-chip">באר שבע</span>
+          </div>
+          <div class="city-cta">שלח בקשה עכשיו</div>
+        </div>
+      </section>
+
+      <!-- S7 Stats 32-36 -->
+      <section id="s7" class="clip" data-start="32" data-duration="4" data-track-index="7">
+        <div class="stats" id="stats">
+          <div class="stat" id="st1"><div class="stat-num" id="n1">0</div><div class="stat-label">אנשי מקצוע</div></div>
+          <div class="stat" id="st2"><div class="stat-num" id="n2">0</div><div class="stat-label">בקשות פעילות</div></div>
+          <div class="stat" id="st3"><div class="stat-num" id="n3">0</div><div class="stat-label">עבודות שהושלמו</div></div>
+          <div class="stat" id="st4"><div class="stat-num" id="n4">0.0</div><div class="stat-label">דירוג ממוצע</div></div>
+        </div>
+      </section>
+
+      <!-- S8 Outro 36-40 -->
+      <section id="s8" class="clip" data-start="36" data-duration="4" data-track-index="8">
+        <div class="outro" id="outro">
+          <div class="logo-wrap" id="logo"><img src="assets/brand/fixly-icon.svg" alt="Fixly" /></div>
+          <div class="wordmark" id="wm">Fixly</div>
+          <div class="tagline" id="tg">תיקונים חכמים</div>
+        </div>
+      </section>
+
+      <audio id="bg-music" data-start="0" data-duration="40" data-track-index="10" data-volume="0.30"
+        src="assets/music/happy-beats-business-moves-vol-1-by-ende-dot-app.mp3"></audio>
+      <audio id="sfx1" data-start="0.2" data-duration="0.11" data-track-index="11" data-volume="0.7" src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx2" data-start="2.4" data-duration="0.10" data-track-index="12" data-volume="0.75" src="assets/sfx/interface/click_001.ogg"></audio>
+      <audio id="sfx3" data-start="4.35" data-duration="0.69" data-track-index="13" data-volume="0.6" src="assets/sfx/casino/card-place-1.ogg"></audio>
+      <audio id="sfx4" data-start="4.5" data-duration="0.46" data-track-index="14" data-volume="0.6" src="assets/sfx/casino/card-place-2.ogg"></audio>
+      <audio id="sfx5" data-start="4.65" data-duration="0.88" data-track-index="15" data-volume="0.6" src="assets/sfx/casino/card-place-3.ogg"></audio>
+      <audio id="sfx6" data-start="4.8" data-duration="0.60" data-track-index="16" data-volume="0.6" src="assets/sfx/casino/card-place-4.ogg"></audio>
+      <audio id="sfx7" data-start="5.2" data-duration="0.15" data-track-index="17" data-volume="0.65" src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx8" data-start="11.0" data-duration="0.15" data-track-index="18" data-volume="0.7" src="assets/sfx/interface/switch_001.ogg"></audio>
+      <audio id="sfx9" data-start="12.4" data-duration="0.10" data-track-index="19" data-volume="0.75" src="assets/sfx/ui/click1.ogg"></audio>
+      <audio id="sfx10" data-start="16.0" data-duration="1.2" data-track-index="20" data-volume="0.78" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
+      <audio id="sfx11" data-start="18.2" data-duration="0.15" data-track-index="21" data-volume="0.7" src="assets/sfx/interface/drop_003.ogg"></audio>
+      <audio id="sfx12" data-start="23.0" data-duration="0.18" data-track-index="22" data-volume="0.7" src="assets/sfx/impact/impactSoft_medium_002.ogg"></audio>
+      <audio id="sfx13" data-start="27.3" data-duration="0.18" data-track-index="23" data-volume="0.72" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx14" data-start="32.3" data-duration="0.26" data-track-index="24" data-volume="0.65" src="assets/sfx/casino/chips-collide-1.ogg"></audio>
+      <audio id="sfx15" data-start="36.5" data-duration="0.65" data-track-index="25" data-volume="0.75" src="assets/sfx/impact/impactBell_heavy_003.ogg"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.fromTo("#p1", { y: 50, opacity: 0, scale: 0.94 }, { y: 0, opacity: 1, scale: 1, duration: 0.55, ease: "power3.out" }, 0.05);
+      tl.fromTo("#h-title", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0.4);
+      tl.fromTo("#h-sub", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 0.6);
+      tl.fromTo("#h-search", { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 0.8);
+      tl.fromTo("#cta1", { y: 14, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.5)" }, 1.1);
+      tl.fromTo("#cta1", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.in" }, 2.4);
+
+      tl.fromTo("#p2", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 4.05);
+      tl.fromTo("#cats-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 4.15);
+      [4.35, 4.5, 4.65, 4.8].forEach(function (t, i) {
+        tl.fromTo("#c" + (i + 1), { y: 18, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 0.28, ease: "back.out(1.4)" }, t);
+      });
+      tl.fromTo("#feat-t", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.28 }, 5.0);
+      tl.fromTo("#pc1", { x: 18, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3 }, 5.15);
+      tl.fromTo("#pc2", { x: 18, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3 }, 5.35);
+
+      tl.fromTo("#p3a", { y: -30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.05);
+      tl.fromTo("#p3b", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 9.2);
+      tl.to("#mdots span", { opacity: 0.35, duration: 0.3, stagger: { each: 0.12, repeat: 5, yoyo: true }, ease: "sine.inOut" }, 9.4);
+      tl.to("#match-state-a", { opacity: 0, y: -8, duration: 0.25 }, 10.9);
+      tl.fromTo("#match-state-b", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35 }, 11.0);
+      tl.fromTo("#accept", { scale: 1 }, { scale: 0.94, duration: 0.1, yoyo: true, repeat: 1 }, 12.4);
+      tl.fromTo("#job", { backgroundColor: "#ffffff" }, { backgroundColor: "#ecfdf5", duration: 0.3 }, 12.55);
+
+      tl.fromTo("#p4", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" }, 14.05);
+      tl.fromTo("#map", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.4 }, 14.25);
+      tl.fromTo("#pinp", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)" }, 14.55);
+      tl.fromTo("#pinh", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)" }, 14.75);
+      tl.fromTo("#rline", { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 0.75, duration: 0.5 }, 14.9);
+      tl.fromTo("#ldot", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.6)" }, 15.2);
+      tl.fromTo("#tcopy", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 15.5);
+      tl.fromTo("#chip", { y: 10, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.5)" }, 16.0);
+      tl.fromTo("#eta", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 16.25);
+      tl.fromTo("#srow", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 15.8);
+      tl.fromTo("#gmini", { y: 10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 16.2);
+      tl.fromTo("#push", { y: -30, opacity: 0, scale: 0.95 }, { y: 0, opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.4)" }, 18.2);
+      tl.to("#push", { opacity: 0, y: -20, duration: 0.35 }, 20.8);
+
+      tl.fromTo("#p5", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 22.05);
+      tl.fromTo("#trust-pro", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 22.25);
+      tl.fromTo("#vbadge", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.6)" }, 22.55);
+      tl.fromTo("#stars", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 22.8);
+      tl.fromTo("#rev-t", { opacity: 0 }, { opacity: 1, duration: 0.25 }, 23.2);
+      tl.fromTo("#rev1", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 23.4);
+      tl.fromTo("#rev2", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 23.75);
+      tl.fromTo("#rate", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3 }, 24.3);
+
+      tl.fromTo("#ghero", { y: 30, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 27.1);
+      tl.to("#ghero", { opacity: 0, y: -40, scale: 0.95, duration: 0.3 }, 29.15);
+      tl.set("#ghero", { autoAlpha: 0 }, 29.35);
+      tl.fromTo(
+        "#city",
+        { xPercent: -50, yPercent: -50, y: 30, opacity: 0, scale: 0.96 },
+        { xPercent: -50, yPercent: -50, y: 0, opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" },
+        29.4
+      );
+
+      tl.fromTo("#stats", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power3.out" }, 32.1);
+      ["#st1", "#st2", "#st3", "#st4"].forEach(function (sel, i) {
+        tl.fromTo(sel, { y: 20, opacity: 0, scale: 0.94 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.3)" }, 32.3 + i * 0.15);
+      });
+      var targets = [
+        { id: "n1", to: 58, suffix: "+" },
+        { id: "n2", to: 24, suffix: "" },
+        { id: "n3", to: 312, suffix: "+" },
+        { id: "n4", to: 4.9, suffix: "", float: true },
+      ];
+      targets.forEach(function (cfg, ti) {
+        var steps = 12;
+        for (var s = 1; s <= steps; s++) {
+          (function (c, step, totalSteps, delayBase) {
+            tl.call(function () {
+              var el = document.getElementById(c.id);
+              if (!el) return;
+              if (c.float) el.textContent = (c.to * (step / totalSteps)).toFixed(1);
+              else el.textContent = Math.round(c.to * (step / totalSteps)) + (c.suffix || "");
+            }, null, delayBase + step * 0.08);
+          })(cfg, s, steps, 32.6 + ti * 0.05);
+        }
+      });
+
+      tl.fromTo("#logo", { scale: 0.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.5)" }, 36.4);
+      tl.fromTo("#wm", { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 }, 36.75);
+      tl.fromTo("#tg", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35 }, 37.1);
+      tl.to("#bg-music", { volume: 0.1, duration: 1.4, ease: "sine.out" }, 38.4);
+
+      if (window.AUDIO_DATA && window.AUDIO_DATA.frames) {
+        var hero = document.getElementById("hero");
+        var frames = window.AUDIO_DATA.frames;
+        var fps = window.AUDIO_DATA.fps || 30;
+        var maxF = Math.min(frames.length, Math.floor(4 * fps));
+        for (var f = 0; f < maxF; f++) {
+          tl.call(
+            (function (frame) {
+              return function () {
+                var bass = (frame.bands && frame.bands[0]) || 0;
+                if (hero) {
+                  hero.style.boxShadow =
+                    "0 0 " + (8 + bass * 28) + "px rgba(18,53,99," + (0.15 + bass * 0.35) + ")";
+                }
+              };
+            })(frames[f]),
+            [],
+            f / fps
+          );
+        }
+      }
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
