@@ -103,6 +103,11 @@ export type Database = {
           response_sample_count: number
           referral_code: string | null
           availability_summary: string | null
+          midrag_profile_url: string | null
+          midrag_rating: number | null
+          midrag_reviews_count: number | null
+          midrag_last_synced_at: string | null
+          midrag_verified: boolean | null
           created_at: string
           updated_at: string
         }
@@ -133,6 +138,11 @@ export type Database = {
           response_sample_count?: number
           referral_code?: string | null
           availability_summary?: string | null
+          midrag_profile_url?: string | null
+          midrag_rating?: number | null
+          midrag_reviews_count?: number | null
+          midrag_last_synced_at?: string | null
+          midrag_verified?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -163,6 +173,11 @@ export type Database = {
           response_sample_count?: number
           referral_code?: string | null
           availability_summary?: string | null
+          midrag_profile_url?: string | null
+          midrag_rating?: number | null
+          midrag_reviews_count?: number | null
+          midrag_last_synced_at?: string | null
+          midrag_verified?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -348,6 +363,53 @@ export type Database = {
             columns: ['category_id']
             isOneToOne: false
             referencedRelation: 'service_categories'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      external_reviews: {
+        Row: {
+          id: string
+          professional_id: string
+          source: string
+          source_url: string | null
+          source_review_id: string | null
+          rating: number
+          review_text: string | null
+          reviewer_name: string | null
+          review_date: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          professional_id: string
+          source?: string
+          source_url?: string | null
+          source_review_id?: string | null
+          rating: number
+          review_text?: string | null
+          reviewer_name?: string | null
+          review_date?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          professional_id?: string
+          source?: string
+          source_url?: string | null
+          source_review_id?: string | null
+          rating?: number
+          review_text?: string | null
+          reviewer_name?: string | null
+          review_date?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'external_reviews_professional_id_fkey'
+            columns: ['professional_id']
+            isOneToOne: false
+            referencedRelation: 'professionals'
             referencedColumns: ['id']
           },
         ]

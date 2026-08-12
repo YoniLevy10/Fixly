@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/review-reminders",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/sync-midrag",
+      "schedule": "0 3 * * *"
     }
   ]
 }

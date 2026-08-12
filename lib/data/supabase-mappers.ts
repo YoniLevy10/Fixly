@@ -26,6 +26,11 @@ type ProfessionalRow = {
   availability_summary?: string | null
   subscription_tier?: string | null
   subscription_until?: string | null
+  midrag_profile_url?: string | null
+  midrag_rating?: number | null
+  midrag_reviews_count?: number | null
+  midrag_verified?: boolean | null
+  midrag_last_synced_at?: string | null
   service_categories?: CategoryRel
 }
 
@@ -126,6 +131,11 @@ export function mapProfessionalRow(row: ProfessionalRow): Professional {
     subscriptionTier: (tier as Professional['subscriptionTier']) ?? 'free',
     avgResponseMinutes: row.avg_response_minutes ?? null,
     availableHours: row.availability_summary ?? undefined,
+    midragProfileUrl: row.midrag_profile_url ?? null,
+    midragRating: row.midrag_rating != null ? Number(row.midrag_rating) : null,
+    midragReviewsCount: row.midrag_reviews_count ?? 0,
+    midragVerified: row.midrag_verified ?? false,
+    midragLastSyncedAt: row.midrag_last_synced_at ?? null,
   }
 }
 

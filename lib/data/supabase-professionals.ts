@@ -20,6 +20,11 @@ const PRO_SELECT = `
   availability_summary,
   subscription_tier,
   subscription_until,
+  midrag_profile_url,
+  midrag_rating,
+  midrag_reviews_count,
+  midrag_verified,
+  midrag_last_synced_at,
   service_categories ( name, name_he, slug )
 `
 

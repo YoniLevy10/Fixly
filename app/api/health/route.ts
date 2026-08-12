@@ -78,22 +78,25 @@ export async function GET(request: Request) {
 
   if (backend !== 'supabase') {
     const status = backend === 'mock' ? 'degraded' : 'error'
-    if (!verbose) return NextResponse.json({ status })
-    return NextResponse.json({
-      status,
-      mode: backend,
-      demoMode: isDemoDataMode(),
-      checks,
-      warnings: envValidation.warnings,
-    })
+    // Always include mode + checks (smoke / production health greps mode without ?verbose=1)
+    return NextResponse.json(
+      {
+        status,
+        mode: backend,
+        demoMode: isDemoDataMode(),
+        checks,
+        warnings: envValidation.warnings,
+      },
+      { status: backend === 'none' ? 500 : 200 },
+    )
   }
 
   const supabase = await createServerSupabaseClient()
   if (!supabase) {
-    if (!verbose) {
-      return NextResponse.json({ status: 'error' }, { status: 500 })
-    }
-    return NextResponse.json({ status: 'error', mode: 'none', checks }, { status: 500 })
+    return NextResponse.json(
+      { status: 'error', mode: 'none', checks },
+      { status: 500 },
+    )
   }
 
   const { data: authData } = await supabase.auth.getUser()
@@ -163,29 +166,33 @@ export async function GET(request: Request) {
   const allOk = Object.values(checks).every((c) => c.ok)
   const status = criticalOk ? (allOk ? 'ok' : 'degraded') : 'error'
 
-  if (!verbose) {
-    return NextResponse.json({ status })
-  }
-
-  return NextResponse.json({
+  const body = {
     status,
-    mode: 'supabase',
+    mode: 'supabase' as const,
     backend,
     demoMode: isDemoDataMode(),
     checks,
     warnings: envValidation.warnings,
-    endpoints: {
-      health: '/api/health',
-      categories: '/api/categories',
-      professionals: '/api/professionals',
-      requests: '/api/requests?scope=mine | scope=pro',
-      reviews: '/api/reviews',
-      claimPro: 'POST /api/pro/claim',
-      waitlist: 'POST /api/pro/waitlist',
-      admin: 'GET /api/admin/stats',
-      cron: 'GET /api/cron/reset-lead-credits',
-      v1Jobs:
-        'POST /api/v1/jobs | GET /api/v1/jobs/:id | POST …/cancel | POST …/accept | PATCH …/status',
-    },
-  })
+    ...(verbose
+      ? {
+          endpoints: {
+            health: '/api/health',
+            categories: '/api/categories',
+            professionals: '/api/professionals',
+            requests: '/api/requests?scope=mine | scope=pro',
+            reviews: '/api/reviews',
+            claimPro: 'POST /api/pro/claim',
+            waitlist: 'POST /api/pro/waitlist',
+            admin: 'GET /api/admin/stats',
+            cron: 'GET /api/cron/reset-lead-credits',
+            v1Jobs:
+              'POST /api/v1/jobs | GET /api/v1/jobs | GET /api/v1/jobs/:id | POST …/cancel | POST …/accept | PATCH …/status',
+            midrag:
+              'POST /api/pro/midrag/link | DELETE /api/pro/midrag/unlink | GET /api/cron/sync-midrag',
+          },
+        }
+      : {}),
+  }
+
+  return NextResponse.json(body)
 }

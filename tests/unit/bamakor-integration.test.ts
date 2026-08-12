@@ -28,6 +28,14 @@ describe('normalizeCategoryKey', () => {
     assert.equal(normalizeCategoryKey('electrical'), 'electricity')
     assert.equal(normalizeCategoryKey('hvac'), 'ac')
     assert.equal(normalizeCategoryKey('מעליות'), 'elevators')
+    assert.equal(normalizeCategoryKey('painting'), 'painting')
+    assert.equal(normalizeCategoryKey('צבעי'), 'painting')
+    assert.equal(normalizeCategoryKey('carpentry'), 'carpentry')
+    assert.equal(normalizeCategoryKey('נגרות'), 'carpentry')
+    assert.equal(normalizeCategoryKey('moving'), 'moving')
+    assert.equal(normalizeCategoryKey('הובלות'), 'moving')
+    assert.equal(normalizeCategoryKey('tiling'), 'tiling')
+    assert.equal(normalizeCategoryKey('ריצוף'), 'tiling')
   })
 })
 
@@ -154,6 +162,7 @@ describe('memory marketplace flow', () => {
   it('matches 2 elevators pros in Hadera and accepts', async () => {
     const a = memoryCreateProvider({
       display_name: 'מעלית פלוס',
+      phone: '0501234567',
       category: 'elevators',
       city: 'חדרה',
     })
@@ -186,6 +195,7 @@ describe('memory marketplace flow', () => {
     assert.equal(accepted.status, 'accepted')
     assert.equal(accepted.assigned_provider_id, a.id)
     assert.equal(webhook.payload.status, 'accepted')
+    assert.equal(webhook.payload.provider?.phone, '0501234567')
     assert.equal(webhook.dryRun, true)
 
     const again = await getJob(job.job_id)

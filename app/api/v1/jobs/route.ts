@@ -5,8 +5,60 @@ import { createJob } from '@/lib/integrations/bamakor/jobs-service'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { trackError } from '@/lib/monitoring/track-error'
+import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
+
+/** GET /api/v1/jobs — list partner jobs filtered by client_id + optional status */
+export async function GET(request: Request) {
+  const limited = await enforceRateLimit(request, 'v1-jobs-get', 120, 60_000)
+  if (limited) return limited
+
+  const auth = assertApiKey(request)
+  if (!auth.ok) return auth.response
+
+  try {
+    const url = new URL(request.url)
+    const status = url.searchParams.get('status')
+    const clientId = url.searchParams.get('client_id') ?? auth.bamakorClientId
+    const limit = Math.min(Number.parseInt(url.searchParams.get('limit') ?? '50', 10) || 50, 100)
+    const offset = Math.max(Number.parseInt(url.searchParams.get('offset') ?? '0', 10) || 0, 0)
+
+    const admin = getAdminSupabaseClient()
+    if (!admin) {
+      return NextResponse.json({ ok: false, error: 'no_admin' }, { status: 500 })
+    }
+
+    let query = admin
+      .from('requests')
+      .select(
+        'id, title, status, created_at, updated_at, external_ticket_id, professional_id, external_client_id, external_system, source',
+      )
+      .not('external_system', 'is', null)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1)
+
+    if (clientId) {
+      query = query.eq('external_client_id', clientId)
+    }
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    const { data, error } = await query
+    if (error) throw new Error(error.message)
+
+    return NextResponse.json({
+      ok: true,
+      jobs: data ?? [],
+      offset,
+      limit,
+    })
+  } catch (error) {
+    trackError(error, { route: 'GET /api/v1/jobs' })
+    return NextResponse.json({ ok: false, error: 'list_failed' }, { status: 500 })
+  }
+}
 
 /** POST /api/v1/jobs — Bamakor (or partner) creates a Fixly job */
 export async function POST(request: Request) {
