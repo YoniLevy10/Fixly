@@ -185,7 +185,9 @@ export async function GET(request: Request) {
       admin: 'GET /api/admin/stats',
       cron: 'GET /api/cron/reset-lead-credits',
       v1Jobs:
-        'POST /api/v1/jobs | GET /api/v1/jobs/:id | POST …/cancel | POST …/accept | PATCH …/status',
+        'POST /api/v1/jobs | GET /api/v1/jobs | GET /api/v1/jobs/:id | POST …/cancel | POST …/accept | PATCH …/status',
+      midrag:
+        'POST /api/pro/midrag/link | DELETE /api/pro/midrag/unlink | GET /api/cron/sync-midrag',
     },
   })
 }

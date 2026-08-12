@@ -31,4 +31,9 @@ export type Professional = {
   subscriptionTier?: 'free' | 'pro' | 'pro_plus'
   avgResponseMinutes?: number | null
   availabilitySummary?: string
+  midragProfileUrl?: string | null
+  midragRating?: number | null
+  midragReviewsCount?: number
+  midragVerified?: boolean
+  midragLastSyncedAt?: string | null
 }

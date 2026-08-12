@@ -8,8 +8,10 @@ import {
   memoryAcceptOffer,
   memoryCreateJob,
   memoryGetJob,
+  memoryListProviders,
   memoryUpdateStatus,
 } from './memory-store'
+import { sendPushToUser } from '@/lib/push/send'
 import type {
   CreateJobInput,
   ExternalRef,
@@ -19,16 +21,66 @@ import type {
   WebhookProvider,
 } from './types'
 
-function providerFromJob(job: JobView, providerId?: string | null): WebhookProvider | null {
+async function providerFromJob(
+  job: JobView,
+  providerId?: string | null,
+): Promise<WebhookProvider | null> {
   const id = providerId ?? job.assigned_provider_id
   if (!id) return null
   const offer = job.offers.find((o) => o.provider_id === id)
   const name = offer?.provider_name ?? 'Pro'
+
+  let phone: string | null = null
+  if (useMemoryFallback()) {
+    phone = memoryListProviders().find((p) => p.id === id)?.phone ?? null
+  } else {
+    const admin = getAdminSupabaseClient()
+    if (admin) {
+      const { data: pro } = await admin
+        .from('professionals')
+        .select('phone, whatsapp_number')
+        .eq('id', id)
+        .maybeSingle()
+      phone = (pro?.whatsapp_number as string | null) ?? (pro?.phone as string | null) ?? null
+    }
+  }
+
   return {
     id,
     name,
-    phone: null,
+    phone,
     category: job.category,
+  }
+}
+
+/** Notify invited professionals about a new Bamakor/partner job */
+async function notifyInvitedProfessionals(
+  requestId: string,
+  title: string,
+  candidates: { professionalId: string }[],
+) {
+  const admin = getAdminSupabaseClient()
+  if (!admin) return
+
+  for (const candidate of candidates) {
+    try {
+      const { data: pro } = await admin
+        .from('professionals')
+        .select('user_id, phone, title')
+        .eq('id', candidate.professionalId)
+        .maybeSingle()
+
+      if (pro?.user_id) {
+        await sendPushToUser(pro.user_id as string, {
+          title: 'עבודה חדשה מ-Fixly! 🛠',
+          body: title,
+          url: `/pro/requests/${requestId}`,
+          tag: `job-${requestId}`,
+        })
+      }
+    } catch (err) {
+      console.error('[push notification failed]', candidate.professionalId, err)
+    }
   }
 }
 
@@ -189,7 +241,7 @@ async function maybeEmit(
     status: job.status,
     previous_status: previousStatus,
     external_ref: job.external_ref,
-    provider: providerFromJob(job),
+    provider: await providerFromJob(job),
     occurred_at: new Date().toISOString(),
     payload: extra,
   }
@@ -213,6 +265,15 @@ export async function createJob(
 ): Promise<{ job: JobView; webhookDryRun: boolean }> {
   if (useMemoryFallback()) {
     const job = memoryCreateJob(input)
+    for (const offer of job.offers) {
+      console.log(
+        '[memory] notify invited provider',
+        offer.provider_id,
+        offer.provider_name,
+        `job=${job.job_id}`,
+        input.title,
+      )
+    }
     const result = await emitJobStatusWebhook({
       callbackUrl: job.callback_url,
       payload: {
@@ -304,6 +365,7 @@ export async function createJob(
         status: 'invited',
       })),
     )
+    await notifyInvitedProfessionals(data.id as string, input.title, candidates)
   }
 
   const job = await mapRowToJobView(data as Record<string, unknown>)
@@ -337,7 +399,7 @@ export async function acceptJobOffer(
         status: job.status,
         previous_status: prev?.status ?? null,
         external_ref: job.external_ref,
-        provider: providerFromJob(job, providerId),
+        provider: await providerFromJob(job, providerId),
         occurred_at: new Date().toISOString(),
       },
     })
@@ -412,7 +474,7 @@ export async function updateJobStatus(
         status: job.status,
         previous_status: prev.status,
         external_ref: job.external_ref,
-        provider: providerFromJob(job),
+        provider: await providerFromJob(job),
         occurred_at: new Date().toISOString(),
         payload: opts?.note ? { note: opts.note } : {},
       },
