@@ -1,4 +1,10 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import {
+  normalizeCategorySlug,
+  resolveCategoryEmoji,
+  resolveCategoryNameEn,
+  resolveCategoryNameHe,
+} from '@/lib/categories/catalog'
 
 export type DbCategory = {
   id: string
@@ -6,15 +12,6 @@ export type DbCategory = {
   name: string
   nameHe: string
   icon: string
-}
-
-const ICON_MAP: Record<string, string> = {
-  bolt: '⚡',
-  droplets: '🚿',
-  snowflake: '❄️',
-  sparkles: '✨',
-  paintbrush: '🎨',
-  wrench: '🔧',
 }
 
 export async function supabaseListCategories(): Promise<DbCategory[] | null> {
@@ -31,11 +28,14 @@ export async function supabaseListCategories(): Promise<DbCategory[] | null> {
     return null
   }
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    slug: row.slug ?? row.name.toLowerCase().replace(/\s+/g, '-'),
-    name: row.name,
-    nameHe: row.name_he ?? row.name,
-    icon: ICON_MAP[row.icon ?? ''] ?? '🔧',
-  }))
+  return (data ?? []).map((row) => {
+    const slug = normalizeCategorySlug(row.slug, row.name)
+    return {
+      id: row.id,
+      slug,
+      name: resolveCategoryNameEn(slug, row.name, row.name_he),
+      nameHe: resolveCategoryNameHe(slug, row.name_he, row.name),
+      icon: resolveCategoryEmoji(slug, row.icon),
+    }
+  })
 }
