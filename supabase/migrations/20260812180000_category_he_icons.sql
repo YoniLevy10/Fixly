@@ -1,5 +1,5 @@
 -- Normalize category Hebrew labels + emoji icons for IL market
--- Idempotent: safe to re-run (no duplicate slug conflicts)
+-- Idempotent: safe to re-run (ON CONFLICT + no slug rewrites)
 
 -- 1) Upsert known categories by slug
 insert into public.service_categories (name, slug, name_he, icon, sort_order)
@@ -30,7 +30,7 @@ set
   icon = excluded.icon,
   sort_order = coalesce(public.service_categories.sort_order, excluded.sort_order);
 
--- 2) Backfill Hebrew + icons for existing rows by slug only (never rewrite slug here)
+-- 2) Backfill Hebrew + icons by existing slug (no slug changes)
 update public.service_categories set name_he = 'אינסטלציה', icon = '🚿' where slug = 'plumbing';
 update public.service_categories set name_he = 'חשמל', icon = '⚡' where slug = 'electricity';
 update public.service_categories set name_he = 'מיזוג אוויר', icon = '❄️' where slug in ('ac', 'hvac');
@@ -50,56 +50,23 @@ update public.service_categories set name_he = 'זגגות', icon = '🪟' where
 update public.service_categories set name_he = 'שיפוצים', icon = '🏗️' where slug in ('renovations', 'renovation');
 update public.service_categories set name_he = 'כללי / אחר', icon = '🧰' where slug in ('general', 'other');
 
--- 3) Orphan English-named rows with empty/null slug: fill Hebrew+icon only when target slug is free
---    If target slug already exists, just update this row's name_he/icon without changing slug.
-update public.service_categories c
-set
-  name_he = 'ריהוט',
-  icon = '🛋️',
-  slug = case
-    when c.slug is null or c.slug = '' then
-      case when exists (select 1 from public.service_categories x where x.slug = 'furniture')
-        then c.slug else 'furniture' end
-    else c.slug
-  end
-where lower(c.name) = 'furniture';
+-- 3) English display names → Hebrew label/icon without touching slug
+update public.service_categories
+set name_he = 'ריהוט', icon = '🛋️'
+where lower(name) = 'furniture';
 
-update public.service_categories c
-set
-  name_he = 'תיקון מכשירים',
-  icon = '🔌',
-  slug = case
-    when c.slug is null or c.slug in ('', 'appliances', 'appliance-repair') then
-      case when exists (
-        select 1 from public.service_categories x
-        where x.slug = 'appliance_repair' and x.id <> c.id
-      ) then c.slug else 'appliance_repair' end
-    else c.slug
-  end
-where lower(c.name) in ('appliance repair', 'appliances');
+update public.service_categories
+set name_he = 'תיקון מכשירים', icon = '🔌'
+where lower(name) in ('appliance repair', 'appliances');
 
-update public.service_categories c
-set
-  name_he = 'מחשבים',
-  icon = '💻',
-  slug = case
-    when c.slug is null or c.slug = '' then
-      case when exists (select 1 from public.service_categories x where x.slug = 'computers' and x.id <> c.id)
-        then c.slug else 'computers' end
-    else c.slug
-  end
-where lower(c.name) = 'computers';
+update public.service_categories
+set name_he = 'מחשבים', icon = '💻'
+where lower(name) = 'computers';
 
-update public.service_categories c
-set
-  name_he = 'זגגות',
-  icon = '🪟'
-where lower(c.name) in ('glazing', 'glass') or c.name_he = 'זגגות' or c.slug in ('glazing', 'glass');
+update public.service_categories
+set name_he = 'זגגות', icon = '🪟'
+where lower(name) in ('glazing', 'glass') or name_he = 'זגגות';
 
-update public.service_categories c
-set
-  name_he = 'שיפוצים',
-  icon = '🏗️'
-where lower(c.name) in ('renovations', 'renovation')
-   or c.name_he = 'שיפוצים'
-   or c.slug in ('renovations', 'renovation');
+update public.service_categories
+set name_he = 'שיפוצים', icon = '🏗️'
+where lower(name) in ('renovations', 'renovation') or name_he = 'שיפוצים';
