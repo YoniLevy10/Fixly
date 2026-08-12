@@ -47,11 +47,7 @@ export default function HomeScreen() {
                   icon: string
                 }) => ({
                   slug: c.slug,
-                  name: getCategoryLabel(
-                    locale,
-                    c.slug,
-                    locale === 'he' ? c.nameHe : (c.name ?? c.nameHe)
-                  ),
+                  name: getCategoryLabel(locale, c.slug, c.nameHe || c.name),
                   icon: c.icon,
                 })
               )
