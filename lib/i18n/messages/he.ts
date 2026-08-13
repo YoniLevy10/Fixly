@@ -198,7 +198,7 @@ export const he: MessageTree = {
     proTier: 'מנוי',
     freeTier: 'מסלול חינם',
   },
-    categories: {
+  categories: {
     plumbing: 'אינסטלציה',
     electricity: 'חשמל',
     ac: 'מיזוג אוויר',
