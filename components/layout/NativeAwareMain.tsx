@@ -47,7 +47,9 @@ export default function NativeAwareMain({
 
   return (
     <main className={mainClass}>
-      <div className="w-full mx-auto max-w-6xl native-content">{children}</div>
+      <div className={hideNav ? 'w-full' : 'w-full mx-auto max-w-6xl native-content'}>
+        {children}
+      </div>
     </main>
   )
 }

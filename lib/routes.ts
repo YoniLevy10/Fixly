@@ -2,6 +2,8 @@ export const routes = {
   home: '/',
   professionals: '/professionals',
   professional: (id: string) => `/professional/${id}`,
+  book: (id: string) => `/book/${id}`,
+  bookSuccess: (id: string) => `/book/success?id=${id}`,
   newRequest: '/request/new',
   myRequests: '/my-requests',
   tracking: (id: string) => `/tracking/${id}`,

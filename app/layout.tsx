@@ -5,13 +5,14 @@ import SWRegister from '@/components/pwa/SWRegister'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: { default: 'Fixly — Repairs & Professionals', template: '%s | Fixly' },
-  description: 'Find a home repair professional quickly — Fixly',
-  applicationName: 'Fixly',
+  title: { default: 'גלאם — ביוטי עד הבית', template: '%s | גלאם' },
+  description:
+    'הזמינו מניקוריסטיות, ספרים ונותני שירותי ביוטי עד הבית, המלון או המשרד — מיידי ומקצועי',
+  applicationName: 'גלאם',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Fixly',
+    title: 'גלאם',
   },
   formatDetection: {
     telephone: false,
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#123563',
+  themeColor: '#1f1814',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,

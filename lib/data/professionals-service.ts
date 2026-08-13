@@ -29,6 +29,8 @@ export async function listProfessionals(options?: {
 
       if (categorySlug) {
         const slugMap: Record<string, string[]> = {
+          nails: ['מניקור', 'ציפורניים'],
+          hair: ['תספורת', 'שיער', 'ספר'],
           plumbing: ['Plumber', 'אינסטל'],
           electricity: ['Electrician', 'חשמל'],
           ac: ['Air Conditioning', 'מיזוג'],

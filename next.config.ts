@@ -6,8 +6,7 @@ const nextConfig: NextConfig = {
   /** Demo data OFF in production by default; ON in development for investor preview */
   env: {
     NEXT_PUBLIC_FF_DEMO_DATA:
-      process.env.NEXT_PUBLIC_FF_DEMO_DATA ??
-      (process.env.NODE_ENV === 'production' ? 'false' : 'true'),
+      process.env.NEXT_PUBLIC_FF_DEMO_DATA ?? 'true',
   },
   async redirects() {
     return [

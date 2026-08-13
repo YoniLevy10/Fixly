@@ -70,8 +70,8 @@ export default function BottomNav() {
         <div className="flex flex-col items-center -mt-5 mx-2">
           <button
             type="button"
-            onClick={() => router.push(routes.newRequest)}
-            className="w-14 h-14 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-lg shadow-secondary/50 border-4 border-card ring-2 ring-secondary/30 active:scale-95 transition-transform"
+            onClick={() => router.push(routes.professionals)}
+            className="w-14 h-14 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-lg shadow-secondary/40 border-4 border-card ring-2 ring-secondary/25 active:scale-95 transition-transform"
             aria-label={t('common.publishIssue')}
           >
             <span className="text-2xl font-bold leading-none">+</span>

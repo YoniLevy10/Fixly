@@ -7,6 +7,11 @@ export type CategoryCatalogEntry = {
 }
 
 export const CATEGORY_CATALOG: Record<string, CategoryCatalogEntry> = {
+  nails: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Nails' },
+  hair: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Hair' },
+  manicure: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Manicure' },
+  barber: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Barber' },
+  // legacy Fixly keys retained for partner/API compatibility
   plumbing: { emoji: '🚿', nameHe: 'אינסטלציה', nameEn: 'Plumbing' },
   electricity: { emoji: '⚡', nameHe: 'חשמל', nameEn: 'Electrical' },
   ac: { emoji: '❄️', nameHe: 'מיזוג אוויר', nameEn: 'Air conditioning' },

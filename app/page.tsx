@@ -1,5 +1,5 @@
-import HomeScreen from '@/components/home/HomeScreen'
+import GlamHome from '@/components/glam/GlamHome'
 
 export default function HomePage() {
-  return <HomeScreen />
+  return <GlamHome />
 }
