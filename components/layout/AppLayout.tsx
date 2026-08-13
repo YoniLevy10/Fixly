@@ -1,7 +1,4 @@
-'use client'
-
 import type { ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
@@ -12,32 +9,23 @@ type AppLayoutProps = {
   hideNav?: boolean
 }
 
-function shouldHideChrome(pathname: string): boolean {
-  if (pathname === '/') return true
-  if (pathname.startsWith('/book/success')) return true
-  return false
-}
-
 /**
  * Responsive PWA shell:
- * - Marketing home: full-bleed, no chrome
- * - App screens: bottom nav / sidebar
+ * - Mobile / tablet: bottom navigation, full-width content
+ * - Desktop (lg+): fixed sidebar + header, centered content up to 6xl
  */
 export default function AppLayout({ children, hideNav = false }: AppLayoutProps) {
-  const pathname = usePathname()
-  const hideChrome = hideNav || shouldHideChrome(pathname)
-
   return (
     <div className="min-h-screen bg-background">
-      {!hideChrome && <DesktopSidebar />}
+      {!hideNav && <DesktopSidebar />}
 
-      <div className={hideChrome ? '' : 'lg:mr-64 native-shell-column'}>
-        {!hideChrome && <DesktopHeader />}
+      <div className={hideNav ? '' : 'lg:mr-64 native-shell-column'}>
+        {!hideNav && <DesktopHeader />}
 
-        <NativeAwareMain hideNav={hideChrome}>{children}</NativeAwareMain>
+        <NativeAwareMain hideNav={hideNav}>{children}</NativeAwareMain>
       </div>
 
-      {!hideChrome && <BottomNav />}
+      {!hideNav && <BottomNav />}
     </div>
   )
 }

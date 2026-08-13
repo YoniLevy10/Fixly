@@ -12,7 +12,6 @@ const config: Config = {
     extend: {
       fontFamily: {
         heebo: ['Heebo', 'sans-serif'],
-        glam: ['Syne', 'Heebo', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',

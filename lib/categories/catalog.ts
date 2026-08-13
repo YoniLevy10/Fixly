@@ -7,11 +7,6 @@ export type CategoryCatalogEntry = {
 }
 
 export const CATEGORY_CATALOG: Record<string, CategoryCatalogEntry> = {
-  nails: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Nails' },
-  hair: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Hair' },
-  manicure: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Manicure' },
-  barber: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Barber' },
-  // legacy Fixly keys retained for partner/API compatibility
   plumbing: { emoji: '🚿', nameHe: 'אינסטלציה', nameEn: 'Plumbing' },
   electricity: { emoji: '⚡', nameHe: 'חשמל', nameEn: 'Electrical' },
   ac: { emoji: '❄️', nameHe: 'מיזוג אוויר', nameEn: 'Air conditioning' },
@@ -33,6 +28,11 @@ export const CATEGORY_CATALOG: Record<string, CategoryCatalogEntry> = {
   glass: { emoji: '🪟', nameHe: 'זגגות', nameEn: 'Glazing' },
   renovations: { emoji: '🏗️', nameHe: 'שיפוצים', nameEn: 'Renovations' },
   renovation: { emoji: '🏗️', nameHe: 'שיפוצים', nameEn: 'Renovations' },
+  nails: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Nails' },
+  hair: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Hair' },
+  makeup: { emoji: '💄', nameHe: 'איפור', nameEn: 'Makeup' },
+  manicure: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Manicure' },
+  barber: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Barber' },
 }
 
 /** Lucide / legacy icon keys stored in DB → emoji */
@@ -76,6 +76,11 @@ const ENGLISH_NAME_TO_SLUG: Record<string, string> = {
   gardening: 'gardening',
   locksmith: 'locksmith',
   tiling: 'tiling',
+  nails: 'nails',
+  manicure: 'nails',
+  hair: 'hair',
+  barber: 'hair',
+  makeup: 'makeup',
 }
 
 function isMostlyLatin(text: string): boolean {

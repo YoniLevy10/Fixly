@@ -23,13 +23,6 @@ export default function ProfessionalsScreen() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const cat = searchParams.get('category')
-    if (cat) setSelectedCategory(cat)
-    const q = searchParams.get('q')
-    if (q) setQuery(q)
-  }, [searchParams])
-
-  useEffect(() => {
     const params = new URLSearchParams()
     if (query) params.set('q', query)
     if (selectedCategory) params.set('category', selectedCategory)
@@ -43,22 +36,19 @@ export default function ProfessionalsScreen() {
   }, [query, selectedCategory, sortBy])
 
   return (
-    <div className="min-h-screen bg-background px-4 py-4 lg:px-8 lg:py-6">
-      <h1 className="font-glam text-3xl mb-1">{t('professionals.title')}</h1>
-      <p className="text-sm text-muted-foreground mb-4">
-        השוו מחירים ודירוגים — והזמינו עד הבית
-      </p>
+    <div className="min-h-screen bg-gray-50 px-4 py-4 lg:px-8 lg:py-6">
+      <h1 className="text-xl font-black mb-4 lg:text-2xl">{t('professionals.title')}</h1>
 
       <div className="relative mb-3">
         <Search
-          className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400"
           size={18}
         />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('professionals.searchPlaceholder')}
-          className="w-full bg-card border border-border rounded-2xl pe-10 ps-4 py-3 text-sm outline-none focus:border-[hsl(350_38%_55%)]"
+          className="w-full bg-white border border-gray-200 rounded-2xl pe-10 ps-4 py-3 text-sm outline-none focus:border-primary/40"
         />
       </div>
 
@@ -67,10 +57,10 @@ export default function ProfessionalsScreen() {
           type="button"
           onClick={() => setSelectedCategory('')}
           className={cn(
-            'flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+            'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
             !selectedCategory
-              ? 'bg-[hsl(20_14%_12%)] text-white border-transparent'
-              : 'bg-card border-border text-foreground/70'
+              ? 'bg-primary text-white border-primary'
+              : 'bg-white border-gray-200 text-gray-600'
           )}
         >
           {t('common.all')}
@@ -83,10 +73,10 @@ export default function ProfessionalsScreen() {
               setSelectedCategory(selectedCategory === cat.slug ? '' : cat.slug)
             }
             className={cn(
-              'flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors flex items-center gap-1',
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1',
               selectedCategory === cat.slug
-                ? 'bg-[hsl(20_14%_12%)] text-white border-transparent'
-                : 'bg-card border-border text-foreground/70'
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white border-gray-200 text-gray-600'
             )}
           >
             <span>{cat.icon}</span>
@@ -99,18 +89,18 @@ export default function ProfessionalsScreen() {
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-1 text-sm text-muted-foreground"
+          className="flex items-center gap-1 text-sm text-gray-600"
         >
           <SlidersHorizontal size={16} />
           {t('professionals.sort')}
         </button>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-gray-500">
           {professionals.length} {t('common.results')}
         </span>
       </div>
 
       {showFilters && (
-        <div className="bg-card rounded-2xl border border-border p-3 mb-4 flex gap-2">
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 mb-4 flex gap-2">
           {(
             [
               ['rating', 'professionals.sortRating'],
@@ -123,10 +113,8 @@ export default function ProfessionalsScreen() {
               type="button"
               onClick={() => setSortBy(key)}
               className={cn(
-                'flex-1 py-2 rounded-xl text-xs font-semibold',
-                sortBy === key
-                  ? 'bg-[hsl(20_14%_12%)] text-white'
-                  : 'bg-muted text-foreground/70'
+                'flex-1 py-2 rounded-xl text-xs font-medium',
+                sortBy === key ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
               )}
             >
               {t(labelKey)}
@@ -135,22 +123,20 @@ export default function ProfessionalsScreen() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-4 border-muted border-t-[hsl(350_38%_55%)] rounded-full animate-spin" />
-        </div>
-      ) : professionals.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="font-bold mb-1">{t('professionals.emptyTitle')}</p>
-          <p className="text-sm text-muted-foreground">{t('professionals.emptyHint')}</p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {professionals.map((pro) => (
-            <ProListCard key={pro.id} professional={pro} />
-          ))}
-        </div>
-      )}
+      <div className="space-y-3 pb-4 lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-4 lg:space-y-0">
+        {loading ? (
+          <div className="col-span-full flex justify-center py-16">
+            <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : professionals.length === 0 ? (
+          <div className="text-center py-16 text-gray-500 col-span-full">
+            <p className="font-semibold">{t('professionals.emptyTitle')}</p>
+            <p className="text-sm mt-1">{t('professionals.emptyHint')}</p>
+          </div>
+        ) : (
+          professionals.map((pro) => <ProListCard key={pro.id} professional={pro} />)
+        )}
+      </div>
     </div>
   )
 }

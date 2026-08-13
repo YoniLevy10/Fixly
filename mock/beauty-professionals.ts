@@ -1,8 +1,7 @@
 import type { Professional } from '@/types/professional'
 
 /**
- * Curated beauty providers for the Glam MVP demo.
- * Phase 1 focus: nail techs (+ a few barbers for expansion signal).
+ * Curated beauty providers layered into Fixly (nails, hair, makeup).
  */
 export const BEAUTY_PROFESSIONALS: Professional[] = [
   {
@@ -315,6 +314,67 @@ export const BEAUTY_PROFESSIONALS: Professional[] = [
       { name: 'תספורת גברים', price: 90 },
       { name: 'תספורת ילדים', price: 70 },
       { name: 'תספורת + זקן', price: 120 },
+    ],
+  },
+  {
+    id: 'b11',
+    name: 'תמר אדרי',
+    title: 'מאפרת מקצועית',
+    category: 'איפור',
+    categories: ['איפור'],
+    description: 'איפור יום, ערב ואירועים — מגיעה עם ערכה מלאה עד הבית או המלון.',
+    avatarUrl:
+      'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&h=200&fit=crop&crop=face',
+    location: 'תל אביב',
+    serviceAreas: ['תל אביב', 'רמת גן', 'הרצליה', 'גבעתיים'],
+    phone: '054-3344556',
+    rating: 4.9,
+    reviewCount: 156,
+    startingPrice: 250,
+    experienceYears: 8,
+    completedJobs: 720,
+    isAvailable: true,
+    isApproved: true,
+    isFeatured: true,
+    isVerified: true,
+    avgResponseMinutes: 12,
+    availableHours: 'א׳–ו׳ 08:00–21:00',
+    gallery: [
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&h=400&fit=crop',
+    ],
+    services: [
+      { name: 'איפור יום', price: 250 },
+      { name: 'איפור ערב / אירוע', price: 380 },
+      { name: 'איפור כלות', price: 650 },
+    ],
+  },
+  {
+    id: 'b12',
+    name: 'נועה פלד',
+    title: 'מאפרת · אירועים וכלות',
+    category: 'איפור',
+    categories: ['איפור'],
+    description: 'התמחות בכלות ואירועים — לוק טבעי עד דרמטי, לפי בחירתכן.',
+    avatarUrl:
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face',
+    location: 'הרצליה',
+    serviceAreas: ['הרצליה', 'רעננה', 'תל אביב', 'כפר סבא'],
+    phone: '052-7788990',
+    rating: 4.8,
+    reviewCount: 91,
+    startingPrice: 280,
+    experienceYears: 6,
+    completedJobs: 410,
+    isAvailable: true,
+    isApproved: true,
+    isFeatured: false,
+    isVerified: true,
+    avgResponseMinutes: 15,
+    availableHours: 'לפי תיאום',
+    services: [
+      { name: 'איפור יום', price: 280 },
+      { name: 'איפור ערב', price: 400 },
+      { name: 'איפור כלות', price: 700 },
     ],
   },
 ]
