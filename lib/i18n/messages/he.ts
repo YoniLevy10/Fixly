@@ -220,6 +220,11 @@ export const he: MessageTree = {
     glass: 'זגגות',
     renovations: 'שיפוצים',
     renovation: 'שיפוצים',
+    nails: 'מניקור וציפורניים',
+    hair: 'תספורת ועיצוב',
+    makeup: 'איפור',
+    manicure: 'מניקור וציפורניים',
+    barber: 'תספורת ועיצוב',
   },
   app: {
     name: 'Fixly',

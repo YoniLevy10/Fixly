@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getRequestById, updateRequestStatus } from '@/lib/data/request-store'
 import {
   supabaseGetRequestById,
   supabaseUpdateRequest,
@@ -32,6 +33,14 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
   }
 
+  if (backend === 'mock') {
+    const item = getRequestById(id)
+    if (!item) {
+      return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
+    }
+    return NextResponse.json(item)
+  }
+
   return NextResponse.json({ error: 'No data backend' }, { status: 503 })
 }
 
@@ -62,7 +71,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (!canTransition(existing.status as RequestStatus, status)) {
         return NextResponse.json(
           { error: `מעבר סטטוס לא חוקי: ${existing.status} → ${status}` },
-          { status: 409 },
+          { status: 409 }
         )
       }
 
@@ -89,19 +98,36 @@ export async function PATCH(request: Request, context: RouteContext) {
             const commission = await handleCommissionOnComplete(
               existing.professionalId,
               id,
-              quotedAmount,
+              quotedAmount
             )
             billing = { ...billing, commissionAgorot: commission }
           }
         }
-        // Bamakor / partner callback when this request has callback_url
         await emitWebhookForRequestId(
           id,
-          toApiStatus(existing.status as string),
+          toApiStatus(existing.status as string)
         ).catch((err) => trackError(err, { route: 'PATCH request webhook' }))
         return NextResponse.json({ ...fromSupabase, billing })
       }
       return NextResponse.json({ error: 'לא נמצא או אין הרשאה' }, { status: 404 })
+    }
+
+    if (backend === 'mock') {
+      const existing = getRequestById(id)
+      if (existing && !canTransition(existing.status as RequestStatus, status)) {
+        return NextResponse.json(
+          { error: `מעבר סטטוס לא חוקי: ${existing.status} → ${status}` },
+          { status: 409 }
+        )
+      }
+
+      const updated = updateRequestStatus(id, status, {
+        cancellationReason,
+      })
+      if (!updated) {
+        return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
+      }
+      return NextResponse.json(updated)
     }
 
     return NextResponse.json({ error: 'No data backend' }, { status: 503 })

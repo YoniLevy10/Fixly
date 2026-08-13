@@ -24,11 +24,18 @@ export const CATEGORIES: Category[] = [
   { id: '15', name: 'מחשבים', slug: 'computers', icon: '💻', description: 'תיקון מחשבים וטכנולוגיה' },
   { id: '16', name: 'זגגות', slug: 'glazing', icon: '🪟', description: 'חלונות וזכוכית' },
   { id: '17', name: 'שיפוצים', slug: 'renovations', icon: '🏗️', description: 'שיפוץ דירות ועסקים' },
+  // Beauty / wellness — home service verticals
+  { id: '19', name: 'מניקור וציפורניים', slug: 'nails', icon: '💅', description: 'מניקור, ג׳ל ופדיקור עד הבית' },
+  { id: '20', name: 'תספורת ועיצוב', slug: 'hair', icon: '✂️', description: 'ספרים ומעצבי שיער ניידים' },
+  { id: '21', name: 'איפור', slug: 'makeup', icon: '💄', description: 'מאפרות עד הבית, מלון או משרד' },
   { id: '18', name: 'כללי / אחר', slug: 'general', icon: '🧰', description: 'שירותים כלליים' },
 ]
 
-/** Grid tiles on home */
+/** Grid tiles on home — beauty categories surfaced for discovery */
 export const HOME_DISPLAY_CATEGORIES = [
+  { name: 'מניקור וציפורניים', slug: 'nails', emoji: '💅' },
+  { name: 'תספורת ועיצוב', slug: 'hair', emoji: '✂️' },
+  { name: 'איפור', slug: 'makeup', emoji: '💄' },
   { name: 'מיזוג אוויר', slug: 'ac', emoji: '❄️' },
   { name: 'אינסטלציה', slug: 'plumbing', emoji: '🚿' },
   { name: 'חשמל', slug: 'electricity', emoji: '⚡' },
@@ -41,6 +48,9 @@ export const HOME_DISPLAY_CATEGORIES = [
 ]
 
 export const PROFESSIONALS_FILTER_CATEGORIES = [
+  { slug: 'nails', name: 'מניקור וציפורניים', icon: '💅' },
+  { slug: 'hair', name: 'תספורת ועיצוב', icon: '✂️' },
+  { slug: 'makeup', name: 'איפור', icon: '💄' },
   { slug: 'ac', name: 'מיזוג אוויר', icon: '❄️' },
   { slug: 'plumbing', name: 'אינסטלציה', icon: '🚿' },
   { slug: 'electricity', name: 'חשמל', icon: '⚡' },

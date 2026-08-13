@@ -327,6 +327,60 @@ export const DEMO_CATEGORY_DEFS: DemoCategoryDef[] = [
       'הובלה דחופה',
     ],
   },
+  {
+    category: 'מניקור וציפורניים',
+    slug: 'nails',
+    titleTemplates: ['טכנאית ציפורניים', 'מניקוריסטית מוסמכת', 'מומחית ג׳ל'],
+    count: 5,
+    basePrice: 120,
+    services: [
+      { name: 'מניקור קלאסי', price: 120 },
+      { name: 'מניקור ג׳ל', price: 160 },
+      { name: 'פדיקור ג׳ל', price: 190 },
+    ],
+    jobTitles: [
+      'מניקור ג׳ל עד הבית',
+      'פדיקור ספא',
+      'מילוי ציפורניים',
+      'מניקור לאירוע',
+    ],
+  },
+  {
+    category: 'תספורת ועיצוב',
+    slug: 'hair',
+    titleTemplates: ['ספר נייד', 'מעצבת שיער', 'ספר גברים'],
+    count: 4,
+    basePrice: 100,
+    services: [
+      { name: 'תספורת גברים', price: 100 },
+      { name: 'תספורת נשים', price: 180 },
+      { name: 'פן / עיצוב', price: 140 },
+    ],
+    jobTitles: [
+      'תספורת עד הבית',
+      'פן לאירוע',
+      'תספורת + זקן',
+      'עיצוב שיער',
+    ],
+  },
+  {
+    category: 'איפור',
+    slug: 'makeup',
+    titleTemplates: ['מאפרת מקצועית', 'מאפרת אירועים', 'מאפרת כלות'],
+    count: 3,
+    basePrice: 250,
+    services: [
+      { name: 'איפור יום', price: 250 },
+      { name: 'איפור ערב', price: 380 },
+      { name: 'איפור כלות', price: 650 },
+    ],
+    jobTitles: [
+      'איפור עד הבית',
+      'איפור לאירוע',
+      'איפור כלות',
+      'איפור ערב',
+    ],
+  },
 ]
 
 export const DEMO_REVIEW_TEXTS = [

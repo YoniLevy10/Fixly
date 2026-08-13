@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server'
 import {
+  createRequest,
+  listRequests,
+  listRequestsByCustomer,
+  listRequestsByProfessional,
+} from '@/lib/data/request-store'
+import {
   supabaseCreateRequest,
   supabaseListRequests,
 } from '@/lib/data/supabase-requests'
@@ -44,13 +50,17 @@ export async function GET(request: Request) {
 
   if (scope === 'mine') {
     const supabase = await createServerSupabaseClient()
-    const { data: { user } } = await supabase?.auth.getUser() ?? { data: { user: null } }
+    const {
+      data: { user },
+    } = (await supabase?.auth.getUser()) ?? { data: { user: null } }
     if (user) customerId = user.id
   }
 
   if (scope === 'pro') {
     professionalId =
-      (await resolveProfessionalIdFromAuth()) ?? professionalId ?? (isDemoDataMode() ? '1' : undefined)
+      (await resolveProfessionalIdFromAuth()) ??
+      professionalId ??
+      (isDemoDataMode() ? '1' : undefined)
   }
 
   const includeInvites = scope === 'pro'
@@ -64,7 +74,7 @@ export async function GET(request: Request) {
   if (backend === 'supabase') {
     const fromSupabase = await supabaseListRequests(
       { customerId, professionalId, includeInvites },
-      limit > 0 ? { limit: limit + 1, offset } : undefined,
+      limit > 0 ? { limit: limit + 1, offset } : undefined
     )
     const rows = fromSupabase ?? []
     if (limit > 0) {
@@ -73,6 +83,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ items, hasMore, offset })
     }
     return NextResponse.json(rows)
+  }
+
+  if (backend === 'mock') {
+    let data = listRequests()
+    if (customerId) data = listRequestsByCustomer(customerId)
+    if (professionalId) data = listRequestsByProfessional(professionalId)
+    if (limit > 0) {
+      const slice = data.slice(offset, offset + limit + 1)
+      const hasMore = slice.length > limit
+      const items = hasMore ? slice.slice(0, limit) : slice
+      return NextResponse.json({ items, hasMore, offset })
+    }
+    return NextResponse.json(data)
   }
 
   return NextResponse.json({ error: 'No data backend' }, { status: 503 })
@@ -94,7 +117,9 @@ export async function POST(request: Request) {
       if (fromSupabase) {
         if (body.referralCode) {
           const supabase = await createServerSupabaseClient()
-          const { data: { user } } = await supabase?.auth.getUser() ?? { data: { user: null } }
+          const {
+            data: { user },
+          } = (await supabase?.auth.getUser()) ?? { data: { user: null } }
           if (user) {
             await recordReferralRedemption({
               referralCode: body.referralCode,
@@ -106,6 +131,15 @@ export async function POST(request: Request) {
         return NextResponse.json(fromSupabase, { status: 201 })
       }
       return NextResponse.json({ error: 'יש להתחבר כדי לשלוח בקשה' }, { status: 401 })
+    }
+
+    if (backend === 'mock') {
+      const created = createRequest({
+        ...body,
+        customerId: body.customerId || 'guest@fixly.app',
+        customerName: body.customerName || 'אורח',
+      })
+      return NextResponse.json(created, { status: 201 })
     }
 
     return NextResponse.json({ error: 'No data backend' }, { status: 503 })

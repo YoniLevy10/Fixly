@@ -1,6 +1,7 @@
 import type { Professional } from '@/types/professional'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { getDemoDataset } from '@/mock/demo-seed'
+import { BEAUTY_PROFESSIONALS } from '@/mock/beauty-professionals'
 
 /** Ported from BASE44 mockData.js — Hebrew professionals seed (non-demo) */
 const LEGACY_PROFESSIONALS: Professional[] = [
@@ -169,7 +170,11 @@ const LEGACY_PROFESSIONALS: Professional[] = [
 
 /** Lazy — reads demo flag at call time (not only at module import). */
 export function getProfessionals(): Professional[] {
-  return isDemoDataMode() ? getDemoDataset().professionals : LEGACY_PROFESSIONALS
+  const base = isDemoDataMode()
+    ? getDemoDataset().professionals
+    : LEGACY_PROFESSIONALS
+  // Curated beauty pros (nails / hair / makeup) layered onto Fixly catalog
+  return [...BEAUTY_PROFESSIONALS, ...base]
 }
 
 /** @deprecated Use getProfessionals() */
@@ -186,6 +191,11 @@ const SLUG_TO_CATEGORY: Record<string, string[]> = {
   locksmith: ['מנעולן', 'מנעולנות'],
   tiling: ['ריצוף'],
   moving: ['הובלות'],
+  nails: ['מניקור', 'ציפורניים'],
+  hair: ['תספורת', 'שיער', 'ספר'],
+  makeup: ['איפור', 'מאפר'],
+  manicure: ['מניקור', 'ציפורניים'],
+  barber: ['תספורת', 'ספר'],
 }
 
 export function getFeaturedProfessionals(): Professional[] {

@@ -3,6 +3,21 @@ export const CATEGORY_ACCENTS: Record<
   string,
   { chip: string; card: string; iconBg: string }
 > = {
+  nails: {
+    chip: 'bg-rose-100 text-rose-900 border-rose-300',
+    card: 'border-rose-300 hover:border-rose-500 hover:bg-rose-50/80',
+    iconBg: 'bg-rose-100',
+  },
+  hair: {
+    chip: 'bg-stone-200 text-stone-900 border-stone-400',
+    card: 'border-stone-400 hover:border-stone-600 hover:bg-stone-50/80',
+    iconBg: 'bg-stone-200',
+  },
+  makeup: {
+    chip: 'bg-fuchsia-100 text-fuchsia-900 border-fuchsia-300',
+    card: 'border-fuchsia-300 hover:border-fuchsia-500 hover:bg-fuchsia-50/80',
+    iconBg: 'bg-fuchsia-100',
+  },
   electricity: {
     chip: 'bg-amber-100 text-amber-900 border-amber-300',
     card: 'border-amber-300 hover:border-amber-500 hover:bg-amber-50/80',

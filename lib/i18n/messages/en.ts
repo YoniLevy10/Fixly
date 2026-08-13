@@ -220,6 +220,11 @@ export const en: MessageTree = {
     glass: 'Glazing',
     renovations: 'Renovations',
     renovation: 'Renovations',
+    nails: 'Nails',
+    hair: 'Hair',
+    makeup: 'Makeup',
+    manicure: 'Manicure',
+    barber: 'Barber',
   },
   app: {
     name: 'Fixly',
