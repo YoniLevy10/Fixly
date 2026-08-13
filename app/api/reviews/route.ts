@@ -20,6 +20,11 @@ export async function GET(request: Request) {
     return NextResponse.json(reviews ?? [])
   }
 
+  if (resolveDataBackend() === 'mock') {
+    const { getReviewsByProfessionalId } = await import('@/mock/reviews')
+    return NextResponse.json(getReviewsByProfessionalId(professionalId))
+  }
+
   return NextResponse.json({ error: 'No data backend' }, { status: 503 })
 }
 
