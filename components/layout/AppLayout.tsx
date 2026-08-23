@@ -1,4 +1,7 @@
+'use client'
+
 import type { ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
@@ -10,22 +13,24 @@ type AppLayoutProps = {
 }
 
 /**
- * Responsive PWA shell:
- * - Mobile / tablet: bottom navigation, full-width content
- * - Desktop (lg+): fixed sidebar + header, centered content up to 6xl
+ * Responsive PWA shell. Campaign landing pages under /go intentionally render
+ * without product navigation so paid traffic gets one focused conversion path.
  */
 export default function AppLayout({ children, hideNav = false }: AppLayoutProps) {
+  const pathname = usePathname()
+  const shouldHideNav = hideNav || pathname.startsWith('/go/')
+
   return (
     <div className="min-h-screen bg-background">
-      {!hideNav && <DesktopSidebar />}
+      {!shouldHideNav && <DesktopSidebar />}
 
-      <div className={hideNav ? '' : 'lg:mr-64 native-shell-column'}>
-        {!hideNav && <DesktopHeader />}
+      <div className={shouldHideNav ? '' : 'lg:mr-64 native-shell-column'}>
+        {!shouldHideNav && <DesktopHeader />}
 
-        <NativeAwareMain hideNav={hideNav}>{children}</NativeAwareMain>
+        <NativeAwareMain hideNav={shouldHideNav}>{children}</NativeAwareMain>
       </div>
 
-      {!hideNav && <BottomNav />}
+      {!shouldHideNav && <BottomNav />}
     </div>
   )
 }
