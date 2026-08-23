@@ -23,7 +23,7 @@ const copy = {
     title: 'פחות זמן לחפש עבודה. יותר עבודות שמתאימות לכם',
     subtitle: 'Fixly מחברת אתכם ללקוחות שכבר צריכים את השירות שלכם — לפי תחום, אזור וזמינות.',
     cta: 'הצטרפו כבעלי מקצוע',
-    href: '/pro/register?utm_source=meta&utm_medium=paid_social&utm_campaign=jerusalem_pros_v1',
+    href: '/pro/join?utm_source=meta&utm_medium=paid_social&utm_campaign=jerusalem_pros_v1',
     note: '3 לידים ראשונים בחודש ללא עלות',
     bullets: ['פניות ממוקדות באזור העבודה שלכם', 'ניהול לידים ועבודות במקום אחד', 'פרופיל מקצועי שבונה אמון'],
     cardTitle: 'העבודה הבאה כבר מחכה',
