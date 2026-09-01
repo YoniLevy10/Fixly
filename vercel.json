@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/sync-midrag",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/keepalive",
+      "schedule": "0 6 * * *"
     }
   ]
 }
