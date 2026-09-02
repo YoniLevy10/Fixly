@@ -1,6 +1,6 @@
+import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { monetizationConfig, computeCommissionAgorot } from '@/lib/monetization/config'
 import type { BillingEventType } from '@/lib/monetization/types'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { isSupabaseEnabled } from '@/lib/data/config'
 
 type RecordBillingInput = {
@@ -11,13 +11,14 @@ type RecordBillingInput = {
   metadata?: Record<string, unknown>
 }
 
+/** Persist billing events with service-role (RLS blocks user-client inserts). */
 export async function recordBillingEvent(input: RecordBillingInput): Promise<void> {
   if (!isSupabaseEnabled()) return
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = getAdminSupabaseClient()
   if (!supabase) return
 
-  await supabase.from('billing_events').insert({
+  const { error } = await supabase.from('billing_events').insert({
     professional_id: input.professionalId,
     request_id: input.requestId ?? null,
     event_type: input.eventType,
@@ -25,6 +26,9 @@ export async function recordBillingEvent(input: RecordBillingInput): Promise<voi
     currency: monetizationConfig.currency,
     metadata: input.metadata ?? {},
   })
+  if (error) {
+    console.error('[billing] recordBillingEvent failed', error.message)
+  }
 }
 
 /** On request accepted: charge lead or waive if Pro / credits remain */
@@ -36,7 +40,7 @@ export async function handleLeadOnAccept(
     return { charged: false, amountAgorot: 0 }
   }
 
-  const supabase = await createServerSupabaseClient()
+  const supabase = getAdminSupabaseClient()
   if (!supabase) return { charged: false, amountAgorot: 0 }
 
   const { data: pro } = await supabase
@@ -65,10 +69,14 @@ export async function handleLeadOnAccept(
 
   const credits = (pro.lead_credits as number) ?? 0
   if (credits > 0) {
-    await supabase
+    const { error: creditError } = await supabase
       .from('professionals')
       .update({ lead_credits: credits - 1 })
       .eq('id', professionalId)
+
+    if (creditError) {
+      console.error('[billing] lead_credits decrement failed', creditError.message)
+    }
 
     await recordBillingEvent({
       professionalId,
@@ -86,7 +94,7 @@ export async function handleLeadOnAccept(
     requestId,
     eventType: 'lead_charged',
     amountAgorot: fee,
-    metadata: { note: 'accrued — collect via Stripe when enabled' },
+    metadata: { note: 'accrued — collect via Tranzila when enabled' },
   })
 
   return { charged: true, amountAgorot: fee }
@@ -111,12 +119,15 @@ export async function handleCommissionOnComplete(
   })
 
   if (isSupabaseEnabled()) {
-    const supabase = await createServerSupabaseClient()
+    const supabase = getAdminSupabaseClient()
     if (supabase) {
-      await supabase
+      const { error } = await supabase
         .from('requests')
         .update({ platform_fee_agorot: commission })
         .eq('id', requestId)
+      if (error) {
+        console.error('[billing] platform_fee update failed', error.message)
+      }
     }
   }
 

@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "node --import tsx --test tests/unit/*.test.ts",
     "smoke:phase1": "FIXLY_JOBS_STORE=memory FIXLY_WEBHOOK_DRY_RUN=1 node --import tsx scripts/smoke-phase1.ts",
+    "smoke:pilot": "node --import tsx scripts/smoke-pilot.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "scan:submission": "bash scripts/e2e-submission-scan.sh"

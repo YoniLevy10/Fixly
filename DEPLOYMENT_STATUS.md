@@ -1,37 +1,42 @@
 # Deployment Status
 
-**Updated:** 2026-07-23 (post Bamakor Phase 1–2 merge)
+**Updated:** 2026-09-02 (marketing-ready code path)
 
-## Code (agent / repo): done
+## Code (agent / repo): done for ads gate
 
 | Item | Status |
 |------|--------|
-| Marketplace MVP (requests, matching, statuses) | In `main` |
-| Production hardening (Zod, rate limits, health, demo off) | In `main` |
-| Bamakor `/api/v1/jobs` + signed webhooks + retries | Merged (#6) |
-| Unit tests + `smoke:phase1` in CI | This PR |
-| Docs: `PRODUCTION_READINESS`, `BAMAKOR_INTEGRATION`, `FIXLY_STATUS` | In repo |
+| Marketplace MVP (requests, matching, statuses) | In `main` / this branch |
+| Demo default OFF in `next.config.ts` | This PR |
+| Multi-match RLS + billing via service-role | This PR |
+| Consumer pro notify (push + WA log) | This PR |
+| GA4 loader + Tranzila webhook secret | This PR |
+| `npm run smoke:pilot` | This PR |
+| Bamakor `/api/v1/jobs` + signed webhooks | Merged |
+| Unit tests + phase1 smoke in CI | In repo |
 
-## You (external / ops): still required for launch marketing
+## You (external / ops): still required before paid ads
 
 | Step | Owner | Notes |
 |------|--------|--------|
+| Vercel project + canonical domain | You | `fixly.vercel.app` was wrong project historically |
 | Vercel env vars | You | See `docs/PRODUCTION_READINESS.md` + `.env.example` |
-| `FIXLY_API_KEYS` + `BAMAKOR_WEBHOOK_SECRET` | You | Needed for partner API / signed callbacks |
-| Supabase migrations (all) | You | Bamakor migration already run ✓ |
-| Optional pilot seed | You | `supabase/seed_pilot_optional.sql` |
+| `NEXT_PUBLIC_FF_DEMO_DATA=false` + redeploy | You | Critical |
+| `TRANZILA_*` + `TRANZILA_WEBHOOK_SECRET` | You | Notification URL with `?secret=` |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` + analytics flag | You | Ads measurement |
+| VAPID + `NEXT_PUBLIC_FF_PUSH=true` | You | Pro notify |
+| Supabase migrations (all, incl. marketing_ready_rls) | You | `supabase db push` |
 | Google OAuth | You | Supabase + Google Console |
-| Stripe (if charging) | You | Keys + webhook |
 | `ADMIN_EMAILS` | You | `/admin` access |
 | `/api/health` → `ok`, `demoMode: false` | You | After env + deploy |
 | 20+ real pros in pilot city | You | Supply before paid ads |
+| Soft launch 20–50 real requests | You | Before ad spend |
 | Bamakor button + webhook receiver | Bamakor team | Not in this repo |
 
 ## Verify after you configure
 
 ```bash
-curl -s https://fixly.vercel.app/api/health | jq
+curl -sS 'https://YOUR_DOMAIN/api/health?verbose=1' | jq
 # Expect: status ok|degraded, demoMode false, mode supabase
-# checks.bamakor_migration.ok true
-# checks.partner_api_keys.ok true (once FIXLY_API_KEYS set)
+PILOT_BASE_URL=https://YOUR_DOMAIN npm run smoke:pilot
 ```
