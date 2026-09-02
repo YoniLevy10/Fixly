@@ -3,9 +3,9 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  /** Demo data ON by default (investor / candidacy preview). Set false for live Supabase-only. */
+  /** Demo OFF by default so production builds never bake mock data. Set true for investor preview. */
   env: {
-    NEXT_PUBLIC_FF_DEMO_DATA: process.env.NEXT_PUBLIC_FF_DEMO_DATA ?? 'true',
+    NEXT_PUBLIC_FF_DEMO_DATA: process.env.NEXT_PUBLIC_FF_DEMO_DATA ?? 'false',
   },
   async redirects() {
     return [

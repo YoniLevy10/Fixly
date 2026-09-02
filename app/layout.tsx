@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import AppLayout from '@/components/layout/AppLayout'
 import AppProviders from '@/components/providers/AppProviders'
 import SWRegister from '@/components/pwa/SWRegister'
+import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default function RootLayout({
           <AppLayout>{children}</AppLayout>
         </AppProviders>
         <SWRegister />
+        <GoogleAnalytics />
       </body>
     </html>
   )

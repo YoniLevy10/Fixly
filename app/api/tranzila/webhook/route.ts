@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { handleTranzilaWebhookEvent } from '@/lib/tranzila/webhook-handlers'
+import {
+  isTranzilaWebhookSecretConfigured,
+  verifyTranzilaWebhookSecret,
+} from '@/lib/tranzila/verify-webhook'
 
 export async function POST(request: Request) {
   const supabase = getAdminSupabaseClient()
@@ -12,6 +16,21 @@ export async function POST(request: Request) {
   } catch {
     const text = await request.text()
     body = Object.fromEntries(new URLSearchParams(text))
+  }
+
+  const verified = verifyTranzilaWebhookSecret(request, body)
+  if (!verified.ok) {
+    return NextResponse.json({ error: verified.error }, { status: 401 })
+  }
+
+  if (
+    process.env.NODE_ENV === 'production' &&
+    process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false' &&
+    !isTranzilaWebhookSecretConfigured()
+  ) {
+    console.warn(
+      '[tranzila] TRANZILA_WEBHOOK_SECRET unset — notification endpoint is unauthenticated',
+    )
   }
 
   await handleTranzilaWebhookEvent(supabase, body)

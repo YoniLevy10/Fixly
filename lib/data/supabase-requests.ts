@@ -1,7 +1,9 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { mapRequestRow } from '@/lib/data/supabase-mappers'
 import { coordsFromLocationText } from '@/lib/tracking/geo'
 import { findMatchingCandidates } from '@/lib/matching/find-candidates'
+import { notifyInvitedProfessionals } from '@/lib/push/notify-invited-professionals'
 import type { MockRequest, CreateRequestInput } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
@@ -216,7 +218,9 @@ export async function supabaseCreateRequest(
     })
 
     if (candidates.length) {
-      await supabase.from('request_candidates').insert(
+      // Service-role insert — no public INSERT policy on request_candidates (RLS)
+      const admin = getAdminSupabaseClient() ?? supabase
+      const { error: candidateError } = await admin.from('request_candidates').insert(
         candidates.map((c) => ({
           request_id: data.id,
           professional_id: c.professionalId,
@@ -224,7 +228,16 @@ export async function supabaseCreateRequest(
           status: 'invited',
         })),
       )
-      mapped.candidates = candidates
+      if (candidateError) {
+        console.error('[supabase] request_candidates insert', candidateError.message)
+      } else {
+        mapped.candidates = candidates
+        void notifyInvitedProfessionals(
+          data.id as string,
+          (data.title as string) || mapped.title || 'בקשה חדשה',
+          candidates,
+        )
+      }
     }
   }
 

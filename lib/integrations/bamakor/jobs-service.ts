@@ -11,7 +11,7 @@ import {
   memoryListProviders,
   memoryUpdateStatus,
 } from './memory-store'
-import { sendPushToUser } from '@/lib/push/send'
+import { notifyInvitedProfessionals } from '@/lib/push/notify-invited-professionals'
 import type {
   CreateJobInput,
   ExternalRef,
@@ -50,37 +50,6 @@ async function providerFromJob(
     name,
     phone,
     category: job.category,
-  }
-}
-
-/** Notify invited professionals about a new Bamakor/partner job */
-async function notifyInvitedProfessionals(
-  requestId: string,
-  title: string,
-  candidates: { professionalId: string }[],
-) {
-  const admin = getAdminSupabaseClient()
-  if (!admin) return
-
-  for (const candidate of candidates) {
-    try {
-      const { data: pro } = await admin
-        .from('professionals')
-        .select('user_id, phone, title')
-        .eq('id', candidate.professionalId)
-        .maybeSingle()
-
-      if (pro?.user_id) {
-        await sendPushToUser(pro.user_id as string, {
-          title: 'עבודה חדשה מ-Fixly! 🛠',
-          body: title,
-          url: `/pro/requests/${requestId}`,
-          tag: `job-${requestId}`,
-        })
-      }
-    } catch (err) {
-      console.error('[push notification failed]', candidate.professionalId, err)
-    }
   }
 }
 
@@ -365,7 +334,9 @@ export async function createJob(
         status: 'invited',
       })),
     )
-    await notifyInvitedProfessionals(data.id as string, input.title, candidates)
+    await notifyInvitedProfessionals(data.id as string, input.title, candidates, {
+      sourceLabel: 'Fixly / Bamakor',
+    })
   }
 
   const job = await mapRowToJobView(data as Record<string, unknown>)

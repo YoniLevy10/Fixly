@@ -49,6 +49,15 @@ export function validateProductionEnv(): EnvValidationResult {
     if (!process.env.TRANZILA_API_APP_KEY || !process.env.TRANZILA_API_SECRET_KEY) {
       warnings.push('TRANZILA_API_APP_KEY / TRANZILA_API_SECRET_KEY missing — checkout disabled')
     }
+    if (!process.env.TRANZILA_WEBHOOK_SECRET?.trim()) {
+      warnings.push(
+        'TRANZILA_WEBHOOK_SECRET missing — /api/tranzila/webhook accepts unsigned notifications',
+      )
+    }
+  }
+
+  if (process.env.NEXT_PUBLIC_FF_ANALYTICS === 'true' && !process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
+    warnings.push('NEXT_PUBLIC_FF_ANALYTICS=true but NEXT_PUBLIC_GA_MEASUREMENT_ID missing')
   }
 
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
