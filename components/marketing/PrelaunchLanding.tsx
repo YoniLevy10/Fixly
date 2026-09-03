@@ -57,8 +57,10 @@ export default function PrelaunchLanding() {
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [showSticky, setShowSticky] = useState(true)
   const startedRef = useRef(false)
   const scrollMarks = useRef(new Set<number>())
+  const waitlistRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     forceHebrewRtl()
@@ -94,6 +96,17 @@ export default function PrelaunchLanding() {
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const el = waitlistRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowSticky(!(entry?.isIntersecting ?? false)),
+      { rootMargin: '-10% 0px -35% 0px', threshold: 0.05 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
 
   const markSignupStarted = () => {
@@ -156,7 +169,7 @@ export default function PrelaunchLanding() {
 
   return (
     <div
-      className="prelaunch-root min-h-screen overflow-x-hidden bg-[#f7f9fc] pb-24 text-[#10233f] md:pb-0"
+      className="prelaunch-root min-h-screen overflow-x-hidden bg-[#f7f9fc] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] text-[#10233f] md:pb-0"
       dir="rtl"
       lang="he"
     >
@@ -166,7 +179,7 @@ export default function PrelaunchLanding() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,53,99,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(18,53,99,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_bottom,black,transparent_55%)]" />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-[#123563]/8 bg-[#f7f9fc]/88 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-[#123563]/8 bg-[#f7f9fc]/88 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-8">
           <a href="#top" className="flex items-center gap-2" aria-label="Fixly">
             <span dir="ltr" className="text-2xl font-black tracking-tight text-[#123563]">
@@ -196,13 +209,15 @@ export default function PrelaunchLanding() {
               mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
             }`}
           >
-            <p
-              dir="ltr"
-              className="mb-3 font-black tracking-tight text-[#123563] text-[clamp(2.6rem,7.5vw,4.5rem)] leading-none"
-            >
-              {copy.brand}
-              <span className="text-[#F59E0B]">.</span>
-            </p>
+            <div className="flex justify-start">
+              <p
+                dir="ltr"
+                className="mb-3 font-black tracking-tight text-[#123563] text-[clamp(2.6rem,7.5vw,4.5rem)] leading-none"
+              >
+                {copy.brand}
+                <span className="text-[#F59E0B]">.</span>
+              </p>
+            </div>
             <p className="mb-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#123563] sm:text-sm">
               <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
               {copy.badge}
@@ -333,7 +348,11 @@ export default function PrelaunchLanding() {
           </div>
         </section>
 
-        <section id="waitlist" className="scroll-mt-20 bg-[#eaf1f8]">
+        <section
+          id="waitlist"
+          ref={waitlistRef}
+          className="scroll-mt-20 bg-[#eaf1f8]"
+        >
           <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
             <div>
               <h2 className="max-w-xl text-3xl font-black tracking-tight text-[#10233f] sm:text-4xl">
@@ -541,18 +560,20 @@ export default function PrelaunchLanding() {
         </p>
       </footer>
 
-      <div className="fixed inset-x-3 bottom-3 z-50 md:hidden">
-        <a
-          href="#waitlist"
-          onClick={() =>
-            track('waitlist_cta_click', { placement: 'mobile_sticky', variant: VARIANT })
-          }
-          className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#123563] px-5 text-base font-black text-white shadow-[0_16px_40px_rgba(18,53,99,0.32)]"
-        >
-          {copy.stickyCta}
-          <ArrowLeft className="h-5 w-5" aria-hidden />
-        </a>
-      </div>
+      {showSticky ? (
+        <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] z-50 md:hidden">
+          <a
+            href="#waitlist"
+            onClick={() =>
+              track('waitlist_cta_click', { placement: 'mobile_sticky', variant: VARIANT })
+            }
+            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#123563] px-5 text-base font-black text-white shadow-[0_16px_40px_rgba(18,53,99,0.32)]"
+          >
+            {copy.stickyCta}
+            <ArrowLeft className="h-5 w-5" aria-hidden />
+          </a>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -602,57 +623,59 @@ function Field({
 function HeroFlowMock() {
   return (
     <div
-      className="relative mx-auto w-full max-w-md py-4 lg:max-w-none"
+      className="relative mx-auto w-full max-w-md py-2 sm:py-4 lg:max-w-none"
       aria-label="הדגמה: זרימת בקשה ב-Fixly"
     >
-      <div className="absolute inset-x-8 top-10 h-[75%] rounded-[2.5rem] bg-[#123563]/12 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/95 p-5 shadow-[0_28px_70px_rgba(18,53,99,0.16)] sm:p-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div>
+      <div className="absolute inset-x-8 top-8 hidden h-[75%] rounded-[2.5rem] bg-[#123563]/12 blur-3xl sm:block" />
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/80 bg-white p-4 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:rounded-[1.75rem] sm:p-6 sm:shadow-[0_28px_70px_rgba(18,53,99,0.16)]">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 sm:pb-4">
+          <div className="min-w-0">
             <p className="text-xs font-bold text-slate-400">ככה זה ירגיש</p>
-            <p dir="ltr" className="mt-1 text-lg font-black text-[#123563]">
+            <p dir="ltr" className="mt-1 text-base font-black text-[#123563] sm:text-lg">
               Fixly<span className="text-[#F59E0B]">.</span>
             </p>
           </div>
-          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
+          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
             בקשה פעילה
           </span>
         </div>
 
-        <div className="mt-5 rounded-2xl bg-[#f5f8fb] p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
+        <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-3.5 sm:mt-5 sm:p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
               <p className="text-xs font-bold text-slate-400">הבקשה שלך</p>
-              <p className="mt-1 text-lg font-black text-[#10233f]">המים בכיור לא יורדים</p>
+              <p className="mt-1 text-base font-black leading-snug text-[#10233f] sm:text-lg">
+                המים בכיור לא יורדים
+              </p>
             </div>
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-[#123563] shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#123563] shadow-sm sm:h-11 sm:w-11">
               <Wrench className="h-5 w-5" aria-hidden />
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-500">
-            <MapPin className="h-4 w-4 text-[#F59E0B]" aria-hidden />
+            <MapPin className="h-4 w-4 shrink-0 text-[#F59E0B]" aria-hidden />
             ירושלים · אינסטלציה
           </div>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
           <StatusRow done title="הבקשה נשלחה" subtitle="קיבלנו את הפרטים" />
           <StatusRow done title="נמצאה התאמה" subtitle="בעל מקצוע רלוונטי באזור" />
           <StatusRow active title="בדרך אליך" subtitle="השלב הבא מופיע כאן בזמן אמת" />
         </div>
 
-        <div className="mt-6 rounded-2xl bg-[#10233f] p-4 text-white">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
+        <div className="mt-5 rounded-2xl bg-[#10233f] p-3.5 text-white sm:mt-6 sm:p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 sm:h-11 sm:w-11">
                 <BadgeCheck className="h-5 w-5 text-[#ffd07a]" aria-hidden />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold text-white/55">התאמה לדוגמה</p>
-                <p className="mt-0.5 text-sm font-black">בעל מקצוע מאומת</p>
+                <p className="mt-0.5 truncate text-sm font-black">בעל מקצוע מאומת</p>
               </div>
             </div>
-            <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/80">
+            <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/80">
               באזור שלך
             </span>
           </div>
