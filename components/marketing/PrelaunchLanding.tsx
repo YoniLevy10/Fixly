@@ -170,7 +170,10 @@ export default function PrelaunchLanding() {
             mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
           }`}
         >
-          <p className="mb-3 font-black tracking-tight text-[#123563] text-[clamp(2.75rem,8vw,4.75rem)] leading-none">
+          <p
+            dir="ltr"
+            className="mb-3 font-black tracking-tight text-[#123563] text-[clamp(2.75rem,8vw,4.75rem)] leading-none"
+          >
             {copy.brand}
             <span className="text-[#F59E0B]">.</span>
           </p>
@@ -421,7 +424,7 @@ export default function PrelaunchLanding() {
       </section>
 
       <footer className="border-t border-[#123563]/10 bg-white/70 px-5 py-8 text-center text-sm font-medium text-slate-500">
-        <p className="font-black text-[#123563]">
+        <p className="font-black text-[#123563]" dir="ltr">
           Fixly<span className="text-[#F59E0B]">.</span>
         </p>
         <p className="mt-2">
