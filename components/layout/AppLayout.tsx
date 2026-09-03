@@ -1,12 +1,12 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
 import NativeAwareMain from '@/components/layout/NativeAwareMain'
-import { featureFlags } from '@/lib/feature-flags'
+import { shouldShowPrelaunchLanding } from '@/lib/site-hosts'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -19,10 +19,17 @@ type AppLayoutProps = {
  */
 export default function AppLayout({ children, hideNav = false }: AppLayoutProps) {
   const pathname = usePathname()
+  const [host, setHost] = useState('')
+
+  useEffect(() => {
+    setHost(window.location.host)
+  }, [])
+
+  const isMarketingHome = shouldShowPrelaunchLanding(host) && pathname === '/'
   const isMarketingRoute =
     pathname.startsWith('/go/') ||
     pathname === '/waitlist' ||
-    (featureFlags.prelaunch && pathname === '/')
+    isMarketingHome
   const shouldHideNav = hideNav || isMarketingRoute
 
   return (

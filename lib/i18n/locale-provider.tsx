@@ -10,13 +10,13 @@ import {
   type ReactNode,
 } from 'react'
 import { translate } from '@/lib/i18n/translate'
-import { featureFlags } from '@/lib/feature-flags'
 import {
   isLocale,
   localeDirection,
   LOCALE_STORAGE_KEY,
   type Locale,
 } from '@/lib/i18n/types'
+import { shouldShowPrelaunchLanding } from '@/lib/site-hosts'
 
 type LocaleContextValue = {
   locale: Locale
@@ -36,10 +36,13 @@ function detectBrowserLocale(): Locale {
 }
 
 function isMarketingPath(pathname: string): boolean {
+  if (typeof window === 'undefined') {
+    return pathname === '/waitlist' || pathname.startsWith('/go/')
+  }
   return (
     pathname === '/waitlist' ||
     pathname.startsWith('/go/') ||
-    (featureFlags.prelaunch && pathname === '/')
+    (shouldShowPrelaunchLanding(window.location.host) && pathname === '/')
   )
 }
 

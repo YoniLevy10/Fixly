@@ -2,6 +2,20 @@
 
 מדריך קצר לחיבור הדומיין `fixly.tech` ל-Google Search Console ולדחיפת תנועה אורגנית.
 
+## 0. דומיינים — נחיתה מול מערכת
+
+| דומיין | מה מוצג ב-`/` |
+|--------|----------------|
+| `https://fixly.tech` | דף נחיתה / הרשמה מוקדמת |
+| `https://*.vercel.app` | המערכת המלאה (marketplace) |
+| `localhost` | המערכת (פיתוח) |
+
+`/waitlist` זמין תמיד. אחרי השקה מלאה: `NEXT_PUBLIC_FF_PRELAUNCH=false`.
+
+מומלץ להגדיר גם:
+- `NEXT_PUBLIC_APP_URL=https://fixly.tech` (SEO / GSC)
+- `NEXT_PUBLIC_PRODUCT_URL=https://YOUR-PROJECT.vercel.app` (קישור למערכת)
+
 ## 1. חברו את הדומיין ב-Vercel
 
 1. Vercel → Project → **Settings → Domains**
@@ -14,7 +28,8 @@
 | משתנה | ערך |
 |--------|------|
 | `NEXT_PUBLIC_APP_URL` | `https://fixly.tech` |
-| `NEXT_PUBLIC_FF_PRELAUNCH` | `true` (עד להשקה מלאה) |
+| `NEXT_PUBLIC_PRODUCT_URL` | `https://YOUR-ALIAS.vercel.app` (אופציונלי) |
+| `NEXT_PUBLIC_FF_PRELAUNCH` | `true` (עד להשקה מלאה; vercel.app עדיין מציג את האפליקציה) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | טוקן האימות מ-GSC (ראו למטה) |
 | `NEXT_PUBLIC_FF_ANALYTICS` | `true` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-…` (מומלץ יחד עם GSC) |

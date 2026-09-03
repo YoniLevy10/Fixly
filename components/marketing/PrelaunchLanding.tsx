@@ -11,6 +11,7 @@ import {
 import { track } from '@/lib/analytics/track'
 import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 import { prelaunchCopy as copy } from '@/lib/marketing/prelaunch-copy'
+import { PRODUCT_URL } from '@/lib/site-config'
 
 type FormState = {
   fullName: string
@@ -440,6 +441,18 @@ export default function PrelaunchLanding() {
           <Link href="/about" className="underline underline-offset-2">
             אודות
           </Link>
+          {PRODUCT_URL ? (
+            <>
+              {' · '}
+              <a
+                href={PRODUCT_URL}
+                className="underline underline-offset-2"
+                rel="noopener noreferrer"
+              >
+                כניסה למערכת
+              </a>
+            </>
+          ) : null}
         </p>
       </footer>
     </div>
