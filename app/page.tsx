@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import HomeScreen from '@/components/home/HomeScreen'
-import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
+import PrelaunchLandingV2 from '@/components/marketing/PrelaunchLandingV2'
 import { featureFlags } from '@/lib/feature-flags'
 import {
   DEFAULT_DESCRIPTION_HE,
@@ -34,7 +34,7 @@ export const metadata: Metadata = featureFlags.prelaunch
 
 export default function HomePage() {
   if (featureFlags.prelaunch) {
-    return <PrelaunchLanding />
+    return <PrelaunchLandingV2 />
   }
   return <HomeScreen />
 }
