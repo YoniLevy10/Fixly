@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react'
 import { translate } from '@/lib/i18n/translate'
+import { featureFlags } from '@/lib/feature-flags'
 import {
   isLocale,
   localeDirection,
@@ -34,8 +35,18 @@ function detectBrowserLocale(): Locale {
   return lang.startsWith('he') ? 'he' : 'en'
 }
 
+function isMarketingPath(pathname: string): boolean {
+  return (
+    pathname === '/waitlist' ||
+    pathname.startsWith('/go/') ||
+    (featureFlags.prelaunch && pathname === '/')
+  )
+}
+
 function readStoredLocale(): Locale {
   if (typeof window === 'undefined') return 'he'
+  // Pre-launch / waitlist pages are Hebrew-first acquisition surfaces
+  if (isMarketingPath(window.location.pathname)) return 'he'
   const stored = localStorage.getItem(LOCALE_STORAGE_KEY)
   if (stored && isLocale(stored)) return stored
   if (!localStorage.getItem(LOCALE_SUGGESTED_KEY)) {

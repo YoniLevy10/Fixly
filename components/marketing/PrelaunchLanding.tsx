@@ -50,7 +50,21 @@ export default function PrelaunchLanding() {
     forceHebrewRtl()
     const id = requestAnimationFrame(() => setMounted(true))
     track('waitlist_page_view', { path: window.location.pathname })
-    return () => cancelAnimationFrame(id)
+
+    // LocaleProvider may apply browser English after mount — keep acquisition pages RTL
+    const observer = new MutationObserver(() => {
+      if (document.documentElement.getAttribute('dir') !== 'rtl') {
+        forceHebrewRtl()
+      }
+    })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['dir', 'lang'],
+    })
+    return () => {
+      cancelAnimationFrame(id)
+      observer.disconnect()
+    }
   }, [])
 
   useEffect(() => {
@@ -91,16 +105,20 @@ export default function PrelaunchLanding() {
     markSignupStarted()
     try {
       const attribution = getStoredAttribution()
+      const referralCode = getStoredReferral()
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...form,
+          fullName: form.fullName,
+          phone: form.phone,
+          email: form.email || undefined,
+          city: form.city || undefined,
+          category: audience === 'professional' && form.category ? form.category : undefined,
           audience,
           source: 'prelaunch_landing',
-          referralCode: getStoredReferral(),
-          attribution:
-            Object.keys(attribution).length > 0 ? attribution : undefined,
+          ...(referralCode ? { referralCode } : {}),
+          ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         }),
       })
       if (!res.ok) {

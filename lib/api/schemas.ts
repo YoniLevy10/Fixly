@@ -74,7 +74,7 @@ export const proWaitlistSchema = z.object({
   email: z.union([z.string().trim().email().max(200), z.literal('')]).optional(),
   category: z.string().trim().max(100).optional(),
   city: z.string().trim().max(100).optional(),
-  referralCode: z.string().trim().max(50).optional(),
+  referralCode: z.string().trim().max(50).nullish(),
   audience: waitlistAudienceSchema.optional().default('professional'),
   source: z.string().trim().max(100).optional(),
   attribution: waitlistAttributionSchema,
