@@ -56,14 +56,32 @@ export const updateRequestSchema = z.object({
   cancellationReason: z.string().trim().max(1000).optional(),
 })
 
+export const waitlistAudienceSchema = z.enum(['customer', 'professional'])
+
+export const waitlistAttributionSchema = z
+  .object({
+    utm_source: z.string().trim().max(200).optional(),
+    utm_medium: z.string().trim().max(200).optional(),
+    utm_campaign: z.string().trim().max(200).optional(),
+    utm_content: z.string().trim().max(200).optional(),
+    utm_term: z.string().trim().max(200).optional(),
+  })
+  .optional()
+
 export const proWaitlistSchema = z.object({
   fullName: z.string().trim().min(2).max(200),
   phone: z.string().trim().min(7).max(30),
   email: z.union([z.string().trim().email().max(200), z.literal('')]).optional(),
   category: z.string().trim().max(100).optional(),
   city: z.string().trim().max(100).optional(),
-  referralCode: z.string().trim().max(50).optional(),
+  referralCode: z.string().trim().max(50).nullish(),
+  audience: waitlistAudienceSchema.optional().default('professional'),
+  source: z.string().trim().max(100).optional(),
+  attribution: waitlistAttributionSchema,
 })
+
+/** Alias for the unified pre-launch waitlist API */
+export const waitlistSchema = proWaitlistSchema
 
 export const proClaimSchema = z.object({
   professionalId: z.string().trim().uuid(),

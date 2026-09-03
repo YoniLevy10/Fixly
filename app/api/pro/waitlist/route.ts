@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     const parsed = await parseJsonBody(request, proWaitlistSchema)
     if (!parsed.success) return parsed.response
     const body = parsed.data
+    const audience = body.audience ?? 'professional'
 
     if (isSupabaseEnabled()) {
       const supabase = await createServerSupabaseClient()
@@ -26,8 +27,21 @@ export async function POST(request: Request) {
           category: body.category ?? null,
           city: body.city ?? null,
           referral_code: body.referralCode ?? null,
+          audience,
+          source: body.source ?? 'pro_join',
         })
         if (!error) {
+          return NextResponse.json({ ok: true }, { status: 201 })
+        }
+        const legacy = await supabase.from('pro_waitlist').insert({
+          full_name: body.fullName,
+          phone: body.phone,
+          email: body.email || null,
+          category: body.category ?? null,
+          city: body.city ?? null,
+          referral_code: body.referralCode ?? null,
+        })
+        if (!legacy.error) {
           return NextResponse.json({ ok: true }, { status: 201 })
         }
         trackError(error, { route: 'POST /api/pro/waitlist' })
@@ -40,7 +54,9 @@ export async function POST(request: Request) {
       email: body.email,
       category: body.category,
       city: body.city,
-      referralCode: body.referralCode,
+      referralCode: body.referralCode ?? undefined,
+      audience,
+      source: body.source ?? 'pro_join',
     })
 
     return NextResponse.json({ ok: true }, { status: 201 })
