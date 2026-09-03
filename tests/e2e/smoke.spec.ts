@@ -14,14 +14,16 @@ test.describe('public pages', () => {
 
   test('waitlist page collects early access signups', async ({ page }) => {
     await page.goto('/waitlist')
-    await expect(page.getByRole('heading', { name: /שמרו מקום|הרשמה מוקדמת/i })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /תיכנסו לפני|שמרו מקום|הרשמה מוקדמת/i }),
+    ).toBeVisible()
     await expect(page.getByRole('tab', { name: /אני לקוח/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /בעל\/ת מקצוע/i })).toBeVisible()
     await page.getByRole('tab', { name: /בעל\/ת מקצוע/i }).click()
     await expect(page.getByLabel(/תחום/i)).toBeVisible()
     await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.getByLabel(/טלפון/i).fill('0501234567')
-    await page.getByRole('button', { name: /הצטרפו בחינם|שמרו אותי/i }).click()
+    await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(page.getByText(/נרשמתם בהצלחה/i)).toBeVisible({ timeout: 10_000 })
   })
 
