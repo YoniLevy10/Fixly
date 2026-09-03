@@ -6,16 +6,9 @@ import {
   ArrowLeft,
   BadgeCheck,
   CheckCircle2,
-  Clock3,
-  Home,
   Lock,
   MapPin,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Users,
   Wrench,
-  Zap,
 } from 'lucide-react'
 import {
   getStoredAttribution,
@@ -40,7 +33,7 @@ const emptyForm: FormState = {
   category: '',
 }
 
-const VARIANT = 'landing_v2'
+const VARIANT = 'landing_v3_lean'
 
 function forceHebrewRtl() {
   document.documentElement.lang = 'he'
@@ -59,7 +52,6 @@ export default function PrelaunchLanding() {
   const [mounted, setMounted] = useState(false)
   const [showSticky, setShowSticky] = useState(true)
   const startedRef = useRef(false)
-  const scrollMarks = useRef(new Set<number>())
   const waitlistRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
@@ -79,23 +71,6 @@ export default function PrelaunchLanding() {
       cancelAnimationFrame(id)
       observer.disconnect()
     }
-  }, [])
-
-  useEffect(() => {
-    const onScroll = () => {
-      const doc = document.documentElement
-      const max = doc.scrollHeight - window.innerHeight
-      if (max <= 0) return
-      const pct = Math.round((window.scrollY / max) * 100)
-      for (const mark of [25, 50, 75, 100]) {
-        if (pct >= mark && !scrollMarks.current.has(mark)) {
-          scrollMarks.current.add(mark)
-          track('waitlist_scroll_depth', { depth: mark, variant: VARIANT })
-        }
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
@@ -140,7 +115,7 @@ export default function PrelaunchLanding() {
           city: form.city || undefined,
           category: audience === 'professional' && form.category ? form.category : undefined,
           audience,
-          source: 'prelaunch_landing_v2',
+          source: 'prelaunch_landing_v3',
           ...(referralCode ? { referralCode } : {}),
           ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         }),
@@ -174,26 +149,22 @@ export default function PrelaunchLanding() {
       lang="he"
     >
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="prelaunch-drift absolute -right-28 -top-16 h-72 w-72 rounded-full bg-[#ffd98e]/50 blur-3xl" />
-        <div className="prelaunch-drift absolute -left-36 top-[34rem] h-88 w-88 rounded-full bg-[#bfd6f0]/55 blur-3xl [animation-delay:1.4s]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,53,99,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(18,53,99,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_bottom,black,transparent_55%)]" />
+        <div className="prelaunch-drift absolute -right-28 -top-16 h-72 w-72 rounded-full bg-[#ffd98e]/45 blur-3xl" />
+        <div className="prelaunch-drift absolute -left-36 top-[28rem] h-80 w-80 rounded-full bg-[#bfd6f0]/50 blur-3xl [animation-delay:1.4s]" />
       </div>
 
       <header className="sticky top-0 z-40 border-b border-[#123563]/8 bg-[#f7f9fc]/88 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-8">
-          <a href="#top" className="flex items-center gap-2" aria-label="Fixly">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5 sm:px-8">
+          <a href="#top" aria-label="Fixly">
             <span dir="ltr" className="text-2xl font-black tracking-tight text-[#123563]">
               {copy.brand}
               <span className="text-[#F59E0B]">.</span>
-            </span>
-            <span className="hidden rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200 sm:inline-flex">
-              {copy.eyebrow}
             </span>
           </a>
           <a
             href="#waitlist"
             onClick={() => track('waitlist_cta_click', { placement: 'header', variant: VARIANT })}
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#123563] px-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0c294f]"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#123563] px-4 text-sm font-black text-white transition hover:bg-[#0c294f]"
           >
             {copy.primaryCta}
             <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -202,183 +173,60 @@ export default function PrelaunchLanding() {
       </header>
 
       <main id="top">
-        {/* Hero — brand first, then outcome copy + product-flow visual */}
-        <section className="relative mx-auto grid min-h-[calc(100svh-4.5rem)] max-w-6xl items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-14">
+        <section className="mx-auto grid max-w-5xl items-center gap-8 px-5 pb-10 pt-8 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-14 lg:pt-12">
           <div
             className={`transition-all duration-700 ease-out ${
-              mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+              mounted ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0'
             }`}
           >
+            <p className="mb-2 text-xs font-bold text-slate-500 sm:text-sm">{copy.eyebrow}</p>
             <div className="flex justify-start">
               <p
                 dir="ltr"
-                className="mb-3 font-black tracking-tight text-[#123563] text-[clamp(2.6rem,7.5vw,4.5rem)] leading-none"
+                className="font-black tracking-tight text-[#123563] text-[clamp(2.5rem,7vw,4rem)] leading-none"
               >
                 {copy.brand}
                 <span className="text-[#F59E0B]">.</span>
               </p>
             </div>
-            <p className="mb-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#123563] sm:text-sm">
-              <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
-              {copy.badge}
-            </p>
-            <h1 className="max-w-xl text-[clamp(1.55rem,4.2vw,2.45rem)] font-extrabold leading-snug text-[#1a2f4d]">
+            <h1 className="mt-4 max-w-md text-[clamp(1.35rem,3.8vw,2rem)] font-extrabold leading-snug text-[#1a2f4d]">
               {copy.headline}
-              <span className="mt-1 block text-[#123563]">{copy.headlineLine2}</span>
-              <span className="mt-1 block text-[#F59E0B]">{copy.headlineAccent}</span>
             </h1>
-            <p className="mt-4 max-w-lg text-base font-medium leading-7 text-slate-600 sm:text-lg sm:leading-8">
+            <p className="mt-3 max-w-md text-base font-medium leading-7 text-slate-600">
               {copy.subheadline}
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href="#waitlist"
-                onClick={() => track('waitlist_cta_click', { placement: 'hero', variant: VARIANT })}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#123563] px-6 text-base font-black text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#0c294f] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#123563]/30"
-              >
-                {copy.primaryCta}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
-              </a>
-              <a
-                href="#how"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-bold text-[#123563] transition hover:bg-white/70"
-              >
-                {copy.secondaryCta}
-              </a>
-            </div>
-            <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate-500">
-              {copy.trustItems.map((item, i) => {
-                const Icon = [ShieldCheck, Clock3, Users][i] ?? ShieldCheck
-                return (
-                  <li key={item} className="inline-flex items-center gap-1.5">
-                    <Icon className="h-4 w-4 text-[#123563]" aria-hidden />
-                    {item}
-                  </li>
-                )
-              })}
-            </ul>
-            <div className="mt-6 flex max-w-xl flex-wrap gap-2" aria-label="קטגוריות לדוגמה">
-              {copy.categories.map((category) => (
-                <span
-                  key={category}
-                  className="rounded-full border border-[#123563]/10 bg-white/80 px-3 py-1 text-xs font-bold text-[#40546e]"
-                >
-                  {category}
-                </span>
-              ))}
-            </div>
+            <a
+              href="#waitlist"
+              onClick={() => track('waitlist_cta_click', { placement: 'hero', variant: VARIANT })}
+              className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#123563] px-6 text-base font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0c294f]"
+            >
+              {copy.primaryCta}
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+            </a>
+            <p className="mt-3 text-sm font-semibold text-slate-500">{copy.trustLine}</p>
           </div>
 
           <div
-            className={`relative transition-all delay-150 duration-700 ease-out ${
-              mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+            className={`transition-all delay-100 duration-700 ease-out ${
+              mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
             }`}
           >
             <HeroFlowMock />
           </div>
         </section>
 
-        <section className="border-y border-[#123563]/10 bg-[#10233f] text-white" aria-label="מה Fixly לא">
-          <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:grid-cols-3 sm:px-8">
-            {copy.differentiators.map((item) => (
-              <div key={item.num} className="flex gap-4">
-                <span className="text-sm font-black text-[#F59E0B]">{item.num}</span>
-                <div>
-                  <h2 className="font-black">{item.title}</h2>
-                  <p className="mt-1 text-sm font-medium leading-6 text-white/65">{item.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="how" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="text-2xl font-black text-[#123563] sm:text-4xl">{copy.howTitle}</h2>
-          <p className="mt-3 max-w-2xl text-base font-medium text-slate-600 sm:text-lg">{copy.howLead}</p>
-          <ol className="mt-10 grid gap-8 sm:grid-cols-3">
-            {copy.howSteps.map((step, i) => {
-              const Icon = [Home, Search, Zap][i] ?? Home
-              return (
-                <li key={step.title}>
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#123563] text-white">
-                    <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                  </div>
-                  <p className="text-xs font-black text-[#F59E0B]">{i + 1}</p>
-                  <h3 className="mt-1 text-lg font-black text-[#123563]">{step.title}</h3>
-                  <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{step.text}</p>
-                </li>
-              )
-            })}
-          </ol>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-5 pb-16 sm:px-8 sm:pb-20">
-          <div className="grid overflow-hidden rounded-[1.75rem] border border-[#123563]/10 bg-white lg:grid-cols-2">
-            <div className="p-7 sm:p-10">
-              <p className="text-xs font-black text-[#123563]">ללקוחות</p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-[#10233f] sm:text-3xl">
-                {copy.customerTitle}
-              </h2>
-              <p className="mt-3 text-base font-medium leading-7 text-slate-600">{copy.customerLead}</p>
-              <ul className="mt-5 space-y-2.5 text-sm font-bold text-[#40546e]">
-                {copy.customerBullets.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="bg-[#10233f] p-7 text-white sm:p-10">
-              <p className="text-xs font-black text-[#ffd07a]">לבעלי מקצוע</p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">{copy.proTitle}</h2>
-              <p className="mt-3 text-base font-medium leading-7 text-white/70">{copy.proLead}</p>
-              <a
-                href="#waitlist"
-                onClick={() => {
-                  switchAudience('professional')
-                  track('waitlist_cta_click', { placement: 'pro_panel', variant: VARIANT })
-                }}
-                className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#F59E0B] px-5 text-sm font-black text-[#10233f] transition hover:-translate-y-0.5 hover:brightness-105"
-              >
-                {copy.proCta}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
-              </a>
-            </div>
-          </div>
-        </section>
-
         <section
           id="waitlist"
           ref={waitlistRef}
-          className="scroll-mt-20 bg-[#eaf1f8]"
+          className="scroll-mt-20 border-t border-[#123563]/8 bg-white"
         >
-          <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-            <div>
-              <h2 className="max-w-xl text-3xl font-black tracking-tight text-[#10233f] sm:text-4xl">
-                {copy.waitlistTitle}
-              </h2>
-              <p className="mt-4 max-w-xl text-base font-medium leading-7 text-slate-600 sm:text-lg">
-                {copy.waitlistLead}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate-500">
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-[#123563]" aria-hidden />
-                  בלי התחייבות
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
-                  גישה מוקדמת לפיילוט
-                </span>
-              </div>
-            </div>
+          <div className="mx-auto max-w-lg px-5 py-12 sm:px-8 sm:py-14">
+            <h2 className="text-2xl font-black text-[#123563]">{copy.waitlistTitle}</h2>
+            <p className="mt-2 text-base font-medium text-slate-600">{copy.waitlistLead}</p>
 
-            <div
-              id="waitlist-panel"
-              className="rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-[0_20px_50px_rgba(18,53,99,0.1)] sm:p-7"
-            >
+            <div className="mt-6 rounded-2xl border border-[#123563]/10 bg-[#f7f9fc] p-4 sm:p-5">
               <div
-                className="grid grid-cols-2 gap-2 rounded-2xl bg-[#f3f6fa] p-1.5"
+                className="grid grid-cols-2 gap-2 rounded-xl bg-white p-1"
                 role="tablist"
                 aria-label="סוג הרשמה"
               >
@@ -393,11 +241,10 @@ export default function PrelaunchLanding() {
                     type="button"
                     role="tab"
                     aria-selected={audience === tab.id}
-                    aria-controls="waitlist-panel"
                     onClick={() => switchAudience(tab.id)}
-                    className={`min-h-11 rounded-xl px-3 text-sm font-black transition ${
+                    className={`min-h-11 rounded-lg px-3 text-sm font-black transition ${
                       audience === tab.id
-                        ? 'bg-white text-[#123563] shadow-sm'
+                        ? 'bg-[#123563] text-white'
                         : 'text-slate-500 hover:text-[#123563]'
                     }`}
                   >
@@ -410,19 +257,19 @@ export default function PrelaunchLanding() {
                 <div className="flex flex-col items-center gap-3 py-10 text-center">
                   <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
                   <p className="text-xl font-black text-[#123563]">{copy.successTitle}</p>
-                  <p className="max-w-sm text-sm font-medium text-slate-600">
+                  <p className="text-sm font-medium text-slate-600">
                     {audience === 'professional' ? copy.successPro : copy.successCustomer}
                   </p>
                   <button
                     type="button"
                     onClick={() => setDone(false)}
-                    className="mt-2 text-sm font-bold text-[#123563] underline"
+                    className="mt-1 text-sm font-bold text-[#123563] underline"
                   >
                     לרשום עוד מישהו
                   </button>
                 </div>
               ) : (
-                <form className="mt-5 space-y-4" onSubmit={submit} onFocus={markSignupStarted}>
+                <form className="mt-4 space-y-3.5" onSubmit={submit} onFocus={markSignupStarted}>
                   <p className="text-sm font-semibold text-slate-500">
                     {audience === 'customer' ? copy.customerHint : copy.proHint}
                   </p>
@@ -431,7 +278,6 @@ export default function PrelaunchLanding() {
                     name="fullName"
                     autoComplete="name"
                     required
-                    placeholder="איך קוראים לך?"
                     value={form.fullName}
                     onChange={(v) => {
                       markSignupStarted()
@@ -445,24 +291,15 @@ export default function PrelaunchLanding() {
                     required
                     dir="ltr"
                     inputMode="tel"
-                    placeholder="050-0000000"
                     value={form.phone}
                     onChange={(v) => {
                       markSignupStarted()
                       setForm((f) => ({ ...f, phone: v }))
                     }}
                   />
-                  <Field
-                    label="עיר (אופציונלי)"
-                    name="city"
-                    autoComplete="address-level2"
-                    placeholder="למשל ירושלים"
-                    value={form.city}
-                    onChange={(v) => setForm((f) => ({ ...f, city: v }))}
-                  />
                   {audience === 'professional' && (
                     <Field
-                      label="תחום (למשל אינסטלציה, חשמל)"
+                      label="תחום"
                       name="category"
                       placeholder="למשל אינסטלציה"
                       value={form.category}
@@ -470,10 +307,7 @@ export default function PrelaunchLanding() {
                     />
                   )}
                   {error && (
-                    <p
-                      className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
-                      role="alert"
-                    >
+                    <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">
                       {error}
                     </p>
                   )}
@@ -491,7 +325,7 @@ export default function PrelaunchLanding() {
                   </button>
                   <p className="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-slate-500">
                     <Lock className="h-3.5 w-3.5" aria-hidden />
-                    בלי כרטיס אשראי · אפשר להסיר בכל עת
+                    בלי כרטיס אשראי
                   </p>
                 </form>
               )}
@@ -499,55 +333,30 @@ export default function PrelaunchLanding() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-20">
-          <h2 className="text-center text-2xl font-black text-[#123563] sm:text-3xl">{copy.faqTitle}</h2>
-          <div className="mt-8 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <section className="mx-auto max-w-lg px-5 pb-14 pt-2 sm:px-8">
+          <h2 className="text-lg font-black text-[#123563]">{copy.faqTitle}</h2>
+          <div className="mt-4 space-y-4">
             {copy.faq.map((item) => (
-              <details key={item.q} className="group p-5 sm:px-6">
-                <summary className="cursor-pointer list-none text-base font-black text-[#10233f] marker:content-none">
-                  <span className="flex items-center justify-between gap-4">
-                    {item.q}
-                    <span className="text-xl font-black text-[#F59E0B] transition group-open:rotate-45">
-                      +
-                    </span>
-                  </span>
-                </summary>
-                <p className="mt-3 text-sm font-medium leading-7 text-slate-600">{item.a}</p>
-              </details>
+              <div key={item.q}>
+                <h3 className="text-sm font-black text-[#10233f]">{item.q}</h3>
+                <p className="mt-1 text-sm font-medium leading-6 text-slate-600">{item.a}</p>
+              </div>
             ))}
           </div>
         </section>
-
-        <section className="mx-auto max-w-6xl px-5 pb-16 pt-2 text-center sm:px-8">
-          <h2 className="text-2xl font-black text-[#123563] sm:text-3xl">{copy.finalCtaTitle}</h2>
-          <p className="mx-auto mt-3 max-w-lg text-base font-medium text-slate-600">{copy.finalCtaLead}</p>
-          <a
-            href="#waitlist"
-            onClick={() => track('waitlist_cta_click', { placement: 'footer', variant: VARIANT })}
-            className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#123563] px-8 text-base font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0c294f]"
-          >
-            {copy.primaryCta}
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-          </a>
-        </section>
       </main>
 
-      <footer className="border-t border-[#123563]/10 bg-white/80 px-5 py-8 text-center text-sm font-medium text-slate-500">
+      <footer className="border-t border-[#123563]/10 bg-white px-5 py-6 text-center text-sm font-medium text-slate-500">
         <p className="font-black text-[#123563]" dir="ltr">
           Fixly<span className="text-[#F59E0B]">.</span>
         </p>
         <p className="mt-2">
-          © {new Date().getFullYear()} Fixly ·{' '}
           <Link href="/privacy" className="underline underline-offset-2">
             פרטיות
           </Link>
           {' · '}
           <Link href="/terms" className="underline underline-offset-2">
             תנאים
-          </Link>
-          {' · '}
-          <Link href="/about" className="underline underline-offset-2">
-            אודות
           </Link>
           {PRODUCT_URL ? (
             <>
@@ -623,61 +432,50 @@ function Field({
 function HeroFlowMock() {
   return (
     <div
-      className="relative mx-auto w-full max-w-md py-2 sm:py-4 lg:max-w-none"
+      className="relative mx-auto w-full max-w-md"
       aria-label="הדגמה: זרימת בקשה ב-Fixly"
     >
-      <div className="absolute inset-x-8 top-8 hidden h-[75%] rounded-[2.5rem] bg-[#123563]/12 blur-3xl sm:block" />
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/80 bg-white p-4 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:rounded-[1.75rem] sm:p-6 sm:shadow-[0_28px_70px_rgba(18,53,99,0.16)]">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 sm:pb-4">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-400">ככה זה ירגיש</p>
-            <p dir="ltr" className="mt-1 text-base font-black text-[#123563] sm:text-lg">
-              Fixly<span className="text-[#F59E0B]">.</span>
-            </p>
-          </div>
-          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/80 bg-white p-4 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:p-5">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <p dir="ltr" className="text-base font-black text-[#123563]">
+            Fixly<span className="text-[#F59E0B]">.</span>
+          </p>
+          <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
             בקשה פעילה
           </span>
         </div>
 
-        <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-3.5 sm:mt-5 sm:p-4">
+        <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-3.5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs font-bold text-slate-400">הבקשה שלך</p>
-              <p className="mt-1 text-base font-black leading-snug text-[#10233f] sm:text-lg">
+              <p className="mt-1 text-base font-black leading-snug text-[#10233f]">
                 המים בכיור לא יורדים
               </p>
             </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#123563] shadow-sm sm:h-11 sm:w-11">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#123563] shadow-sm">
               <Wrench className="h-5 w-5" aria-hidden />
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-500">
+          <div className="mt-2.5 flex items-center gap-2 text-xs font-bold text-slate-500">
             <MapPin className="h-4 w-4 shrink-0 text-[#F59E0B]" aria-hidden />
             ירושלים · אינסטלציה
           </div>
         </div>
 
-        <div className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
-          <StatusRow done title="הבקשה נשלחה" subtitle="קיבלנו את הפרטים" />
-          <StatusRow done title="נמצאה התאמה" subtitle="בעל מקצוע רלוונטי באזור" />
-          <StatusRow active title="בדרך אליך" subtitle="השלב הבא מופיע כאן בזמן אמת" />
+        <div className="mt-4 space-y-3">
+          <StatusRow done title="נשלחה" />
+          <StatusRow done title="נמצאה התאמה" />
+          <StatusRow active title="בדרך אליכם" />
         </div>
 
-        <div className="mt-5 rounded-2xl bg-[#10233f] p-3.5 text-white sm:mt-6 sm:p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 sm:h-11 sm:w-11">
-                <BadgeCheck className="h-5 w-5 text-[#ffd07a]" aria-hidden />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white/55">התאמה לדוגמה</p>
-                <p className="mt-0.5 truncate text-sm font-black">בעל מקצוע מאומת</p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/80">
-              באזור שלך
-            </span>
+        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#10233f] p-3.5 text-white">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+            <BadgeCheck className="h-5 w-5 text-[#ffd07a]" aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-white/55">התאמה לדוגמה</p>
+            <p className="text-sm font-black">בעל מקצוע מאומת</p>
           </div>
         </div>
       </div>
@@ -685,41 +483,28 @@ function HeroFlowMock() {
   )
 }
 
-function StatusRow({
-  done,
-  active,
-  title,
-  subtitle,
-}: {
-  done?: boolean
-  active?: boolean
-  title: string
-  subtitle: string
-}) {
+function StatusRow({ done, active, title }: { done?: boolean; active?: boolean; title: string }) {
   return (
-    <div className="grid grid-cols-[28px_1fr] gap-3">
-      <div className="relative flex justify-center">
-        <div
-          className={`z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 ${
-            done
-              ? 'border-emerald-500 bg-emerald-500 text-white'
-              : active
-                ? 'border-[#F59E0B] bg-[#fff7e8] text-[#F59E0B]'
-                : 'border-slate-200 bg-white text-slate-300'
-          }`}
-        >
-          {done ? (
-            <CheckCircle2 className="h-4 w-4" aria-hidden />
-          ) : (
-            <span className="h-2 w-2 rounded-full bg-current" />
-          )}
-        </div>
+    <div className="grid grid-cols-[28px_1fr] items-center gap-3">
+      <div
+        className={`flex h-7 w-7 items-center justify-center rounded-full border-2 ${
+          done
+            ? 'border-emerald-500 bg-emerald-500 text-white'
+            : active
+              ? 'border-[#F59E0B] bg-[#fff7e8] text-[#F59E0B]'
+              : 'border-slate-200 bg-white text-slate-300'
+        }`}
+      >
+        {done ? (
+          <CheckCircle2 className="h-4 w-4" aria-hidden />
+        ) : (
+          <span className="h-2 w-2 rounded-full bg-current" />
+        )}
       </div>
       <div>
         <p className="text-sm font-black text-[#10233f]">{title}</p>
-        <p className="mt-0.5 text-xs font-medium text-slate-500">{subtitle}</p>
         {active ? (
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#fff1cf]">
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#fff1cf]">
             <div className="prelaunch-progress h-full rounded-full bg-[#F59E0B]" />
           </div>
         ) : null}
