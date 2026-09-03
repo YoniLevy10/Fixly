@@ -79,7 +79,7 @@ async function handleWaitlist(request: Request, route: string) {
       email: body.email,
       category: body.category,
       city: body.city,
-      referralCode: body.referralCode,
+      referralCode: body.referralCode ?? undefined,
       audience,
       source: body.source,
       attribution: attribution ?? undefined,
