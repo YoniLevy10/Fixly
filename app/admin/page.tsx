@@ -18,6 +18,8 @@ type AdminStats = {
     phone: string
     city: string | null
     category: string | null
+    audience?: string | null
+    source?: string | null
     created_at: string
   }>
   recentBilling: Array<{
@@ -100,6 +102,7 @@ export default function AdminPage() {
             {recentWaitlist.map((entry) => (
               <li key={entry.id} className="border-b border-border pb-2">
                 <strong>{entry.full_name}</strong> — {entry.phone}
+                {entry.audience ? ` • ${entry.audience}` : ''}
                 {entry.city ? ` • ${entry.city}` : ''}
                 {entry.category ? ` • ${entry.category}` : ''}
               </li>

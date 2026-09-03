@@ -44,7 +44,7 @@ export async function GET() {
       admin.from('reviews').select('*', { count: 'exact', head: true }),
       admin
         .from('pro_waitlist')
-        .select('id, full_name, phone, city, category, created_at')
+        .select('id, full_name, phone, city, category, audience, source, created_at')
         .order('created_at', { ascending: false })
         .limit(10),
       admin

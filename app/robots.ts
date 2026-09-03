@@ -1,9 +1,14 @@
 import type { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/site-config'
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://fixly.vercel.app'
   return {
-    rules: { userAgent: '*', allow: '/' },
-    sitemap: `${base}/sitemap.xml`,
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/api/', '/admin', '/dashboard', '/pro/dashboard', '/pro/requests'],
+    },
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   }
 }

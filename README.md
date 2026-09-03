@@ -120,6 +120,7 @@ docs/          # מדריכי השקה, מונטיזציה, אינטגרציות
 
 | מסמך | נושא |
 |------|------|
+| [`docs/GOOGLE_SEARCH_CONSOLE.md`](./docs/GOOGLE_SEARCH_CONSOLE.md) | חיבור Fixly.tech ל-GSC |
 | [`docs/PRODUCTION_READINESS.md`](./docs/PRODUCTION_READINESS.md) | צ'קליסט השקה |
 | [`docs/ROADMAP_LAUNCH.md`](./docs/ROADMAP_LAUNCH.md) | סדר עבודה להשקה |
 | [`docs/MONETIZATION.md`](./docs/MONETIZATION.md) | תמחור וגבייה |

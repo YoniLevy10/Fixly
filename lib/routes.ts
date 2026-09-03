@@ -15,6 +15,7 @@ export const routes = {
   about: '/about',
   quickRequest: '/request/quick',
   proJoin: '/pro/join',
+  waitlist: '/waitlist',
   proPricing: '/pro/pricing',
   services: (city: string, category: string) => `/services/${city}/${category}`,
 }
