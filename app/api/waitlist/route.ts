@@ -7,6 +7,17 @@ import { parseJsonBody } from '@/lib/api/parse-body'
 import { waitlistSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
 
+function compactAttribution(
+  attribution: Record<string, string | undefined> | undefined
+): Record<string, string> | null {
+  if (!attribution) return null
+  const cleaned: Record<string, string> = {}
+  for (const [key, value] of Object.entries(attribution)) {
+    if (typeof value === 'string' && value.trim()) cleaned[key] = value.trim()
+  }
+  return Object.keys(cleaned).length ? cleaned : null
+}
+
 async function handleWaitlist(request: Request, route: string) {
   const limited = await enforceRateLimit(request, 'waitlist', 10, 60_000)
   if (limited) return limited
@@ -16,11 +27,12 @@ async function handleWaitlist(request: Request, route: string) {
     if (!parsed.success) return parsed.response
     const body = parsed.data
     const audience = body.audience ?? 'professional'
+    const attribution = compactAttribution(body.attribution)
 
     if (isSupabaseEnabled()) {
       const supabase = await createServerSupabaseClient()
       if (supabase) {
-        const { error } = await supabase.from('pro_waitlist').insert({
+        const baseRow = {
           full_name: body.fullName,
           phone: body.phone,
           email: body.email || null,
@@ -29,11 +41,23 @@ async function handleWaitlist(request: Request, route: string) {
           referral_code: body.referralCode ?? null,
           audience,
           source: body.source ?? null,
+        }
+
+        const withAttribution = await supabase.from('pro_waitlist').insert({
+          ...baseRow,
+          ...(attribution ? { attribution } : {}),
         })
-        if (!error) {
+        if (!withAttribution.error) {
           return NextResponse.json({ ok: true, audience }, { status: 201 })
         }
-        // Older DBs without audience/source columns — fall back to legacy insert
+
+        // Older DBs without attribution — retry with audience/source only
+        const withAudience = await supabase.from('pro_waitlist').insert(baseRow)
+        if (!withAudience.error) {
+          return NextResponse.json({ ok: true, audience }, { status: 201 })
+        }
+
+        // Legacy schema without audience/source
         const legacy = await supabase.from('pro_waitlist').insert({
           full_name: body.fullName,
           phone: body.phone,
@@ -45,7 +69,7 @@ async function handleWaitlist(request: Request, route: string) {
         if (!legacy.error) {
           return NextResponse.json({ ok: true, audience }, { status: 201 })
         }
-        trackError(error, { route })
+        trackError(withAttribution.error, { route })
       }
     }
 
@@ -58,6 +82,7 @@ async function handleWaitlist(request: Request, route: string) {
       referralCode: body.referralCode,
       audience,
       source: body.source,
+      attribution: attribution ?? undefined,
     })
 
     return NextResponse.json({ ok: true, audience }, { status: 201 })

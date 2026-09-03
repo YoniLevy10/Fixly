@@ -45,9 +45,10 @@
 
 - מטא־תגיות בעברית + Open Graph
 - `metadataBase` על `fixly.tech`
-- JSON-LD מסוג Organization
+- JSON-LD מסוג Organization + FAQPage ב-`/waitlist`
 - עמוד נחיתה `/` (במצב prelaunch) + `/waitlist`
 - עמודי SEO קיימים: `/services/[city]/[category]`
+- אירועי funnel: page view, CTA, signup start/complete, scroll depth (דרך GA4 כשמופעל)
 
 ## 6. אחרי האימות — פעולות מומלצות
 
@@ -62,7 +63,11 @@
 
 ```bash
 # דרך Supabase CLI / Dashboard SQL
-# קובץ: supabase/migrations/20260903130000_waitlist_audience.sql
+# קבצים:
+#   supabase/migrations/20260903130000_waitlist_audience.sql
+#   supabase/migrations/20260903140000_waitlist_attribution.sql
 ```
 
-מוסיף עמודות `audience` (`customer` | `professional`) ו-`source` לטבלת `pro_waitlist`.
+מוסיף:
+- `audience` (`customer` | `professional`) ו-`source`
+- `attribution` (JSONB) לשמירת UTM על כל ליד

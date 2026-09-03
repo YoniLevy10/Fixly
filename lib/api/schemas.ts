@@ -58,6 +58,16 @@ export const updateRequestSchema = z.object({
 
 export const waitlistAudienceSchema = z.enum(['customer', 'professional'])
 
+export const waitlistAttributionSchema = z
+  .object({
+    utm_source: z.string().trim().max(200).optional(),
+    utm_medium: z.string().trim().max(200).optional(),
+    utm_campaign: z.string().trim().max(200).optional(),
+    utm_content: z.string().trim().max(200).optional(),
+    utm_term: z.string().trim().max(200).optional(),
+  })
+  .optional()
+
 export const proWaitlistSchema = z.object({
   fullName: z.string().trim().min(2).max(200),
   phone: z.string().trim().min(7).max(30),
@@ -67,6 +77,7 @@ export const proWaitlistSchema = z.object({
   referralCode: z.string().trim().max(50).optional(),
   audience: waitlistAudienceSchema.optional().default('professional'),
   source: z.string().trim().max(100).optional(),
+  attribution: waitlistAttributionSchema,
 })
 
 /** Alias for the unified pre-launch waitlist API */

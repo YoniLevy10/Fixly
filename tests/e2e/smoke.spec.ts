@@ -6,16 +6,22 @@ test.describe('public pages', () => {
   test('home loads waitlist or marketplace', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Fixly/i)
-    const waitlistCta = page.getByRole('link', { name: /הצטרפו לרשימה/i })
+    const waitlistCta = page.getByRole('link', { name: /הצטרפו בחינם|הצטרפו לרשימה/i })
     const search = page.getByPlaceholder(/מה צריך לתקן|What needs fixing/i)
     await expect(waitlistCta.or(search)).toBeVisible()
   })
 
   test('waitlist page collects early access signups', async ({ page }) => {
     await page.goto('/waitlist')
-    await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /שמרו מקום|הרשמה מוקדמת/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /אני לקוח/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /בעל\/ת מקצוע/i })).toBeVisible()
+    await page.getByRole('tab', { name: /בעל\/ת מקצוע/i }).click()
+    await expect(page.getByLabel(/תחום/i)).toBeVisible()
+    await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
+    await page.getByLabel(/טלפון/i).fill('0501234567')
+    await page.getByRole('button', { name: /הצטרפו בחינם|שמרו אותי/i }).click()
+    await expect(page.getByText(/נרשמתם בהצלחה/i)).toBeVisible({ timeout: 10_000 })
   })
 
   test('robots and sitemap are public', async ({ request }) => {

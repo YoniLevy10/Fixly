@@ -1,5 +1,13 @@
 export type WaitlistAudience = 'customer' | 'professional'
 
+export type WaitlistAttribution = {
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  utm_term?: string
+}
+
 export type ProWaitlistEntry = {
   id: string
   fullName: string
@@ -10,6 +18,7 @@ export type ProWaitlistEntry = {
   referralCode?: string
   audience: WaitlistAudience
   source?: string
+  attribution?: WaitlistAttribution
   createdAt: string
 }
 
