@@ -5,6 +5,7 @@ export type AnalyticsEvent =
   | 'request_completed'
   | 'pro_accepted'
   | 'pro_join_submitted'
+  | 'waitlist_submitted'
   | 'language_changed'
   | 'share_request'
   | 'job_checkout_started'

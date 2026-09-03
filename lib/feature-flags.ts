@@ -14,4 +14,6 @@ export const featureFlags = {
   monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false',
   googleOAuth: process.env.NEXT_PUBLIC_FF_GOOGLE_OAUTH !== 'false',
   liveTracking: process.env.NEXT_PUBLIC_FF_LIVE_TRACKING !== 'false',
+  /** When true, `/` shows the pre-launch waitlist landing instead of the app home */
+  prelaunch: process.env.NEXT_PUBLIC_FF_PRELAUNCH !== 'false',
 } as const

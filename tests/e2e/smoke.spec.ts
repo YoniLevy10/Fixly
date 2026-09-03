@@ -3,12 +3,31 @@ import { test, expect } from '@playwright/test'
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
 
 test.describe('public pages', () => {
-  test('home loads with search', async ({ page }) => {
+  test('home loads waitlist or marketplace', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Fixly/i)
-    await expect(
-      page.getByPlaceholder(/מה צריך לתקן|What needs fixing/i),
-    ).toBeVisible()
+    const waitlistCta = page.getByRole('link', { name: /הצטרפו לרשימה/i })
+    const search = page.getByPlaceholder(/מה צריך לתקן|What needs fixing/i)
+    await expect(waitlistCta.or(search)).toBeVisible()
+  })
+
+  test('waitlist page collects early access signups', async ({ page }) => {
+    await page.goto('/waitlist')
+    await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /אני לקוח/i })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /בעל\/ת מקצוע/i })).toBeVisible()
+  })
+
+  test('robots and sitemap are public', async ({ request }) => {
+    const robots = await request.get(`${BASE}/robots.txt`)
+    expect(robots.status()).toBe(200)
+    const robotsText = await robots.text()
+    expect(robotsText).toMatch(/sitemap/i)
+
+    const sitemap = await request.get(`${BASE}/sitemap.xml`)
+    expect(sitemap.status()).toBe(200)
+    const xml = await sitemap.text()
+    expect(xml).toContain('waitlist')
   })
 
   test('professionals directory loads', async ({ page }) => {

@@ -56,6 +56,8 @@ export const updateRequestSchema = z.object({
   cancellationReason: z.string().trim().max(1000).optional(),
 })
 
+export const waitlistAudienceSchema = z.enum(['customer', 'professional'])
+
 export const proWaitlistSchema = z.object({
   fullName: z.string().trim().min(2).max(200),
   phone: z.string().trim().min(7).max(30),
@@ -63,7 +65,12 @@ export const proWaitlistSchema = z.object({
   category: z.string().trim().max(100).optional(),
   city: z.string().trim().max(100).optional(),
   referralCode: z.string().trim().max(50).optional(),
+  audience: waitlistAudienceSchema.optional().default('professional'),
+  source: z.string().trim().max(100).optional(),
 })
+
+/** Alias for the unified pre-launch waitlist API */
+export const waitlistSchema = proWaitlistSchema
 
 export const proClaimSchema = z.object({
   professionalId: z.string().trim().uuid(),
