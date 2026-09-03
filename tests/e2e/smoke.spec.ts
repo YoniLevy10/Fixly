@@ -6,7 +6,8 @@ test.describe('public pages', () => {
   test('home loads waitlist or marketplace', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Fixly/i)
-    const waitlistCta = page.getByRole('link', { name: /הצטרפו בחינם|הצטרפו לרשימה/i })
+    // Prelaunch has multiple identical CTAs; marketplace has a search field
+    const waitlistCta = page.getByRole('link', { name: /הצטרפו בחינם|הצטרפו לרשימה/i }).first()
     const search = page.getByPlaceholder(/מה צריך לתקן|What needs fixing/i)
     await expect(waitlistCta.or(search)).toBeVisible()
   })
