@@ -4,6 +4,10 @@ import {
   supabaseCreateReview,
   supabaseListReviewsByProfessional,
 } from '@/lib/data/supabase-reviews'
+import {
+  createDemoReview,
+  listDemoReviewsByProfessional,
+} from '@/lib/data/review-store'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { createReviewSchema } from '@/lib/api/schemas'
@@ -21,8 +25,7 @@ export async function GET(request: Request) {
   }
 
   if (resolveDataBackend() === 'mock') {
-    const { getReviewsByProfessionalId } = await import('@/mock/reviews')
-    return NextResponse.json(getReviewsByProfessionalId(professionalId))
+    return NextResponse.json(listDemoReviewsByProfessional(professionalId))
   }
 
   return NextResponse.json({ error: 'No data backend' }, { status: 503 })
@@ -32,13 +35,18 @@ export async function POST(request: Request) {
   const limited = await enforceRateLimit(request, 'reviews-post', 20, 60_000)
   if (limited) return limited
 
-  if (resolveDataBackend() !== 'supabase') {
-    return NextResponse.json({ error: 'Supabase required' }, { status: 503 })
-  }
-
   try {
     const parsed = await parseJsonBody(request, createReviewSchema)
     if (!parsed.success) return parsed.response
+
+    if (resolveDataBackend() === 'mock') {
+      const review = createDemoReview(parsed.data)
+      return NextResponse.json(review, { status: 201 })
+    }
+
+    if (resolveDataBackend() !== 'supabase') {
+      return NextResponse.json({ error: 'Supabase required' }, { status: 503 })
+    }
 
     const review = await supabaseCreateReview(parsed.data)
 

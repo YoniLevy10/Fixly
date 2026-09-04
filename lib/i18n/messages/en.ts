@@ -125,6 +125,7 @@ export const en: MessageTree = {
   },
   demo: {
     banner: 'Investor demo — simulated data · 58+ pros · 120+ requests',
+    bannerCta: 'Start full booking',
     statsPros: 'Professionals',
     statsActive: 'Active requests',
     statsJobs: 'Jobs completed',

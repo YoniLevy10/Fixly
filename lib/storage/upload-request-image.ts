@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/lib/supabase/client'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024
 const ALLOWED_TYPES = new Set([
@@ -8,6 +9,10 @@ const ALLOWED_TYPES = new Set([
   'image/heic',
   'image/heif',
 ])
+
+/** Placeholder used in investor demo when Storage is unavailable */
+const DEMO_IMAGE_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=600&fit=crop'
 
 export function validateImageFile(file: File): string | null {
   if (!ALLOWED_TYPES.has(file.type)) {
@@ -24,6 +29,11 @@ export async function uploadRequestImage(file: File): Promise<string | null> {
   if (validationError) {
     console.error('[storage] validation', validationError)
     return null
+  }
+
+  // Demo / mock — skip Supabase Storage so booking flow never blocks on bucket setup
+  if (isDemoDataMode()) {
+    return DEMO_IMAGE_PLACEHOLDER
   }
 
   const supabase = getSupabaseClient()

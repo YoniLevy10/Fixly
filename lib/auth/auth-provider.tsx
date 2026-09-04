@@ -12,8 +12,9 @@ import {
 import { featureFlags } from '@/lib/feature-flags'
 import { createBrowserSupabaseClient } from '@/lib/supabase/browser'
 import { isSupabaseEnabled } from '@/lib/data/config'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
-import { GUEST_USER, type AppUser } from '@/lib/auth/types'
+import { DEMO_PRO_USER, GUEST_USER, type AppUser } from '@/lib/auth/types'
 
 type AuthContextValue = {
   user: AppUser
@@ -149,6 +150,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getClient])
 
   const claimProfessionalProfile = useCallback(async (professionalId: string) => {
+    // Investor demo: bind local session to mock pro — no Supabase claim API
+    if (isDemoDataMode()) {
+      setUser({
+        ...DEMO_PRO_USER,
+        professionalId: professionalId || DEMO_PROFESSIONAL_ID,
+      })
+      return null
+    }
+
     const res = await fetch('/api/pro/claim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -125,6 +125,7 @@ export const he: MessageTree = {
   },
   demo: {
     banner: 'מצב הדגמה להצגה למשקיעים — נתונים מדומים · 58+ אנשי מקצוע · 120+ בקשות',
+    bannerCta: 'התחל הזמנה מלאה',
     statsPros: 'אנשי מקצוע',
     statsActive: 'בקשות פעילות',
     statsJobs: 'עבודות שהושלמו',
