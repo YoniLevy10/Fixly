@@ -61,3 +61,11 @@ curl -sS 'https://YOUR_DOMAIN/api/health?verbose=1' | jq '.demoMode, .mode'
 - `/my-requests` — בקשות רבות
 - `/` — 4 מדדי פלטפורמה
 - `/tracking/req-demo-1` — מפה חיה
+
+## פרודקשן בלי דמו (Supabase)
+
+כש־`NEXT_PUBLIC_FF_DEMO_DATA=false`, הרשימה מגיעה מ־Supabase.
+
+- חייבים שמיגרציות Midrag + יופי יהיו על ה־DB (`supabase db push`), אחרת `/api/professionals` עלול להיכשל על עמודות חסרות.
+- קטלוג יופי מקוצר (ציפורניים / שיער / איפור) מרובד מהקוד גם בלי דמו מלא — עד שיש אנשי מקצוע אמיתיים ב־DB.
+- סיד אופציונלי: `supabase/migrations/20260904120000_fix_professionals_catalog.sql`
