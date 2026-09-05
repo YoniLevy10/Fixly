@@ -30,13 +30,13 @@ async function checkHealth(baseUrl: string) {
   console.log('mode:', json.mode)
   console.log('demoMode:', json.demoMode)
 
-  assert.notEqual(json.demoMode, true, 'demoMode must be false before paid ads')
+  assert.equal(json.demoMode, true, 'demoMode must be true (pre-funding showcase)')
   assert.ok(
     json.status === 'ok' || json.status === 'degraded',
     `unexpected health status: ${json.status}`,
   )
   if (json.mode) {
-    assert.equal(json.mode, 'supabase', 'mode must be supabase (not mock)')
+    assert.equal(json.mode, 'mock', 'mode must be mock while demo is on')
   }
 
   for (const key of ['env', 'demo_mode', 'supabase'] as const) {
@@ -96,22 +96,25 @@ function checkWebhookVerify() {
 
 function checkDemoFlagParsing() {
   section('Demo flag parsing')
-  const prev = process.env.NEXT_PUBLIC_FF_DEMO_DATA
+  const prev = process.env.NEXT_PUBLIC_FF_DEMO_KILL
 
-  process.env.NEXT_PUBLIC_FF_DEMO_DATA = 'false'
-  assert.equal(isDemoDataMode(), false)
-
-  process.env.NEXT_PUBLIC_FF_DEMO_DATA = 'true'
+  delete process.env.NEXT_PUBLIC_FF_DEMO_KILL
   assert.equal(isDemoDataMode(), true)
 
-  process.env.NEXT_PUBLIC_FF_DEMO_DATA = '0'
+  process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
   assert.equal(isDemoDataMode(), false)
 
-  if (prev !== undefined) process.env.NEXT_PUBLIC_FF_DEMO_DATA = prev
-  else delete process.env.NEXT_PUBLIC_FF_DEMO_DATA
+  process.env.NEXT_PUBLIC_FF_DEMO_KILL = '1'
+  assert.equal(isDemoDataMode(), false)
+
+  process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'false'
+  assert.equal(isDemoDataMode(), true)
+
+  if (prev !== undefined) process.env.NEXT_PUBLIC_FF_DEMO_KILL = prev
+  else delete process.env.NEXT_PUBLIC_FF_DEMO_KILL
   console.log('demo flag parsing: ok')
   console.log(
-    'note: next.config.ts defaults NEXT_PUBLIC_FF_DEMO_DATA to "false" when unset at build',
+    'note: demo defaults ON; kill with NEXT_PUBLIC_FF_DEMO_KILL=true after funding',
   )
 }
 

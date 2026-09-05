@@ -1,8 +1,13 @@
 /**
  * Host-based surface split during pre-launch:
- * - fixly.tech → marketing waitlist landing
+ * - fixly.tech → marketing waitlist landing (when demo is off)
  * - *.vercel.app / localhost → full product app
+ *
+ * While demo mode is on (pre-funding), marketing hosts also get the product UI
+ * so the investor tour works on fixly.tech.
  */
+
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 export const MARKETING_HOSTS = ['fixly.tech', 'www.fixly.tech'] as const
 
@@ -28,12 +33,14 @@ export function isProductHost(host: string | null | undefined): boolean {
 
 /**
  * Show pre-launch waitlist on `/` for the branded domain only.
- * Product hosts (vercel.app / localhost) always get the marketplace home
- * so ops can demo the app while marketing collects leads on fixly.tech.
+ * Product hosts (vercel.app / localhost) always get the marketplace home.
+ * Demo mode skips the waitlist so the full demo + tour run on fixly.tech.
  *
  * Set NEXT_PUBLIC_FF_PRELAUNCH=false after full launch to show the app everywhere.
+ * Set NEXT_PUBLIC_FF_DEMO_KILL=true to restore waitlist-only marketing hosts.
  */
 export function shouldShowPrelaunchLanding(host: string | null | undefined): boolean {
+  if (isDemoDataMode()) return false
   if (process.env.NEXT_PUBLIC_FF_PRELAUNCH === 'false') return false
   if (isProductHost(host)) return false
   if (isMarketingHost(host)) return true

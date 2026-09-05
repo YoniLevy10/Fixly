@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach } from 'node:test'
+import { describe, it, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   isMarketingHost,
@@ -10,12 +10,15 @@ import {
 describe('site-hosts', () => {
   const originalPrelaunch = process.env.NEXT_PUBLIC_FF_PRELAUNCH
   const originalProductHost = process.env.NEXT_PUBLIC_PRODUCT_HOST
+  const originalDemoKill = process.env.NEXT_PUBLIC_FF_DEMO_KILL
 
   afterEach(() => {
     if (originalPrelaunch === undefined) delete process.env.NEXT_PUBLIC_FF_PRELAUNCH
     else process.env.NEXT_PUBLIC_FF_PRELAUNCH = originalPrelaunch
     if (originalProductHost === undefined) delete process.env.NEXT_PUBLIC_PRODUCT_HOST
     else process.env.NEXT_PUBLIC_PRODUCT_HOST = originalProductHost
+    if (originalDemoKill === undefined) delete process.env.NEXT_PUBLIC_FF_DEMO_KILL
+    else process.env.NEXT_PUBLIC_FF_DEMO_KILL = originalDemoKill
   })
 
   it('normalizes host with port and case', () => {
@@ -32,13 +35,22 @@ describe('site-hosts', () => {
     assert.equal(isProductHost('fixly.tech'), false)
   })
 
-  it('shows waitlist on fixly.tech while prelaunch is on', () => {
+  it('skips waitlist on fixly.tech while demo mode is on (pre-funding)', () => {
+    delete process.env.NEXT_PUBLIC_FF_DEMO_KILL
+    process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'true'
+    assert.equal(shouldShowPrelaunchLanding('fixly.tech'), false)
+    assert.equal(shouldShowPrelaunchLanding('www.fixly.tech'), false)
+  })
+
+  it('shows waitlist on fixly.tech when demo is killed and prelaunch is on', () => {
+    process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
     process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'true'
     assert.equal(shouldShowPrelaunchLanding('fixly.tech'), true)
     assert.equal(shouldShowPrelaunchLanding('www.fixly.tech'), true)
   })
 
   it('shows marketplace on vercel.app / localhost even when prelaunch is on', () => {
+    process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
     process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'true'
     assert.equal(shouldShowPrelaunchLanding('fixly.vercel.app'), false)
     assert.equal(shouldShowPrelaunchLanding('localhost'), false)
@@ -49,12 +61,14 @@ describe('site-hosts', () => {
   })
 
   it('forces marketplace everywhere when prelaunch is false', () => {
+    process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
     process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'false'
     assert.equal(shouldShowPrelaunchLanding('fixly.tech'), false)
     assert.equal(shouldShowPrelaunchLanding('fixly.vercel.app'), false)
   })
 
   it('respects NEXT_PUBLIC_PRODUCT_HOST override', () => {
+    process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
     process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'true'
     process.env.NEXT_PUBLIC_PRODUCT_HOST = 'app.fixly.tech'
     assert.equal(isProductHost('app.fixly.tech'), true)
