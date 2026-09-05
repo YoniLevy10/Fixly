@@ -29,6 +29,8 @@ type AuthContextValue = {
   signInAnonymously: () => Promise<string | null>
   signInWithGoogle: () => Promise<string | null>
   claimProfessionalProfile: (professionalId: string) => Promise<string | null>
+  /** Investor demo only — flip between customer and pro without Supabase */
+  switchDemoRole: (role: 'customer' | 'professional') => void
   signOut: () => Promise<void>
 }
 
@@ -175,6 +177,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }, [getClient])
 
+  const switchDemoRole = useCallback((role: 'customer' | 'professional') => {
+    if (!isDemoDataMode()) return
+    if (role === 'professional') {
+      setUser({ ...DEMO_PRO_USER, professionalId: DEMO_PROFESSIONAL_ID })
+    } else {
+      setUser(GUEST_USER)
+    }
+  }, [])
+
   const signOut = useCallback(async () => {
     const supabase = getClient()
     if (supabase) {
@@ -198,6 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInAnonymously,
       signInWithGoogle,
       claimProfessionalProfile,
+      switchDemoRole,
       signOut,
     }),
     [
@@ -208,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInAnonymously,
       signInWithGoogle,
       claimProfessionalProfile,
+      switchDemoRole,
       signOut,
     ]
   )
