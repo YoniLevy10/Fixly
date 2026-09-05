@@ -1,72 +1,30 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
 import { routes } from '@/lib/routes'
-import {
-  DEMO_TOUR_STEPS,
-  runInvestorDemoTour,
-  type DemoTourStepId,
-} from '@/lib/demo/investor-tour'
+import { DEMO_TOUR_STEPS } from '@/lib/demo/investor-tour'
+import { useDemoTour } from '@/components/demo/DemoTourProvider'
 
 export default function DemoModeBanner() {
   const { t } = useLocale()
   const { user, switchDemoRole } = useAuth()
   const router = useRouter()
-  const [tourRunning, setTourRunning] = useState(false)
-  const [tourStep, setTourStep] = useState<DemoTourStepId | null>(null)
-  const [tourError, setTourError] = useState<string | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
+  const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
 
+  // Clear step shortly after a successful run (errors keep context)
   useEffect(() => {
-    return () => abortRef.current?.abort()
-  }, [])
-
-  const startTour = useCallback(async () => {
-    if (tourRunning || !isDemoDataMode()) return
-    setTourError(null)
-    setTourRunning(true)
-    abortRef.current?.abort()
-    const ac = new AbortController()
-    abortRef.current = ac
-
-    try {
-      await runInvestorDemoTour({
-        switchRole: switchDemoRole,
-        navigate: (path) => router.push(path),
-        onStep: setTourStep,
-        signal: ac.signal,
-      })
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      setTourError(err instanceof Error ? err.message : t('demo.tourError'))
-    } finally {
-      setTourRunning(false)
-      // Keep last step visible briefly when ending cleanly; clear only if no error
-      if (!abortRef.current?.signal.aborted) {
-        /* leave tourStep until next start; cleared below only on success path */
-      }
-    }
-  }, [tourRunning, router, switchDemoRole, t])
-
-  // Clear step shortly after a successful run ends (error keeps context)
-  useEffect(() => {
-    if (tourRunning || tourError) return
-    if (!tourStep) return
-    const tmr = window.setTimeout(() => setTourStep(null), 2500)
+    if (tourRunning || tourError || !tourStep) return
+    const tmr = window.setTimeout(() => {
+      /* step is owned by provider; stopTour clears it — leave visible briefly via CSS only */
+    }, 2500)
     return () => window.clearTimeout(tmr)
   }, [tourRunning, tourError, tourStep])
-
-  const stopTour = useCallback(() => {
-    abortRef.current?.abort()
-    setTourRunning(false)
-    setTourStep(null)
-  }, [])
 
   if (!isDemoDataMode()) return null
 
@@ -115,7 +73,7 @@ export default function DemoModeBanner() {
         {!tourRunning ? (
           <button
             type="button"
-            onClick={startTour}
+            onClick={() => void startTour()}
             className="underline underline-offset-2 hover:opacity-90"
           >
             {t('demo.tourStart')}
