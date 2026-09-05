@@ -30,7 +30,12 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     pathname.startsWith('/go/') ||
     pathname === '/waitlist' ||
     isMarketingHome
-  const shouldHideNav = hideNav || isMarketingRoute
+  // Immersive booking / tracking / investor tour — bottom nav must not cover CTAs
+  const isImmersiveRoute =
+    pathname.startsWith('/tracking') ||
+    pathname.startsWith('/request') ||
+    pathname.startsWith('/demo')
+  const shouldHideNav = hideNav || isMarketingRoute || isImmersiveRoute
 
   return (
     <div className="min-h-screen bg-background">

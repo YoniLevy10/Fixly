@@ -32,6 +32,10 @@ import { featureFlags } from '@/lib/feature-flags'
 import { isTrackingStatus } from '@/lib/tracking/geo'
 import { useLiveTracking } from '@/shared/hooks/use-live-tracking'
 import { useTrackingPushAlerts } from '@/shared/hooks/use-tracking-push-alerts'
+import {
+  DEMO_TOUR_EVENT,
+  readTourRequest,
+} from '@/lib/demo/tour-session'
 import dynamic from 'next/dynamic'
 
 const LiveTrackingMap = dynamic(
@@ -70,15 +74,49 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   )
 
   const loadRequest = useCallback(() => {
+    // Prefer in-tab tour snapshot (survives multi-instance mock store misses)
+    const local = readTourRequest(requestId)
+    if (local) {
+      setRequest(local)
+      setLoading(false)
+    }
+
     fetch(`/api/requests/${requestId}`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setRequest(data))
+      .then((data) => {
+        if (data) setRequest(data)
+        else if (!local) {
+          // Last resort: demo upsert GET
+          return fetch(`/api/demo/requests?id=${encodeURIComponent(requestId)}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((demo) => {
+              if (demo) setRequest(demo)
+            })
+        }
+      })
       .finally(() => setLoading(false))
   }, [requestId])
 
   useEffect(() => {
     loadRequest()
   }, [loadRequest])
+
+  // Live updates from the investor tour (same tab)
+  useEffect(() => {
+    const onTour = (event: Event) => {
+      const detail = (event as CustomEvent<MockRequest>).detail
+      if (detail?.id === requestId) setRequest(detail)
+    }
+    window.addEventListener(DEMO_TOUR_EVENT, onTour)
+    const poll = window.setInterval(() => {
+      const local = readTourRequest(requestId)
+      if (local) setRequest(local)
+    }, 1200)
+    return () => {
+      window.removeEventListener(DEMO_TOUR_EVENT, onTour)
+      window.clearInterval(poll)
+    }
+  }, [requestId])
 
   useRequestRealtime(requestId, (updated) => setRequest(updated))
 

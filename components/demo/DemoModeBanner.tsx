@@ -47,9 +47,20 @@ export default function DemoModeBanner() {
       setTourError(err instanceof Error ? err.message : t('demo.tourError'))
     } finally {
       setTourRunning(false)
-      setTourStep(null)
+      // Keep last step visible briefly when ending cleanly; clear only if no error
+      if (!abortRef.current?.signal.aborted) {
+        /* leave tourStep until next start; cleared below only on success path */
+      }
     }
   }, [tourRunning, router, switchDemoRole, t])
+
+  // Clear step shortly after a successful run ends (error keeps context)
+  useEffect(() => {
+    if (tourRunning || tourError) return
+    if (!tourStep) return
+    const tmr = window.setTimeout(() => setTourStep(null), 2500)
+    return () => window.clearTimeout(tmr)
+  }, [tourRunning, tourError, tourStep])
 
   const stopTour = useCallback(() => {
     abortRef.current?.abort()

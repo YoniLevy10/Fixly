@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -61,10 +62,16 @@ function mapSupabaseUser(sbUser: {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser>(GUEST_USER)
   const [isLoading, setIsLoading] = useState(true)
+  /** Keeps investor-tour role flips from being overwritten by Supabase auth events */
+  const demoRoleLockRef = useRef<'customer' | 'professional' | null>(null)
 
   const getClient = useCallback(() => createBrowserSupabaseClient(), [])
 
   const applySession = useCallback(async () => {
+    if (demoRoleLockRef.current) {
+      setIsLoading(false)
+      return
+    }
     const supabase = getClient()
     if (!supabase) {
       setUser(GUEST_USER)
@@ -93,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (demoRoleLockRef.current) return
       if (session?.user) {
         setUser(mapSupabaseUser(session.user))
       } else {
@@ -154,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const claimProfessionalProfile = useCallback(async (professionalId: string) => {
     // Investor demo: bind local session to mock pro — no Supabase claim API
     if (isDemoDataMode()) {
+      demoRoleLockRef.current = 'professional'
       setUser({
         ...DEMO_PRO_USER,
         professionalId: professionalId || DEMO_PROFESSIONAL_ID,
@@ -179,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const switchDemoRole = useCallback((role: 'customer' | 'professional') => {
     if (!isDemoDataMode()) return
+    demoRoleLockRef.current = role
     if (role === 'professional') {
       setUser({ ...DEMO_PRO_USER, professionalId: DEMO_PROFESSIONAL_ID })
     } else {
@@ -187,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = useCallback(async () => {
+    demoRoleLockRef.current = null
     const supabase = getClient()
     if (supabase) {
       await supabase.auth.signOut()
