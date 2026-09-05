@@ -17,7 +17,9 @@ export function validateProductionEnv(): EnvValidationResult {
   }
 
   if (isDemoDataMode()) {
-    errors.push('NEXT_PUBLIC_FF_DEMO_DATA must be false in production')
+    warnings.push(
+      'Demo mode ON (pre-funding). After investment set NEXT_PUBLIC_FF_DEMO_KILL=true and redeploy.',
+    )
   }
 
   if (!isSupabaseEnabled()) {
