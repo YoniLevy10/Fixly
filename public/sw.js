@@ -1,24 +1,49 @@
-const CACHE_NAME = 'fixly-v2'
+const CACHE_NAME = 'fixly-v3'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(['/', '/manifest.webmanifest'])).then(() => {
-      return self.skipWaiting()
-    }),
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(['/', '/manifest.webmanifest']))
+      .then(() => self.skipWaiting()),
   )
 })
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))),
-    ).then(() => self.clients.claim()),
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))),
+      )
+      .then(() => self.clients.claim()),
   )
 })
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
+
+function isApiRequest(url) {
+  try {
+    const u = new URL(url)
+    return u.pathname.startsWith('/api/')
+  } catch {
+    return false
+  }
+}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event
   if (request.method !== 'GET') return
+
+  // Never cache API — stale GET /api/requests/:id was freezing the investor tour on "pending"
+  if (isApiRequest(request.url)) {
+    event.respondWith(fetch(request))
+    return
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
@@ -31,7 +56,11 @@ self.addEventListener('fetch', (event) => {
           return response
         })
         .catch(() => cached)
-      return cached || fetched
+      // Prefer network for navigations; fall back to cache offline
+      if (request.mode === 'navigate') {
+        return fetched.then((r) => r || cached).catch(() => cached)
+      }
+      return fetched.catch(() => cached).then((r) => r || cached)
     }),
   )
 })
