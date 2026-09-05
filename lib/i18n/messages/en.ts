@@ -262,6 +262,9 @@ export const en: MessageTree = {
     howWeUse: 'How we use data',
     howWeUseBody:
       'We use data to operate the service, show requests to professionals, improve the product, and provide support. We do not sell your data to third parties.',
+    analytics: 'Analytics & advertising',
+    analyticsBody:
+      'When measurement is enabled, we may use Google Analytics and the Meta Pixel to measure visits and waitlist signups and to improve paid campaigns. You can block cookies in your browser settings.',
     storage: 'Storage & security',
     storageBody:
       'Data is stored in Supabase (secure cloud). Access is limited by user permissions (RLS).',
