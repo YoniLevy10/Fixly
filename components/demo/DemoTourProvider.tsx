@@ -39,6 +39,7 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const [tourStep, setTourStep] = useState<DemoTourStepId | null>(null)
   const [tourError, setTourError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const runningRef = useRef(false)
   const routerRef = useRef(router)
   const switchRef = useRef(switchDemoRole)
   routerRef.current = router
@@ -47,24 +48,26 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const stopTour = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
+    runningRef.current = false
     setTourRunning(false)
     setTourStep(null)
   }, [])
 
   const startTour = useCallback(async () => {
     if (!isDemoDataMode()) return
-    if (abortRef.current) {
-      abortRef.current.abort()
-    }
+    // Do not restart mid-flight — restarting aborted the previous walkthrough
+    // right after /demo navigated to /tracking (looked like "stuck on pending").
+    if (runningRef.current) return
+
     setTourError(null)
     setTourRunning(true)
+    runningRef.current = true
     setTourStep('create')
     const ac = new AbortController()
     abortRef.current = ac
 
     try {
       await runInvestorDemoTour({
-        // Use refs so navigation away from the starter page cannot stale-close over
         switchRole: (role) => switchRef.current(role),
         navigate: (path) => routerRef.current.push(path),
         onStep: setTourStep,
@@ -72,9 +75,11 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
       })
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
+      console.error('[demo-tour]', err)
       setTourError(err instanceof Error ? err.message : 'הסיור נכשל — נסו שוב')
     } finally {
       if (abortRef.current === ac) abortRef.current = null
+      runningRef.current = false
       setTourRunning(false)
     }
   }, [])
