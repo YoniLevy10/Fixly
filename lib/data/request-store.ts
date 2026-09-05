@@ -112,6 +112,22 @@ export function updateRequestStatus(
   return updated
 }
 
+/**
+ * Insert-or-replace a full request row.
+ * Used by the investor demo tour so any serverless isolate can accept
+ * the client-owned snapshot (in-memory stores are not shared on Vercel).
+ */
+export function upsertRequest(request: MockRequest): MockRequest {
+  ensureDemoStore()
+  const index = store.findIndex((r) => r.id === request.id)
+  if (index === -1) {
+    store = [request, ...store]
+  } else {
+    store = [...store.slice(0, index), request, ...store.slice(index + 1)]
+  }
+  return request
+}
+
 /** Reset store (tests) */
 export function resetRequestStore(): void {
   store = [...getMockRequests()]
