@@ -26,6 +26,7 @@
 | `NEXT_PUBLIC_PRODUCT_URL` | You | Optional public vercel.app URL for the product |
 | `TRANZILA_*` + `TRANZILA_WEBHOOK_SECRET` | You | Notification URL with `?secret=` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` + analytics flag | You | Ads measurement |
+| `NEXT_PUBLIC_META_PIXEL_ID` | You | Meta Ads → CompleteRegistration; see `docs/META_WEEKEND_ADS.md` |
 | VAPID + `NEXT_PUBLIC_FF_PUSH=true` | You | Pro notify |
 | Supabase migrations (all, incl. marketing_ready_rls) | You | `supabase db push` |
 | Google OAuth | You | Supabase + Google Console |

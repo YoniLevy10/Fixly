@@ -16,6 +16,7 @@ import {
   Users,
   Wrench,
   Zap,
+  Share2,
 } from 'lucide-react'
 import {
   getStoredAttribution,
@@ -24,6 +25,11 @@ import {
 import { track } from '@/lib/analytics/track'
 import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 import { prelaunchCopy as copy } from '@/lib/marketing/prelaunch-copy'
+import {
+  buildWaitlistShareMessage,
+  buildWaitlistShareUrl,
+  buildWaitlistWhatsAppShareUrl,
+} from '@/lib/marketing/waitlist-share'
 import { PRODUCT_URL } from '@/lib/site-config'
 
 type FormState = {
@@ -58,6 +64,7 @@ export default function PrelaunchLanding() {
   const [done, setDone] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [showSticky, setShowSticky] = useState(true)
+  const [shareCopied, setShareCopied] = useState(false)
   const startedRef = useRef(false)
   const scrollMarks = useRef(new Set<number>())
   const waitlistRef = useRef<HTMLElement | null>(null)
@@ -119,8 +126,37 @@ export default function PrelaunchLanding() {
     setAudience(next)
     setDone(false)
     setError(null)
+    setShareCopied(false)
     startedRef.current = false
     track('waitlist_audience_switch', { audience: next, variant: VARIANT })
+  }
+
+  const shareWaitlist = async (channel: 'whatsapp' | 'native' | 'copy') => {
+    track('waitlist_share_click', { audience, channel, variant: VARIANT })
+    const message = buildWaitlistShareMessage(audience)
+    const url = buildWaitlistShareUrl(audience)
+
+    if (channel === 'whatsapp') {
+      window.open(buildWaitlistWhatsAppShareUrl(audience), '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (channel === 'native' && typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({ title: 'Fixly', text: message, url })
+        return
+      } catch {
+        // user cancelled or share failed — fall through to copy
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareCopied(true)
+      window.setTimeout(() => setShareCopied(false), 2500)
+    } catch {
+      window.prompt('העתיקו את הקישור:', url)
+    }
   }
 
   const submit = async (e: FormEvent) => {
@@ -407,15 +443,49 @@ export default function PrelaunchLanding() {
               </div>
 
               {done ? (
-                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
                   <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
                   <p className="text-xl font-black text-[#123563]">{copy.successTitle}</p>
                   <p className="max-w-sm text-sm font-medium text-slate-600">
                     {audience === 'professional' ? copy.successPro : copy.successCustomer}
                   </p>
+                  <div className="mt-4 w-full max-w-sm rounded-2xl bg-[#f3f6fa] p-4 text-start">
+                    <p className="text-sm font-black text-[#123563]">{copy.successShareTitle}</p>
+                    <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
+                      {copy.successShareLead}
+                    </p>
+                    <div className="mt-3 flex flex-col gap-2">
+                      <a
+                        href={buildWaitlistWhatsAppShareUrl(audience)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() =>
+                          track('waitlist_share_click', {
+                            audience,
+                            channel: 'whatsapp',
+                            variant: VARIANT,
+                          })
+                        }
+                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-black text-white transition hover:brightness-105"
+                      >
+                        {copy.successShareWhatsApp}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => shareWaitlist('native')}
+                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#123563]/15 bg-white px-4 text-sm font-black text-[#123563] transition hover:bg-white/80"
+                      >
+                        <Share2 className="h-4 w-4" aria-hidden />
+                        {shareCopied ? copy.successShareCopied : copy.successShareNative}
+                      </button>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setDone(false)}
+                    onClick={() => {
+                      setDone(false)
+                      setShareCopied(false)
+                    }}
                     className="mt-2 text-sm font-bold text-[#123563] underline"
                   >
                     לרשום עוד מישהו

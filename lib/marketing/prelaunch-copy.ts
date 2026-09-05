@@ -68,6 +68,11 @@ export const prelaunchCopy = {
   successTitle: 'נרשמתם בהצלחה',
   successCustomer: 'נעדכן אתכם ברגע ש-Fixly נפתחת באזור שלכם.',
   successPro: 'נעדכן אתכם עם פרטי הצטרפות לבעלי מקצוע כשהפיילוט נפתח.',
+  successShareTitle: 'עזרו לחברים לגלות אותנו',
+  successShareLead: 'שיתוף בוואטסאפ לוקח שנייה — ומקרב את הפתיחה באזור שלכם.',
+  successShareWhatsApp: 'שתפו בוואטסאפ',
+  successShareNative: 'שתפו קישור',
+  successShareCopied: 'הקישור הועתק',
   faqTitle: 'לפני שנרשמים',
   faq: [
     {

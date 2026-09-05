@@ -62,6 +62,12 @@ export function validateProductionEnv(): EnvValidationResult {
     warnings.push('NEXT_PUBLIC_FF_ANALYTICS=true but NEXT_PUBLIC_GA_MEASUREMENT_ID missing')
   }
 
+  if (!process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()) {
+    warnings.push(
+      'NEXT_PUBLIC_META_PIXEL_ID missing — Meta Ads cannot optimize for CompleteRegistration',
+    )
+  }
+
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
     warnings.push('Upstash Redis not configured — rate limits are per-instance only')
   }

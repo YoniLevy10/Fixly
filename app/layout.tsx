@@ -3,6 +3,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import AppProviders from '@/components/providers/AppProviders'
 import SWRegister from '@/components/pwa/SWRegister'
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
+import MetaPixel from '@/components/analytics/MetaPixel'
 import {
   DEFAULT_DESCRIPTION_HE,
   DEFAULT_TITLE_HE,
@@ -107,6 +108,7 @@ export default function RootLayout({
         </AppProviders>
         <SWRegister />
         <GoogleAnalytics />
+        <MetaPixel />
       </body>
     </html>
   )
