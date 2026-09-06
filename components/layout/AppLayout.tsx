@@ -6,6 +6,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
 import NativeAwareMain from '@/components/layout/NativeAwareMain'
+import { useDemoTour } from '@/components/demo/DemoTourProvider'
 import { shouldShowPrelaunchLanding } from '@/lib/site-hosts'
 
 type AppLayoutProps = {
@@ -19,6 +20,7 @@ type AppLayoutProps = {
  */
 export default function AppLayout({ children, hideNav = false }: AppLayoutProps) {
   const pathname = usePathname()
+  const { tourRunning } = useDemoTour()
   const [host, setHost] = useState('')
 
   useEffect(() => {
@@ -30,24 +32,31 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     pathname.startsWith('/go/') ||
     pathname === '/waitlist' ||
     isMarketingHome
-  // Immersive booking / tracking / investor tour — bottom nav must not cover CTAs
+  // Full-bleed booking / tracking / investor deep-link
   const isImmersiveRoute =
     pathname.startsWith('/tracking') ||
     pathname.startsWith('/request') ||
     pathname.startsWith('/demo')
-  const shouldHideNav = hideNav || isMarketingRoute || isImmersiveRoute
+  // Pro surfaces keep desktop chrome, but the customer bottom FAB must not
+  // cover request-detail sheets (investor tour + normal pro use).
+  const isProRoute = pathname.startsWith('/pro')
+  const shouldHideChrome = hideNav || isMarketingRoute || isImmersiveRoute
+  const shouldHideBottomNav =
+    shouldHideChrome || isProRoute || tourRunning
 
   return (
     <div className="min-h-screen bg-background">
-      {!shouldHideNav && <DesktopSidebar />}
+      {!shouldHideChrome && <DesktopSidebar />}
 
-      <div className={shouldHideNav ? '' : 'lg:mr-64 native-shell-column'}>
-        {!shouldHideNav && <DesktopHeader />}
+      <div className={shouldHideChrome ? '' : 'lg:mr-64 native-shell-column'}>
+        {!shouldHideChrome && <DesktopHeader />}
 
-        <NativeAwareMain hideNav={shouldHideNav}>{children}</NativeAwareMain>
+        <NativeAwareMain hideNav={shouldHideBottomNav}>
+          {children}
+        </NativeAwareMain>
       </div>
 
-      {!shouldHideNav && <BottomNav />}
+      {!shouldHideBottomNav && <BottomNav />}
     </div>
   )
 }
