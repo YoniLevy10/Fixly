@@ -52,6 +52,18 @@ function applyListOptions(
       carpentry: ['נגר'],
       tiling: ['ריצוף'],
       moving: ['הובל'],
+      elevators: ['מעלית', 'מעליות'],
+      pest_control: ['הדברה', 'מדביר'],
+      furniture: ['ריהוט', 'רהיט'],
+      appliance_repair: ['מכשיר', 'כביסה', 'מקרר', 'מדיח'],
+      computers: ['מחשב', 'IT'],
+      glazing: ['זגג', 'זכוכית', 'חלון'],
+      renovations: ['שיפוץ', 'שיפוצים'],
+      waterproofing: ['איטום', 'רטיבות'],
+      aluminum: ['אלומיניום', 'תריס', 'פרגולה'],
+      drywall: ['גבס', 'טיח'],
+      solar: ['סולאר', 'שמש', 'קולט'],
+      general: ['כללי', 'אחר', 'תיקון'],
     }
     const names = slugMap[categorySlug] ?? []
     next = next.filter((p) =>

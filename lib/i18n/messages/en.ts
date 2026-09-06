@@ -350,6 +350,9 @@ export const en: MessageTree = {
   contact: { whatsapp: 'WhatsApp' },
   trust: {
     verified: 'Fixly Verified',
+    midragVerified: 'Midrag verified',
+    midragVerifiedHint: 'Profile verified via Midrag',
+    midragScore: 'Midrag {rating} · {count} reviews',
     guaranteeTitle: 'Fixly Guarantee',
     guaranteeBody: 'Not satisfied? We help resolve it — or send another pro.',
     guaranteeShort: 'Covered by Fixly Guarantee',

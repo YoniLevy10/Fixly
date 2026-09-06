@@ -5,6 +5,7 @@ import { Clock, MessageCircle } from 'lucide-react'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
 import VerifiedBadge from '@/components/shared/VerifiedBadge'
+import MidragVerifiedBadge from '@/components/shared/MidragVerifiedBadge'
 import ResponseTimeBadge from '@/components/shared/ResponseTimeBadge'
 import AvailableTodayBadge from '@/components/shared/AvailableTodayBadge'
 import { formatPrice } from '@/lib/i18n/format-locale'
@@ -35,6 +36,7 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-bold text-sm">{pro.name}</h3>
                 {pro.isVerified && <VerifiedBadge />}
+                {pro.midragVerified && <MidragVerifiedBadge />}
                 <AvailableTodayBadge isAvailable={pro.isAvailable} />
                 {pro.isApproved && (
                   <span className="text-primary text-xs font-bold">✓</span>
