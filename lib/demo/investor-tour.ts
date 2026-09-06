@@ -25,7 +25,7 @@ export type DemoTourStep = {
   labelKey: string
 }
 
-/** Ordered investor walkthrough (~90s with default delays) */
+/** Ordered investor walkthrough (~2.5–3 min with default delays) */
 export const DEMO_TOUR_STEPS: DemoTourStep[] = [
   { id: 'create', labelKey: 'demo.tourStepCreate' },
   { id: 'pending', labelKey: 'demo.tourStepPending' },
@@ -150,39 +150,42 @@ export async function runInvestorDemoTour(
 
   onStep?.('pending')
   navigate(`/tracking/${current.id}`)
-  await wait(2400)
+  // Linger so investors can read the pending tracking screen
+  await wait(4500)
 
   // Pro side: show dashboard, then auto-accept
   switchRole('professional')
   navigate('/pro/dashboard')
-  await wait(1800)
+  await wait(3500)
 
   for (const status of STATUS_FLOW) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     current = await persistTourRequest(withStatus(current, status))
     onStep?.(status as DemoTourStepId)
-    await wait(status === 'on_the_way' ? 1600 : 1500)
+    // Give each status a calm beat before flipping screens
+    await wait(status === 'on_the_way' ? 3200 : 3000)
 
     if (status === 'on_the_way') {
       switchRole('customer')
       onStep?.('customer_map')
       navigate(`/tracking/${current.id}`)
-      await wait(5000)
+      // Longest beat — live map is the money shot
+      await wait(8500)
       switchRole('professional')
       navigate('/pro/dashboard')
-      await wait(1500)
+      await wait(3000)
     }
 
     if (status === 'accepted') {
-      // Brief beat on pro dashboard after accept so investors see it land
-      await wait(800)
+      // Extra beat on pro dashboard after accept so investors see it land
+      await wait(2200)
     }
   }
 
   switchRole('customer')
   onStep?.('completed')
   navigate(`/tracking/${current.id}`)
-  await wait(1600)
+  await wait(3500)
   onStep?.('done')
 
   return current.id
