@@ -435,14 +435,15 @@ export default function ProDashboardScreen() {
 
       {selectedRequest && (
         <div
-          className="fixed inset-0 z-50 flex items-end lg:items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[70] flex items-end lg:items-center justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
           onClick={() => setSelectedRequest(null)}
           role="presentation"
         >
           <div
-            className="bg-white rounded-2xl w-full max-w-md p-5 max-h-[85vh] overflow-y-auto"
+            className="bg-white rounded-2xl w-full max-w-md p-5 max-h-[min(85vh,calc(100dvh-6rem))] overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
+            aria-modal="true"
           >
             <h2 className="text-lg font-black mb-4">{t('pro.requestDetails')}</h2>
             <div className="bg-muted rounded-xl p-4 space-y-2 mb-4">
