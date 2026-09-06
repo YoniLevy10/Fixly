@@ -6,6 +6,7 @@ export type Category = {
   description?: string
 }
 
+/** Full marketplace profession list (Hebrew-first). */
 export const CATEGORIES: Category[] = [
   { id: '1', name: 'אינסטלציה', slug: 'plumbing', icon: '🚿', description: 'תיקוני צנרת, כיורים, שירותים' },
   { id: '2', name: 'חשמל', slug: 'electricity', icon: '⚡', description: 'חשמלאים מוסמכים' },
@@ -24,14 +25,17 @@ export const CATEGORIES: Category[] = [
   { id: '15', name: 'מחשבים', slug: 'computers', icon: '💻', description: 'תיקון מחשבים וטכנולוגיה' },
   { id: '16', name: 'זגגות', slug: 'glazing', icon: '🪟', description: 'חלונות וזכוכית' },
   { id: '17', name: 'שיפוצים', slug: 'renovations', icon: '🏗️', description: 'שיפוץ דירות ועסקים' },
-  // Beauty / wellness — home service verticals
+  { id: '22', name: 'איטום', slug: 'waterproofing', icon: '🛡️', description: 'איטום גגות, מרפסות ורטיבות' },
+  { id: '23', name: 'אלומיניום', slug: 'aluminum', icon: '🪟', description: 'חלונות, תריסים ופרגולות' },
+  { id: '24', name: 'גבס וטיח', slug: 'drywall', icon: '🧱', description: 'מחיצות ותקרות גבס' },
+  { id: '25', name: 'סולאר ואנרגיה', slug: 'solar', icon: '☀️', description: 'דודי שמש ומערכות סולאריות' },
   { id: '19', name: 'מניקור וציפורניים', slug: 'nails', icon: '💅', description: 'מניקור, ג׳ל ופדיקור עד הבית' },
   { id: '20', name: 'תספורת ועיצוב', slug: 'hair', icon: '✂️', description: 'ספרים ומעצבי שיער ניידים' },
   { id: '21', name: 'איפור', slug: 'makeup', icon: '💄', description: 'מאפרות עד הבית, מלון או משרד' },
   { id: '18', name: 'כללי / אחר', slug: 'general', icon: '🧰', description: 'שירותים כלליים' },
 ]
 
-/** Grid tiles on home — beauty categories surfaced for discovery */
+/** Grid tiles on home — mix of beauty + top home services */
 export const HOME_DISPLAY_CATEGORIES = [
   { name: 'מניקור וציפורניים', slug: 'nails', emoji: '💅' },
   { name: 'תספורת ועיצוב', slug: 'hair', emoji: '✂️' },
@@ -45,26 +49,13 @@ export const HOME_DISPLAY_CATEGORIES = [
   { name: 'גינון', slug: 'gardening', emoji: '🌿' },
   { name: 'נגרות', slug: 'carpentry', emoji: '🪚' },
   { name: 'ריצוף', slug: 'tiling', emoji: '🧱' },
+  { name: 'שיפוצים', slug: 'renovations', emoji: '🏗️' },
+  { name: 'הדברה', slug: 'pest_control', emoji: '🐛' },
+  { name: 'איטום', slug: 'waterproofing', emoji: '🛡️' },
+  { name: 'אלומיניום', slug: 'aluminum', emoji: '🪟' },
 ]
 
-export const PROFESSIONALS_FILTER_CATEGORIES = [
-  { slug: 'nails', name: 'מניקור וציפורניים', icon: '💅' },
-  { slug: 'hair', name: 'תספורת ועיצוב', icon: '✂️' },
-  { slug: 'makeup', name: 'איפור', icon: '💄' },
-  { slug: 'ac', name: 'מיזוג אוויר', icon: '❄️' },
-  { slug: 'plumbing', name: 'אינסטלציה', icon: '🚿' },
-  { slug: 'electricity', name: 'חשמל', icon: '⚡' },
-  { slug: 'locksmith', name: 'מנעולן', icon: '🔐' },
-  { slug: 'painting', name: 'צביעה', icon: '🎨' },
-  { slug: 'cleaning', name: 'ניקיון', icon: '✨' },
-  { slug: 'gardening', name: 'גינון', icon: '🌿' },
-  { slug: 'carpentry', name: 'נגרות', icon: '🪚' },
-  { slug: 'tiling', name: 'ריצוף', icon: '🧱' },
-  { slug: 'moving', name: 'הובלות', icon: '🚚' },
-  { slug: 'elevators', name: 'מעליות', icon: '🛗' },
-  { slug: 'furniture', name: 'ריהוט', icon: '🛋️' },
-  { slug: 'appliance_repair', name: 'תיקון מכשירים', icon: '🔌' },
-  { slug: 'computers', name: 'מחשבים', icon: '💻' },
-  { slug: 'glazing', name: 'זגגות', icon: '🪟' },
-  { slug: 'renovations', name: 'שיפוצים', icon: '🏗️' },
-]
+/** Search / filter chips — full profession list */
+export const PROFESSIONALS_FILTER_CATEGORIES = CATEGORIES.filter(
+  (c) => c.slug !== 'general'
+).map((c) => ({ slug: c.slug, name: c.name, icon: c.icon }))

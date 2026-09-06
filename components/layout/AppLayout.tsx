@@ -37,12 +37,13 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     pathname.startsWith('/tracking') ||
     pathname.startsWith('/request') ||
     pathname.startsWith('/demo')
-  // Pro surfaces keep desktop chrome, but the customer bottom FAB must not
-  // cover request-detail sheets (investor tour + normal pro use).
-  const isProRoute = pathname.startsWith('/pro')
+  // Pro console only (`/pro` or `/pro/...`) — NOT `/professionals` / `/profile`
+  // (those also start with "/pro" and must keep the customer bottom nav).
+  const isProConsoleRoute =
+    pathname === '/pro' || pathname.startsWith('/pro/')
   const shouldHideChrome = hideNav || isMarketingRoute || isImmersiveRoute
   const shouldHideBottomNav =
-    shouldHideChrome || isProRoute || tourRunning
+    shouldHideChrome || isProConsoleRoute || tourRunning
 
   return (
     <div className="min-h-screen bg-background">

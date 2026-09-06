@@ -352,6 +352,9 @@ export const he: MessageTree = {
   },
   trust: {
     verified: 'מאומת Fixly',
+    midragVerified: 'מאומת מידרג',
+    midragVerifiedHint: 'פרופיל מאומת מול מידרג',
+    midragScore: 'דירוג מידרג {rating} · {count} חוות דעת',
     guaranteeTitle: 'אחריות Fixly',
     guaranteeBody: 'לא מרוצה מהעבודה? נעזור לפתור — או נשלח מקצוען חלופי.',
     guaranteeShort: 'מכוסה באחריות Fixly',
