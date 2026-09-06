@@ -1,27 +1,28 @@
 'use client'
 
 import { useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { useAuth } from '@/lib/auth/auth-provider'
-import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
 import { routes } from '@/lib/routes'
 import { DEMO_TOUR_STEPS } from '@/lib/demo/investor-tour'
 import { useDemoTour } from '@/components/demo/DemoTourProvider'
 
+/**
+ * Minimal investor-demo chrome.
+ * Keep idle controls light; while the tour runs show only the active step + stop.
+ */
 export default function DemoModeBanner() {
   const { t } = useLocale()
   const { user, switchDemoRole } = useAuth()
   const router = useRouter()
   const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
 
-  // Clear step shortly after a successful run (errors keep context)
   useEffect(() => {
     if (tourRunning || tourError || !tourStep) return
     const tmr = window.setTimeout(() => {
-      /* step is owned by provider; stopTour clears it — leave visible briefly via CSS only */
+      /* step owned by provider — leave visible briefly after success */
     }, 2500)
     return () => window.clearTimeout(tmr)
   }, [tourRunning, tourError, tourStep])
@@ -33,6 +34,29 @@ export default function DemoModeBanner() {
     ? DEMO_TOUR_STEPS.find((s) => s.id === tourStep)
     : null
 
+  // During the walkthrough: one calm status line — no role toggle clutter
+  if (tourRunning) {
+    return (
+      <div className="bg-secondary text-secondary-foreground text-xs font-bold py-1.5 px-3 z-[60] relative">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <span>
+            {stepMeta ? t(stepMeta.labelKey) : t('demo.tourRunning')}
+          </span>
+          <button
+            type="button"
+            onClick={stopTour}
+            className="underline underline-offset-2 hover:opacity-90"
+          >
+            {t('demo.tourStop')}
+          </button>
+        </div>
+        {tourError ? (
+          <div className="mt-1 text-center font-medium text-red-900">{tourError}</div>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div className="bg-secondary text-secondary-foreground text-xs font-bold py-1.5 px-3 z-[60] relative">
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
@@ -41,7 +65,6 @@ export default function DemoModeBanner() {
         <div className="inline-flex rounded-full border border-secondary-foreground/30 overflow-hidden">
           <button
             type="button"
-            disabled={tourRunning}
             onClick={() => {
               switchDemoRole('customer')
               router.push(routes.home)
@@ -52,7 +75,6 @@ export default function DemoModeBanner() {
           </button>
           <button
             type="button"
-            disabled={tourRunning}
             onClick={() => {
               switchDemoRole('professional')
               router.push(routes.proDashboard)
@@ -63,42 +85,18 @@ export default function DemoModeBanner() {
           </button>
         </div>
 
-        <Link
-          href={`${routes.newRequest}?professional=${DEMO_PROFESSIONAL_ID}`}
+        <button
+          type="button"
+          onClick={() => void startTour()}
           className="underline underline-offset-2 hover:opacity-90"
         >
-          {t('demo.bannerCta')}
-        </Link>
-
-        {!tourRunning ? (
-          <button
-            type="button"
-            onClick={() => void startTour()}
-            className="underline underline-offset-2 hover:opacity-90"
-          >
-            {t('demo.tourStart')}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={stopTour}
-            className="underline underline-offset-2 hover:opacity-90"
-          >
-            {t('demo.tourStop')}
-          </button>
-        )}
+          {t('demo.tourStart')}
+        </button>
       </div>
 
-      {(tourRunning || tourError) && (
-        <div className="mt-1 text-center font-medium opacity-95">
-          {tourRunning && stepMeta ? (
-            <span>
-              {t('demo.tourRunning')}: {t(stepMeta.labelKey)}
-            </span>
-          ) : null}
-          {tourError ? <span className="text-red-900 ms-2">{tourError}</span> : null}
-        </div>
-      )}
+      {tourError ? (
+        <div className="mt-1 text-center font-medium text-red-900">{tourError}</div>
+      ) : null}
     </div>
   )
 }
