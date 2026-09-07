@@ -23,8 +23,10 @@ export default function NativeBootstrap() {
       }
 
       try {
+        // Hide after a short beat so the web AppSplashScreen (logo + line) is painted.
         const { SplashScreen } = await import('@capacitor/splash-screen')
-        await SplashScreen.hide()
+        await new Promise((r) => setTimeout(r, 280))
+        await SplashScreen.hide({ fadeOutDuration: 280 })
       } catch {
         /* ignore */
       }

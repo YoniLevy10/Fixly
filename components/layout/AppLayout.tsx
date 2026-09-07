@@ -36,7 +36,8 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
   const isImmersiveRoute =
     pathname.startsWith('/tracking') ||
     pathname.startsWith('/request') ||
-    pathname.startsWith('/demo')
+    pathname.startsWith('/demo') ||
+    pathname === '/login'
   // Pro console only (`/pro` or `/pro/...`) — NOT `/professionals` / `/profile`
   // (those also start with "/pro" and must keep the customer bottom nav).
   const isProConsoleRoute =
