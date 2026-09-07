@@ -22,6 +22,10 @@ export default function PrivacyPolicyContent() {
         <p>{t('legal.howWeUseBody')}</p>
       </section>
       <section>
+        <h2 className="font-bold text-base mb-2">{t('legal.analytics')}</h2>
+        <p>{t('legal.analyticsBody')}</p>
+      </section>
+      <section>
         <h2 className="font-bold text-base mb-2">{t('legal.storage')}</h2>
         <p>{t('legal.storageBody')}</p>
       </section>
