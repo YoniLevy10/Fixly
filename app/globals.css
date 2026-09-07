@@ -184,10 +184,54 @@ html.native-app [contenteditable='true'] {
   animation: prelaunch-drift 9s ease-in-out infinite;
 }
 
+/* Bamakor / OpticalCenter AppSplashScreen — logo pop + sweeping progress line */
+@keyframes fixly-splash-bar {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes fixly-splash-mark-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fixly-splash-bar {
+  animation: fixly-splash-bar 1.15s ease-in-out infinite;
+}
+
+.fixly-splash-mark-pop {
+  animation: fixly-splash-mark-pop 0.45s ease-out both;
+}
+
+html[dir='rtl'] .fixly-splash-bar {
+  animation-name: fixly-splash-bar-rtl;
+}
+
+@keyframes fixly-splash-bar-rtl {
+  0% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(-220%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .prelaunch-float,
   .prelaunch-progress,
-  .prelaunch-drift {
+  .prelaunch-drift,
+  .fixly-splash-bar,
+  .fixly-splash-mark-pop {
     animation: none !important;
   }
 }

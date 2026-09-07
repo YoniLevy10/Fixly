@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { FixlyMark } from '@/components/brand/FixlyMark'
 import { primaryNav, secondaryNav } from '@/components/layout/nav-config'
 import { routes } from '@/lib/routes'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -43,9 +44,7 @@ export default function DesktopSidebar() {
     <aside className="native-hide-desktop hidden lg:flex flex-col fixed top-0 right-0 h-screen w-64 border-l border-border bg-card z-40">
       <div className="p-5 border-b border-border">
         <Link href={routes.home} className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-lg shadow-sm">
-            F
-          </div>
+          <FixlyMark size={40} className="rounded-xl" />
           <div>
             <p className="font-black text-lg leading-tight">{t('app.name')}</p>
             <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>

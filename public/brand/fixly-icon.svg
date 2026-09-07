@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none" role="img" aria-label="Fixly">
+  <rect width="1024" height="1024" rx="224" fill="#123563"/>
+  <path
+    d="M512 220 L748 420 V780 H276 V420 Z"
+    stroke="#FFFFFF"
+    stroke-width="56"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <path
+    d="M404 780 V548 H620 V780"
+    stroke="#FFFFFF"
+    stroke-width="48"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <circle cx="680" cy="680" r="200" fill="#F59E0B"/>
+  <path
+    d="M600 680 L660 740 L780 600"
+    stroke="#123563"
+    stroke-width="52"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+  />
+</svg>

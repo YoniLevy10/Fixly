@@ -6,6 +6,7 @@ export const routes = {
   myRequests: '/my-requests',
   tracking: (id: string) => `/tracking/${id}`,
   profile: '/profile',
+  login: '/login',
   proDashboard: '/pro/dashboard',
   proRequests: '/pro/requests',
   admin: '/admin',
