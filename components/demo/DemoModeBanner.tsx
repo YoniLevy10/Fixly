@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { useAuth } from '@/lib/auth/auth-provider'
@@ -12,11 +12,13 @@ import { useDemoTour } from '@/components/demo/DemoTourProvider'
 /**
  * Minimal investor-demo chrome.
  * Keep idle controls light; while the tour runs show only the active step + stop.
+ * Hidden on marketing/waitlist surfaces so conversion pages stay distraction-free.
  */
 export default function DemoModeBanner() {
   const { t } = useLocale()
   const { user, switchDemoRole } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
 
   useEffect(() => {
@@ -27,7 +29,10 @@ export default function DemoModeBanner() {
     return () => window.clearTimeout(tmr)
   }, [tourRunning, tourError, tourStep])
 
-  if (!isDemoDataMode()) return null
+  const isMarketingSurface =
+    pathname === '/waitlist' || pathname.startsWith('/go/')
+
+  if (!isDemoDataMode() || isMarketingSurface) return null
 
   const isPro = user.role === 'professional'
   const stepMeta = tourStep
