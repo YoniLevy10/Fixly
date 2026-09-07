@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { useAuth } from '@/lib/auth/auth-provider'
@@ -16,6 +16,7 @@ import { useDemoTour } from '@/components/demo/DemoTourProvider'
 export default function DemoModeBanner() {
   const { t } = useLocale()
   const { user, switchDemoRole } = useAuth()
+  const pathname = usePathname()
   const router = useRouter()
   const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
 
@@ -26,6 +27,9 @@ export default function DemoModeBanner() {
     }, 2500)
     return () => window.clearTimeout(tmr)
   }, [tourRunning, tourError, tourStep])
+
+  // Keep branded login / splash surfaces clean (OpticalCenter / Bamakor style).
+  if (pathname === '/login') return null
 
   if (!isDemoDataMode()) return null
 
