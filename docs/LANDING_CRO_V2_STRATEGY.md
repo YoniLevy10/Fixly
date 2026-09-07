@@ -161,12 +161,25 @@ Actions:
 4. Request re-indexing of `/` after V2 is live.
 5. Check indexed title/description after Google recrawls.
 
-## Decision rule
+## V3 conversion pass (on top of V2)
 
-Do not judge V2 by whether it “looks cooler”. Judge it by:
-- more qualified signup completions
-- lower form abandonment
-- better customer/professional mix in the pilot city
-- clearer feedback in user interviews
+Shipped in `landing_v3` analytics variant. Goal: shorten Visitor → Lead without inventing social proof.
 
-If those metrics do not improve, revert quickly and test the message before adding more visual complexity.
+### Changes vs V2
+1. **Form in the hero** — signup panel is above the fold (name + phone for customers). Demo mock moved below so it does not compete with the CTA.
+2. **Less hero chrome** — removed competing primary button next to a distant form; secondary link is text-only (“איך זה עובד”).
+3. **Mid-funnel CTA** after How steps.
+4. **Category chips** scroll to the form and fire `waitlist_cta_click` (search intent → action).
+5. **Security objection** added to FAQ + privacy link.
+6. **Copy** tightened around pain → one request → match → status.
+7. **source** field: `prelaunch_landing_v3`.
+
+### Still true
+Do not invent user counts or reviews. Prefer real pilot proof when available.
+
+### Next A/B (unchanged priority)
+1. Headline A vs B (`prelaunchCopy.headline*` / `headlineB`)
+2. CTA “הצטרפו בחינם” vs “שמרו לי מקום”
+3. Customer form: name+phone vs phone-only
+4. Pro offer: early-access vs pilot-priority wording
+

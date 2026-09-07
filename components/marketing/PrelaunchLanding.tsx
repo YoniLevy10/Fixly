@@ -11,12 +11,12 @@ import {
   Lock,
   MapPin,
   Search,
+  Share2,
   ShieldCheck,
   Sparkles,
   Users,
   Wrench,
   Zap,
-  Share2,
 } from 'lucide-react'
 import {
   getStoredAttribution,
@@ -46,7 +46,8 @@ const emptyForm: FormState = {
   category: '',
 }
 
-const VARIANT = 'landing_v2'
+/** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
+const VARIANT = 'landing_v3'
 
 function forceHebrewRtl() {
   document.documentElement.lang = 'he'
@@ -67,7 +68,7 @@ export default function PrelaunchLanding() {
   const [shareCopied, setShareCopied] = useState(false)
   const startedRef = useRef(false)
   const scrollMarks = useRef(new Set<number>())
-  const waitlistRef = useRef<HTMLElement | null>(null)
+  const waitlistRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     forceHebrewRtl()
@@ -146,7 +147,7 @@ export default function PrelaunchLanding() {
         await navigator.share({ title: 'Fixly', text: message, url })
         return
       } catch {
-        // user cancelled or share failed — fall through to copy
+        // cancelled
       }
     }
 
@@ -176,7 +177,7 @@ export default function PrelaunchLanding() {
           city: form.city || undefined,
           category: audience === 'professional' && form.category ? form.category : undefined,
           audience,
-          source: 'prelaunch_landing_v2',
+          source: 'prelaunch_landing_v3',
           ...(referralCode ? { referralCode } : {}),
           ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         }),
@@ -203,13 +204,31 @@ export default function PrelaunchLanding() {
     }
   }
 
+  const formProps: WaitlistFormProps = {
+    audience,
+    form,
+    loading,
+    error,
+    done,
+    shareCopied,
+    onAudience: switchAudience,
+    onFormChange: setForm,
+    onSubmit: submit,
+    onSignupStarted: markSignupStarted,
+    onShare: shareWaitlist,
+    onResetDone: () => {
+      setDone(false)
+      setShareCopied(false)
+    },
+  }
+
   return (
     <div
       className="prelaunch-root min-h-screen overflow-x-hidden bg-[#f7f9fc] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] text-[#10233f] md:pb-0"
       dir="rtl"
       lang="he"
     >
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="prelaunch-drift absolute -right-28 -top-16 h-72 w-72 rounded-full bg-[#ffd98e]/50 blur-3xl" />
         <div className="prelaunch-drift absolute -left-36 top-[34rem] h-88 w-88 rounded-full bg-[#bfd6f0]/55 blur-3xl [animation-delay:1.4s]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,53,99,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(18,53,99,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_bottom,black,transparent_55%)]" />
@@ -238,8 +257,8 @@ export default function PrelaunchLanding() {
       </header>
 
       <main id="top">
-        {/* Hero — brand first, then outcome copy + product-flow visual */}
-        <section className="relative mx-auto grid min-h-[calc(100svh-4.5rem)] max-w-6xl items-center gap-10 px-5 py-10 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12 lg:py-14">
+        {/* Awareness + Action: copy + form above the fold */}
+        <section className="relative mx-auto grid max-w-6xl items-start gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_minmax(300px,400px)] lg:gap-10 lg:py-12">
           <div
             className={`transition-all duration-700 ease-out ${
               mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
@@ -248,17 +267,17 @@ export default function PrelaunchLanding() {
             <div className="flex justify-start">
               <p
                 dir="ltr"
-                className="mb-3 font-black tracking-tight text-[#123563] text-[clamp(2.6rem,7.5vw,4.5rem)] leading-none"
+                className="mb-2 font-black tracking-tight text-[#123563] text-[clamp(2.4rem,7vw,4rem)] leading-none"
               >
                 {copy.brand}
                 <span className="text-[#F59E0B]">.</span>
               </p>
             </div>
-            <p className="mb-4 inline-flex items-center gap-2 text-xs font-extrabold text-[#123563] sm:text-sm">
+            <p className="mb-3 inline-flex items-center gap-2 text-xs font-extrabold text-[#123563] sm:text-sm">
               <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
               {copy.badge}
             </p>
-            <h1 className="max-w-xl text-[clamp(1.55rem,4.2vw,2.45rem)] font-extrabold leading-snug text-[#1a2f4d]">
+            <h1 className="max-w-xl text-[clamp(1.45rem,4vw,2.35rem)] font-extrabold leading-snug text-[#1a2f4d]">
               {copy.headline}
               <span className="mt-1 block text-[#123563]">{copy.headlineLine2}</span>
               <span className="mt-1 block text-[#F59E0B]">{copy.headlineAccent}</span>
@@ -266,22 +285,6 @@ export default function PrelaunchLanding() {
             <p className="mt-4 max-w-lg text-base font-medium leading-7 text-slate-600 sm:text-lg sm:leading-8">
               {copy.subheadline}
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href="#waitlist"
-                onClick={() => track('waitlist_cta_click', { placement: 'hero', variant: VARIANT })}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#123563] px-6 text-base font-black text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#0c294f] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#123563]/30"
-              >
-                {copy.primaryCta}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
-              </a>
-              <a
-                href="#how"
-                className="inline-flex min-h-12 items-center justify-center rounded-xl px-4 text-base font-bold text-[#123563] transition hover:bg-white/70"
-              >
-                {copy.secondaryCta}
-              </a>
-            </div>
             <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate-500">
               {copy.trustItems.map((item, i) => {
                 const Icon = [ShieldCheck, Clock3, Users][i] ?? ShieldCheck
@@ -293,34 +296,46 @@ export default function PrelaunchLanding() {
                 )
               })}
             </ul>
-            <div className="mt-6 flex max-w-xl flex-wrap gap-2" aria-label="קטגוריות לדוגמה">
-              {copy.categories.map((category) => (
-                <span
-                  key={category}
-                  className="rounded-full border border-[#123563]/10 bg-white/80 px-3 py-1 text-xs font-bold text-[#40546e]"
-                >
-                  {category}
-                </span>
-              ))}
-            </div>
+            <a
+              href="#how"
+              className="mt-6 inline-flex text-sm font-bold text-[#123563] underline-offset-4 hover:underline lg:mt-8"
+            >
+              {copy.secondaryCta}
+            </a>
           </div>
 
           <div
-            className={`relative transition-all delay-150 duration-700 ease-out ${
+            id="waitlist"
+            ref={waitlistRef}
+            className={`scroll-mt-24 transition-all delay-100 duration-700 ease-out ${
               mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
             }`}
           >
+            <WaitlistFormCard {...formProps} compact />
+          </div>
+        </section>
+
+        {/* Desire: product flow demo (not competing with hero CTA) */}
+        <section className="border-t border-[#123563]/8 bg-white/60 px-5 py-12 sm:px-8 sm:py-16" aria-label="איך זה נראה">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <div>
+              <h2 className="text-2xl font-black text-[#123563] sm:text-3xl">ככה זה ירגיש בפועל</h2>
+              <p className="mt-3 max-w-md text-base font-medium leading-7 text-slate-600">
+                לא עוד חיפוש בגוגל ורשימת טלפונים. בקשה אחת, התאמה, ומעקב עד שהתקלה מאחוריכם.
+              </p>
+            </div>
             <HeroFlowMock />
           </div>
         </section>
 
+        {/* Interest: what Fixly is not */}
         <section className="border-y border-[#123563]/10 bg-[#10233f] text-white" aria-label="מה Fixly לא">
           <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:grid-cols-3 sm:px-8">
             {copy.differentiators.map((item) => (
               <div key={item.num} className="flex gap-4">
                 <span className="text-sm font-black text-[#F59E0B]">{item.num}</span>
                 <div>
-                  <h2 className="font-black">{item.title}</h2>
+                  <p className="font-black">{item.title}</p>
                   <p className="mt-1 text-sm font-medium leading-6 text-white/65">{item.text}</p>
                 </div>
               </div>
@@ -328,7 +343,7 @@ export default function PrelaunchLanding() {
           </div>
         </section>
 
-        <section id="how" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+        <section id="how" className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="text-2xl font-black text-[#123563] sm:text-4xl">{copy.howTitle}</h2>
           <p className="mt-3 max-w-2xl text-base font-medium text-slate-600 sm:text-lg">{copy.howLead}</p>
           <ol className="mt-10 grid gap-8 sm:grid-cols-3">
@@ -346,9 +361,48 @@ export default function PrelaunchLanding() {
               )
             })}
           </ol>
+
+          <div className="mt-12 rounded-2xl border border-[#123563]/10 bg-white px-5 py-8 text-center sm:px-8">
+            <h3 className="text-xl font-black text-[#123563] sm:text-2xl">{copy.midCtaTitle}</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm font-medium text-slate-600 sm:text-base">
+              {copy.midCtaLead}
+            </p>
+            <a
+              href="#waitlist"
+              onClick={() => track('waitlist_cta_click', { placement: 'after_how', variant: VARIANT })}
+              className="mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#123563] px-7 text-base font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0c294f]"
+            >
+              {copy.primaryCta}
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+            </a>
+          </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 pb-16 sm:px-8 sm:pb-20">
+        {/* Search intent — actionable category chips */}
+        <section className="mx-auto max-w-6xl px-5 pb-6 sm:px-8" aria-label="תחומים">
+          <p className="mb-3 text-sm font-bold text-slate-500">מחפשים למשל:</p>
+          <div className="flex flex-wrap gap-2">
+            {copy.categories.map((category) => (
+              <a
+                key={category}
+                href="#waitlist"
+                onClick={() =>
+                  track('waitlist_cta_click', {
+                    placement: 'category_chip',
+                    category,
+                    variant: VARIANT,
+                  })
+                }
+                className="rounded-full border border-[#123563]/12 bg-white px-3.5 py-1.5 text-xs font-bold text-[#40546e] transition hover:border-[#123563]/35 hover:text-[#123563]"
+              >
+                {category}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        {/* Desire by audience */}
+        <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
           <div className="grid overflow-hidden rounded-[1.75rem] border border-[#123563]/10 bg-white lg:grid-cols-2">
             <div className="p-7 sm:p-10">
               <p className="text-xs font-black text-[#123563]">ללקוחות</p>
@@ -364,6 +418,17 @@ export default function PrelaunchLanding() {
                   </li>
                 ))}
               </ul>
+              <a
+                href="#waitlist"
+                onClick={() => {
+                  switchAudience('customer')
+                  track('waitlist_cta_click', { placement: 'customer_panel', variant: VARIANT })
+                }}
+                className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-black text-[#123563] underline-offset-4 hover:underline"
+              >
+                {copy.submitCustomer}
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+              </a>
             </div>
             <div className="bg-[#10233f] p-7 text-white sm:p-10">
               <p className="text-xs font-black text-[#ffd07a]">לבעלי מקצוע</p>
@@ -384,192 +449,8 @@ export default function PrelaunchLanding() {
           </div>
         </section>
 
-        <section
-          id="waitlist"
-          ref={waitlistRef}
-          className="scroll-mt-20 bg-[#eaf1f8]"
-        >
-          <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-8 sm:py-20 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
-            <div>
-              <h2 className="max-w-xl text-3xl font-black tracking-tight text-[#10233f] sm:text-4xl">
-                {copy.waitlistTitle}
-              </h2>
-              <p className="mt-4 max-w-xl text-base font-medium leading-7 text-slate-600 sm:text-lg">
-                {copy.waitlistLead}
-              </p>
-              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate-500">
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-[#123563]" aria-hidden />
-                  בלי התחייבות
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
-                  גישה מוקדמת לפיילוט
-                </span>
-              </div>
-            </div>
-
-            <div
-              id="waitlist-panel"
-              className="rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-[0_20px_50px_rgba(18,53,99,0.1)] sm:p-7"
-            >
-              <div
-                className="grid grid-cols-2 gap-2 rounded-2xl bg-[#f3f6fa] p-1.5"
-                role="tablist"
-                aria-label="סוג הרשמה"
-              >
-                {(
-                  [
-                    { id: 'customer' as const, label: 'אני לקוח/ה' },
-                    { id: 'professional' as const, label: 'אני בעל/ת מקצוע' },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={audience === tab.id}
-                    aria-controls="waitlist-panel"
-                    onClick={() => switchAudience(tab.id)}
-                    className={`min-h-11 rounded-xl px-3 text-sm font-black transition ${
-                      audience === tab.id
-                        ? 'bg-white text-[#123563] shadow-sm'
-                        : 'text-slate-500 hover:text-[#123563]'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              {done ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
-                  <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
-                  <p className="text-xl font-black text-[#123563]">{copy.successTitle}</p>
-                  <p className="max-w-sm text-sm font-medium text-slate-600">
-                    {audience === 'professional' ? copy.successPro : copy.successCustomer}
-                  </p>
-                  <div className="mt-4 w-full max-w-sm rounded-2xl bg-[#f3f6fa] p-4 text-start">
-                    <p className="text-sm font-black text-[#123563]">{copy.successShareTitle}</p>
-                    <p className="mt-1 text-xs font-medium leading-5 text-slate-500">
-                      {copy.successShareLead}
-                    </p>
-                    <div className="mt-3 flex flex-col gap-2">
-                      <a
-                        href={buildWaitlistWhatsAppShareUrl(audience)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() =>
-                          track('waitlist_share_click', {
-                            audience,
-                            channel: 'whatsapp',
-                            variant: VARIANT,
-                          })
-                        }
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-black text-white transition hover:brightness-105"
-                      >
-                        {copy.successShareWhatsApp}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => shareWaitlist('native')}
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#123563]/15 bg-white px-4 text-sm font-black text-[#123563] transition hover:bg-white/80"
-                      >
-                        <Share2 className="h-4 w-4" aria-hidden />
-                        {shareCopied ? copy.successShareCopied : copy.successShareNative}
-                      </button>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDone(false)
-                      setShareCopied(false)
-                    }}
-                    className="mt-2 text-sm font-bold text-[#123563] underline"
-                  >
-                    לרשום עוד מישהו
-                  </button>
-                </div>
-              ) : (
-                <form className="mt-5 space-y-4" onSubmit={submit} onFocus={markSignupStarted}>
-                  <p className="text-sm font-semibold text-slate-500">
-                    {audience === 'customer' ? copy.customerHint : copy.proHint}
-                  </p>
-                  <Field
-                    label="שם מלא"
-                    name="fullName"
-                    autoComplete="name"
-                    required
-                    placeholder="איך קוראים לך?"
-                    value={form.fullName}
-                    onChange={(v) => {
-                      markSignupStarted()
-                      setForm((f) => ({ ...f, fullName: v }))
-                    }}
-                  />
-                  <Field
-                    label="טלפון"
-                    name="phone"
-                    autoComplete="tel"
-                    required
-                    dir="ltr"
-                    inputMode="tel"
-                    placeholder="050-0000000"
-                    value={form.phone}
-                    onChange={(v) => {
-                      markSignupStarted()
-                      setForm((f) => ({ ...f, phone: v }))
-                    }}
-                  />
-                  <Field
-                    label="עיר (אופציונלי)"
-                    name="city"
-                    autoComplete="address-level2"
-                    placeholder="למשל ירושלים"
-                    value={form.city}
-                    onChange={(v) => setForm((f) => ({ ...f, city: v }))}
-                  />
-                  {audience === 'professional' && (
-                    <Field
-                      label="תחום (למשל אינסטלציה, חשמל)"
-                      name="category"
-                      placeholder="למשל אינסטלציה"
-                      value={form.category}
-                      onChange={(v) => setForm((f) => ({ ...f, category: v }))}
-                    />
-                  )}
-                  {error && (
-                    <p
-                      className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
-                      role="alert"
-                    >
-                      {error}
-                    </p>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F59E0B] px-6 text-base font-black text-[#123563] transition hover:brightness-105 disabled:opacity-60"
-                  >
-                    {loading
-                      ? 'שולחים…'
-                      : audience === 'professional'
-                        ? copy.submitPro
-                        : copy.submitCustomer}
-                    {!loading ? <ArrowLeft className="h-4 w-4" aria-hidden /> : null}
-                  </button>
-                  <p className="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-slate-500">
-                    <Lock className="h-3.5 w-3.5" aria-hidden />
-                    בלי כרטיס אשראי · אפשר להסיר בכל עת
-                  </p>
-                </form>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-20">
+        {/* Trust / objections */}
+        <section className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="text-center text-2xl font-black text-[#123563] sm:text-3xl">{copy.faqTitle}</h2>
           <div className="mt-8 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
             {copy.faq.map((item) => (
@@ -582,7 +463,18 @@ export default function PrelaunchLanding() {
                     </span>
                   </span>
                 </summary>
-                <p className="mt-3 text-sm font-medium leading-7 text-slate-600">{item.a}</p>
+                <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
+                  {item.a}
+                  {item.q.includes('בטוחים') ? (
+                    <>
+                      {' '}
+                      <Link href="/privacy" className="font-bold text-[#123563] underline">
+                        מדיניות הפרטיות
+                      </Link>
+                      .
+                    </>
+                  ) : null}
+                </p>
               </details>
             ))}
           </div>
@@ -648,6 +540,195 @@ export default function PrelaunchLanding() {
   )
 }
 
+type WaitlistFormProps = {
+  audience: WaitlistAudience
+  form: FormState
+  loading: boolean
+  error: string | null
+  done: boolean
+  shareCopied: boolean
+  compact?: boolean
+  onAudience: (a: WaitlistAudience) => void
+  onFormChange: (updater: FormState | ((f: FormState) => FormState)) => void
+  onSubmit: (e: FormEvent) => void
+  onSignupStarted: () => void
+  onShare: (channel: 'whatsapp' | 'native' | 'copy') => void
+  onResetDone: () => void
+}
+
+function WaitlistFormCard({
+  audience,
+  form,
+  loading,
+  error,
+  done,
+  shareCopied,
+  compact,
+  onAudience,
+  onFormChange,
+  onSubmit,
+  onSignupStarted,
+  onShare,
+  onResetDone,
+}: WaitlistFormProps) {
+  const setField = (key: keyof FormState, value: string) => {
+    onSignupStarted()
+    onFormChange((f) => ({ ...f, [key]: value }))
+  }
+
+  return (
+    <div
+      id="waitlist-panel"
+      className="rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:p-6"
+    >
+      <h2 className="mb-3 text-center text-sm font-black tracking-wide text-[#123563]">
+        {copy.formEyebrow}
+      </h2>
+
+      <div
+        className="grid grid-cols-2 gap-2 rounded-2xl bg-[#f3f6fa] p-1.5"
+        role="tablist"
+        aria-label="סוג הרשמה"
+      >
+        {(
+          [
+            { id: 'customer' as const, label: 'אני לקוח/ה' },
+            { id: 'professional' as const, label: 'אני בעל/ת מקצוע' },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={audience === tab.id}
+            aria-controls="waitlist-panel"
+            onClick={() => onAudience(tab.id)}
+            className={`min-h-11 rounded-xl px-3 text-sm font-black transition ${
+              audience === tab.id
+                ? 'bg-white text-[#123563] shadow-sm'
+                : 'text-slate-500 hover:text-[#123563]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {done ? (
+        <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
+          <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
+          <p className="text-xl font-black text-[#123563]">{copy.successTitle}</p>
+          <p className="max-w-sm text-sm font-medium text-slate-600">
+            {audience === 'professional' ? copy.successPro : copy.successCustomer}
+          </p>
+          <div className="mt-4 w-full max-w-sm rounded-2xl bg-[#f3f6fa] p-4 text-start">
+            <p className="text-sm font-black text-[#123563]">{copy.successShareTitle}</p>
+            <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{copy.successShareLead}</p>
+            <div className="mt-3 flex flex-col gap-2">
+              <a
+                href={buildWaitlistWhatsAppShareUrl(audience)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  track('waitlist_share_click', {
+                    audience,
+                    channel: 'whatsapp',
+                    variant: VARIANT,
+                  })
+                }
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-black text-white transition hover:brightness-105"
+              >
+                {copy.successShareWhatsApp}
+              </a>
+              <button
+                type="button"
+                onClick={() => onShare('native')}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#123563]/15 bg-white px-4 text-sm font-black text-[#123563] transition hover:bg-white/80"
+              >
+                <Share2 className="h-4 w-4" aria-hidden />
+                {shareCopied ? copy.successShareCopied : copy.successShareNative}
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onResetDone}
+            className="mt-2 text-sm font-bold text-[#123563] underline"
+          >
+            לרשום עוד מישהו
+          </button>
+        </div>
+      ) : (
+        <form className="mt-4 space-y-3.5" onSubmit={onSubmit} onFocus={onSignupStarted}>
+          <p className="text-sm font-semibold text-slate-500">
+            {audience === 'customer' ? copy.customerHint : copy.proHint}
+          </p>
+          <Field
+            label="שם מלא"
+            name="fullName"
+            autoComplete="name"
+            required
+            placeholder="איך קוראים לך?"
+            value={form.fullName}
+            onChange={(v) => setField('fullName', v)}
+          />
+          <Field
+            label="טלפון"
+            name="phone"
+            autoComplete="tel"
+            required
+            dir="ltr"
+            inputMode="tel"
+            placeholder="050-0000000"
+            value={form.phone}
+            onChange={(v) => setField('phone', v)}
+          />
+          {!compact || audience === 'professional' ? (
+            <Field
+              label="עיר (אופציונלי)"
+              name="city"
+              autoComplete="address-level2"
+              placeholder="למשל ירושלים"
+              value={form.city}
+              onChange={(v) => onFormChange((f) => ({ ...f, city: v }))}
+            />
+          ) : null}
+          {audience === 'professional' && (
+            <Field
+              label="תחום"
+              name="category"
+              placeholder="למשל אינסטלציה"
+              value={form.category}
+              onChange={(v) => onFormChange((f) => ({ ...f, category: v }))}
+            />
+          )}
+          {error && (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F59E0B] px-6 text-base font-black text-[#123563] transition hover:brightness-105 disabled:opacity-60"
+          >
+            {loading
+              ? 'שולחים…'
+              : audience === 'professional'
+                ? copy.submitPro
+                : copy.submitCustomer}
+            {!loading ? <ArrowLeft className="h-4 w-4" aria-hidden /> : null}
+          </button>
+          <p className="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-slate-500">
+            <Lock className="h-3.5 w-3.5" aria-hidden />
+            בלי כרטיס אשראי · אפשר להסיר בכל עת
+          </p>
+        </form>
+      )}
+    </div>
+  )
+}
+
 function Field({
   label,
   value,
@@ -693,7 +774,7 @@ function Field({
 function HeroFlowMock() {
   return (
     <div
-      className="relative mx-auto w-full max-w-md py-2 sm:py-4 lg:max-w-none"
+      className="relative mx-auto w-full max-w-md py-2 sm:py-0 lg:max-w-none"
       aria-label="הדגמה: זרימת בקשה ב-Fixly"
     >
       <div className="absolute inset-x-8 top-8 hidden h-[75%] rounded-[2.5rem] bg-[#123563]/12 blur-3xl sm:block" />
