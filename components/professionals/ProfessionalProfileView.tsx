@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import ReviewsList from '@/components/reviews/ReviewsList'
+import VerifiedBadge from '@/components/shared/VerifiedBadge'
+import MidragVerifiedBadge from '@/components/shared/MidragVerifiedBadge'
 import { routes } from '@/lib/routes'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
@@ -31,8 +33,20 @@ export default function ProfessionalProfileView({ pro }: ProfessionalProfileView
       <div className="px-4 -mt-10 relative z-10 lg:px-8 lg:grid lg:grid-cols-3 lg:gap-6">
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-            <h1 className="text-xl font-black">{pro.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-black">{pro.name}</h1>
+              {pro.isVerified && <VerifiedBadge />}
+              {pro.midragVerified && <MidragVerifiedBadge />}
+            </div>
             <p className="text-gray-500 text-sm mt-0.5">{pro.title ?? pro.category}</p>
+            {pro.midragVerified && (pro.midragRating || pro.midragReviewsCount) ? (
+              <p className="text-xs text-sky-800 mt-1">
+                {t('trust.midragScore', {
+                  rating: String(pro.midragRating ?? '—'),
+                  count: String(pro.midragReviewsCount ?? 0),
+                })}
+              </p>
+            ) : null}
             <div className="flex items-center gap-2 mt-2 text-sm flex-wrap">
               <span className="text-yellow-500 font-semibold">★ {pro.rating.toFixed(1)}</span>
               <span className="text-gray-400">

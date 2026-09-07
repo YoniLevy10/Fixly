@@ -1,12 +1,13 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import BottomNav from '@/components/layout/BottomNav'
 import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
 import NativeAwareMain from '@/components/layout/NativeAwareMain'
-import { featureFlags } from '@/lib/feature-flags'
+import { useDemoTour } from '@/components/demo/DemoTourProvider'
+import { shouldShowPrelaunchLanding } from '@/lib/site-hosts'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -19,23 +20,45 @@ type AppLayoutProps = {
  */
 export default function AppLayout({ children, hideNav = false }: AppLayoutProps) {
   const pathname = usePathname()
+  const { tourRunning } = useDemoTour()
+  const [host, setHost] = useState('')
+
+  useEffect(() => {
+    setHost(window.location.host)
+  }, [])
+
+  const isMarketingHome = shouldShowPrelaunchLanding(host) && pathname === '/'
   const isMarketingRoute =
     pathname.startsWith('/go/') ||
     pathname === '/waitlist' ||
-    (featureFlags.prelaunch && pathname === '/')
-  const shouldHideNav = hideNav || isMarketingRoute
+    isMarketingHome
+  // Full-bleed booking / tracking / investor deep-link
+  const isImmersiveRoute =
+    pathname.startsWith('/tracking') ||
+    pathname.startsWith('/request') ||
+    pathname.startsWith('/demo') ||
+    pathname === '/login'
+  // Pro console only (`/pro` or `/pro/...`) — NOT `/professionals` / `/profile`
+  // (those also start with "/pro" and must keep the customer bottom nav).
+  const isProConsoleRoute =
+    pathname === '/pro' || pathname.startsWith('/pro/')
+  const shouldHideChrome = hideNav || isMarketingRoute || isImmersiveRoute
+  const shouldHideBottomNav =
+    shouldHideChrome || isProConsoleRoute || tourRunning
 
   return (
     <div className="min-h-screen bg-background">
-      {!shouldHideNav && <DesktopSidebar />}
+      {!shouldHideChrome && <DesktopSidebar />}
 
-      <div className={shouldHideNav ? '' : 'lg:mr-64 native-shell-column'}>
-        {!shouldHideNav && <DesktopHeader />}
+      <div className={shouldHideChrome ? '' : 'lg:mr-64 native-shell-column'}>
+        {!shouldHideChrome && <DesktopHeader />}
 
-        <NativeAwareMain hideNav={shouldHideNav}>{children}</NativeAwareMain>
+        <NativeAwareMain hideNav={shouldHideBottomNav}>
+          {children}
+        </NativeAwareMain>
       </div>
 
-      {!shouldHideNav && <BottomNav />}
+      {!shouldHideBottomNav && <BottomNav />}
     </div>
   )
 }

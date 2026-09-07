@@ -1,15 +1,22 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import HomeScreen from '@/components/home/HomeScreen'
 import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
-import { featureFlags } from '@/lib/feature-flags'
+import {
+  isProductHost,
+  requestHostFromHeaders,
+  shouldShowPrelaunchLanding,
+} from '@/lib/site-hosts'
 import {
   DEFAULT_DESCRIPTION_HE,
   DEFAULT_TITLE_HE,
   SITE_URL,
 } from '@/lib/site-config'
 
-export const metadata: Metadata = featureFlags.prelaunch
-  ? {
+export async function generateMetadata(): Promise<Metadata> {
+  const host = requestHostFromHeaders(await headers())
+  if (shouldShowPrelaunchLanding(host)) {
+    return {
       title: DEFAULT_TITLE_HE,
       description: DEFAULT_DESCRIPTION_HE,
       alternates: { canonical: SITE_URL },
@@ -27,13 +34,19 @@ export const metadata: Metadata = featureFlags.prelaunch
         description: DEFAULT_DESCRIPTION_HE,
       },
     }
-  : {
-      title: 'Fixly — תיקונים ואנשי מקצוע',
-      description: DEFAULT_DESCRIPTION_HE,
-    }
+  }
 
-export default function HomePage() {
-  if (featureFlags.prelaunch) {
+  return {
+    title: 'Fixly — תיקונים ואנשי מקצוע',
+    description: DEFAULT_DESCRIPTION_HE,
+    // Keep organic SEO on fixly.tech during pre-launch; vercel.app is the product sandbox
+    robots: isProductHost(host) ? { index: false, follow: true } : undefined,
+  }
+}
+
+export default async function HomePage() {
+  const host = requestHostFromHeaders(await headers())
+  if (shouldShowPrelaunchLanding(host)) {
     return <PrelaunchLanding />
   }
   return <HomeScreen />

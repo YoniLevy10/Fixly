@@ -16,6 +16,7 @@ import {
   LOCALE_STORAGE_KEY,
   type Locale,
 } from '@/lib/i18n/types'
+import { shouldShowPrelaunchLanding } from '@/lib/site-hosts'
 
 type LocaleContextValue = {
   locale: Locale
@@ -34,8 +35,21 @@ function detectBrowserLocale(): Locale {
   return lang.startsWith('he') ? 'he' : 'en'
 }
 
+function isMarketingPath(pathname: string): boolean {
+  if (typeof window === 'undefined') {
+    return pathname === '/waitlist' || pathname.startsWith('/go/')
+  }
+  return (
+    pathname === '/waitlist' ||
+    pathname.startsWith('/go/') ||
+    (shouldShowPrelaunchLanding(window.location.host) && pathname === '/')
+  )
+}
+
 function readStoredLocale(): Locale {
   if (typeof window === 'undefined') return 'he'
+  // Pre-launch / waitlist pages are Hebrew-first acquisition surfaces
+  if (isMarketingPath(window.location.pathname)) return 'he'
   const stored = localStorage.getItem(LOCALE_STORAGE_KEY)
   if (stored && isLocale(stored)) return stored
   if (!localStorage.getItem(LOCALE_SUGGESTED_KEY)) {

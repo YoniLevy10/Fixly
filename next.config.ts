@@ -3,9 +3,9 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  /** Demo OFF by default so production builds never bake mock data. Set true for investor preview. */
+  /** Demo ON until funding — tour + mock marketplace. Kill with NEXT_PUBLIC_FF_DEMO_KILL=true. */
   env: {
-    NEXT_PUBLIC_FF_DEMO_DATA: process.env.NEXT_PUBLIC_FF_DEMO_DATA ?? 'false',
+    NEXT_PUBLIC_FF_DEMO_DATA: 'true',
   },
   async redirects() {
     return [

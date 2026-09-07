@@ -695,6 +695,7 @@ export type Database = {
           referral_code: string | null
           audience: string
           source: string | null
+          attribution: Record<string, string> | null
           created_at: string
         }
         Insert: {
@@ -707,6 +708,7 @@ export type Database = {
           referral_code?: string | null
           audience?: string
           source?: string | null
+          attribution?: Record<string, string> | null
           created_at?: string
         }
         Update: {
@@ -719,6 +721,7 @@ export type Database = {
           referral_code?: string | null
           audience?: string
           source?: string | null
+          attribution?: Record<string, string> | null
           created_at?: string
         }
         Relationships: []

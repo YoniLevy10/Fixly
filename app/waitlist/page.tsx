@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
+import { prelaunchCopy } from '@/lib/marketing/prelaunch-copy'
 import {
   DEFAULT_DESCRIPTION_HE,
   DEFAULT_TITLE_HE,
@@ -21,5 +22,26 @@ export const metadata: Metadata = {
 }
 
 export default function WaitlistPage() {
-  return <PrelaunchLanding />
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: prelaunchCopy.faq.map((item) => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
+      },
+    })),
+  }
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+      />
+      <PrelaunchLanding />
+    </>
+  )
 }

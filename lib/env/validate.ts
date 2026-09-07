@@ -17,7 +17,9 @@ export function validateProductionEnv(): EnvValidationResult {
   }
 
   if (isDemoDataMode()) {
-    errors.push('NEXT_PUBLIC_FF_DEMO_DATA must be false in production')
+    warnings.push(
+      'Demo mode ON (pre-funding). After investment set NEXT_PUBLIC_FF_DEMO_KILL=true and redeploy.',
+    )
   }
 
   if (!isSupabaseEnabled()) {
@@ -58,6 +60,12 @@ export function validateProductionEnv(): EnvValidationResult {
 
   if (process.env.NEXT_PUBLIC_FF_ANALYTICS === 'true' && !process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
     warnings.push('NEXT_PUBLIC_FF_ANALYTICS=true but NEXT_PUBLIC_GA_MEASUREMENT_ID missing')
+  }
+
+  if (!process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()) {
+    warnings.push(
+      'NEXT_PUBLIC_META_PIXEL_ID missing — Meta Ads cannot optimize for CompleteRegistration',
+    )
   }
 
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {

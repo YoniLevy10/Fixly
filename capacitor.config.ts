@@ -33,8 +33,9 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1500,
-      launchAutoHide: true,
+      // Keep native splash until web AuthBootSplash (logo + progress line) mounts.
+      launchShowDuration: 0,
+      launchAutoHide: false,
       backgroundColor: '#123563',
       showSpinner: false,
     },

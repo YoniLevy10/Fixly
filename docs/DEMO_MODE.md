@@ -1,63 +1,42 @@
 # מצב הדגמה (Investor Demo)
 
-## מה מופעל
+## מצב נוכחי (לפני השקעה)
 
-- **58+** אנשי מקצוע, **120+** בקשות, **250+** ביקורות
-- מעקב חי מדומה, ETA, התראות דפדפן
-- באנר כתום בראש האפליקציה
+**דמו מופעל בכל הסביבות** — כולל `fixly.tech` בפרודקשן.
 
-## ברירת מחדל
+- באנר כתום, החלפת תפקיד לקוח ↔ בעל מקצוע, סיור מקצה לקצה
+- 58+ אנשי מקצוע, 120+ בקשות, 250+ ביקורות (mock)
+- ב־`fixly.tech` מוצגת האפליקציה המלאה (לא רק דף המתנה)
 
-`NEXT_PUBLIC_FF_DEMO_DATA` **כבוי** אם לא הוגדר (גם ב-Vercel אחרי deploy).
+## קישור למשקיעים
 
-[`next.config.ts`](../next.config.ts) מזריק `'false'` ב-build כשאין ערך — כדי שלא ייכנס דמו לפרודקשן בטעות.
+```
+https://fixly.tech/demo
+```
 
-בפיתוח מקומי בלי env מפורש, [`lib/data/demo-mode.ts`](../lib/data/demo-mode.ts) עדיין מפעיל דמו כש-`NODE_ENV !== production`.
+הסיור מתחיל אוטומטית: יצירת הזמנה → אישור Pro → בדרך + מפה חיה → עבודה → סיום.
 
-להפעלה מפורשת (הצגה למשקיעים / preview):
+מהבאנר הכתום: **התחל סיור**.
+
+## Kill-switch (אחרי השקעה)
 
 ```env
-NEXT_PUBLIC_FF_DEMO_DATA=true
+NEXT_PUBLIC_FF_DEMO_KILL=true
 ```
 
-לכבות ולעבוד רק מול Supabase אמיתי:
+אחרי השינוי — redeploy. `NEXT_PUBLIC_FF_DEMO_DATA=false` הישן **לא** מכבה יותר את הדמו.
 
-```env
-NEXT_PUBLIC_FF_DEMO_DATA=false
-```
+## טכני — למה זה היה נשבר
 
-## מקומי
+מאגר ה־mock בזיכרון לא משותף בין אינסטנסים ב־Vercel → PATCH אחרי CREATE החזיר 404 → «עדכון נכשל».
+
+**תיקון:** סטטוסים נשמרים ב־`sessionStorage` + `PUT /api/demo/requests` (upsert לכל אינסטנס).
+מסכי מעקב / דשבורד Pro קוראים גם מה־snapshot המקומי.
+ב־`/tracking` ו־`/request` התפריט התחתון מוסתר.
+
+## אימות
 
 ```bash
-# דמו (ברירת מחדל בפיתוח)
-npm run dev
-
-# בלי דמו — מול Supabase
-NEXT_PUBLIC_FF_DEMO_DATA=false npm run dev
+curl -sS 'https://fixly.tech/api/health?verbose=1' | jq '.demoMode, .mode'
+# Expect: true, "mock"
 ```
-
-רענון קשיח: `Ctrl+Shift+R`. עם דמו אמור להופיע באנר "מצב הדגמה להצגה למשקיעים".
-
-## Vercel (פרודקשן)
-
-**חובה לפני שיווק:**
-
-| Name | Value |
-|------|--------|
-| `NEXT_PUBLIC_FF_DEMO_DATA` | `false` |
-
-אחרי שינוי env — redeploy (הערך נאפה ב-build).
-
-אימות:
-
-```bash
-curl -sS 'https://YOUR_DOMAIN/api/health?verbose=1' | jq '.demoMode, .mode'
-# Expect: false, "supabase"
-```
-
-## בדיקה מהירה (כשדמו ON)
-
-- `/professionals` — רשימה ארוכה
-- `/my-requests` — בקשות רבות
-- `/` — 4 מדדי פלטפורמה
-- `/tracking/req-demo-1` — מפה חיה

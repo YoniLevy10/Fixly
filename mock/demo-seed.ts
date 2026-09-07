@@ -69,6 +69,12 @@ export function buildDemoProfessionals(): Professional[] {
         isApproved: true,
         isFeatured,
         isVerified: rating >= 4.7 || id % 7 === 0,
+        // Roughly 1 in 3 demo pros carry Midrag verification for investor demos
+        midragVerified: id % 3 === 1,
+        midragRating: id % 3 === 1 ? round1(8.5 + (seed % 15) / 10) : null,
+        midragReviewsCount: id % 3 === 1 ? 40 + (seed % 180) : undefined,
+        midragProfileUrl:
+          id % 3 === 1 ? `https://www.midrag.co.il/SpCard/Sp/${10000 + id}` : null,
         subscriptionTier: id % 4 === 0 ? 'pro' : id % 11 === 0 ? 'pro_plus' : 'free',
         availableHours: pick(
           ['א׳-ה׳ 08:00-20:00', 'א׳-ו׳ 07:00-19:00', '24/7 — מנעולנות', 'א׳-ה׳ 09:00-18:00'],

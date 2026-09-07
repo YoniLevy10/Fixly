@@ -2,6 +2,20 @@
 
 מדריך קצר לחיבור הדומיין `fixly.tech` ל-Google Search Console ולדחיפת תנועה אורגנית.
 
+## 0. דומיינים — נחיתה מול מערכת
+
+| דומיין | מה מוצג ב-`/` |
+|--------|----------------|
+| `https://fixly.tech` | דף נחיתה / הרשמה מוקדמת |
+| `https://*.vercel.app` | המערכת המלאה (marketplace) |
+| `localhost` | המערכת (פיתוח) |
+
+`/waitlist` זמין תמיד. אחרי השקה מלאה: `NEXT_PUBLIC_FF_PRELAUNCH=false`.
+
+מומלץ להגדיר גם:
+- `NEXT_PUBLIC_APP_URL=https://fixly.tech` (SEO / GSC)
+- `NEXT_PUBLIC_PRODUCT_URL=https://YOUR-PROJECT.vercel.app` (קישור למערכת)
+
 ## 1. חברו את הדומיין ב-Vercel
 
 1. Vercel → Project → **Settings → Domains**
@@ -14,7 +28,8 @@
 | משתנה | ערך |
 |--------|------|
 | `NEXT_PUBLIC_APP_URL` | `https://fixly.tech` |
-| `NEXT_PUBLIC_FF_PRELAUNCH` | `true` (עד להשקה מלאה) |
+| `NEXT_PUBLIC_PRODUCT_URL` | `https://YOUR-ALIAS.vercel.app` (אופציונלי) |
+| `NEXT_PUBLIC_FF_PRELAUNCH` | `true` (עד להשקה מלאה; vercel.app עדיין מציג את האפליקציה) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | טוקן האימות מ-GSC (ראו למטה) |
 | `NEXT_PUBLIC_FF_ANALYTICS` | `true` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-…` (מומלץ יחד עם GSC) |
@@ -45,9 +60,10 @@
 
 - מטא־תגיות בעברית + Open Graph
 - `metadataBase` על `fixly.tech`
-- JSON-LD מסוג Organization
+- JSON-LD מסוג Organization + FAQPage ב-`/waitlist`
 - עמוד נחיתה `/` (במצב prelaunch) + `/waitlist`
 - עמודי SEO קיימים: `/services/[city]/[category]`
+- אירועי funnel: page view, CTA, signup start/complete, scroll depth (דרך GA4 כשמופעל)
 
 ## 6. אחרי האימות — פעולות מומלצות
 
@@ -62,7 +78,11 @@
 
 ```bash
 # דרך Supabase CLI / Dashboard SQL
-# קובץ: supabase/migrations/20260903130000_waitlist_audience.sql
+# קבצים:
+#   supabase/migrations/20260903130000_waitlist_audience.sql
+#   supabase/migrations/20260903140000_waitlist_attribution.sql
 ```
 
-מוסיף עמודות `audience` (`customer` | `professional`) ו-`source` לטבלת `pro_waitlist`.
+מוסיף:
+- `audience` (`customer` | `professional`) ו-`source`
+- `attribution` (JSONB) לשמירת UTM על כל ליד

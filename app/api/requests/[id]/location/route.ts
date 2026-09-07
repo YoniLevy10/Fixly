@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getAdminSupabaseClient } from '@/lib/supabase/admin'
+import {
+  getRequestById,
+  updateRequestLocation,
+} from '@/lib/data/request-store'
 import {
   supabaseGetRequestById,
   supabaseUpdateProLocation,
 } from '@/lib/data/supabase-requests'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { haversineKm } from '@/lib/tracking/geo'
 import { estimateEtaMinutes, formatEtaMinutes } from '@/lib/tracking/eta'
 import { getSimulatedTrackingState } from '@/lib/mock/live-location-simulator'
@@ -100,6 +104,15 @@ export async function GET(request: Request, context: RouteContext) {
   const backend = resolveDataBackend()
   const locale = localeFromRequest(request)
 
+  // Investor demo — public simulated tracking (no Supabase auth)
+  if (backend === 'mock') {
+    const req = getRequestById(id)
+    if (!req) {
+      return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
+    }
+    return NextResponse.json(buildState(req, { locale, simulate: true }))
+  }
+
   const supabase = await createServerSupabaseClient()
   if (!supabase) {
     return NextResponse.json({ error: 'לא מחובר' }, { status: 401 })
@@ -139,10 +152,6 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'אין הרשאה' }, { status: 403 })
   }
 
-  if (backend === 'mock') {
-    return NextResponse.json({ error: 'Mock mode not available' }, { status: 503 })
-  }
-
   if (backend === 'supabase') {
     const req = await supabaseGetRequestById(id)
     if (!req) return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
@@ -165,6 +174,14 @@ export async function POST(request: Request, context: RouteContext) {
     const { lat, lng } = parsed.data
 
     const backend = resolveDataBackend()
+
+    if (backend === 'mock') {
+      const updated = updateRequestLocation(id, lat, lng)
+      if (!updated) {
+        return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })
+      }
+      return NextResponse.json(buildState(updated, { locale, simulate: true }))
+    }
 
     if (backend === 'supabase') {
       const supabase = await createServerSupabaseClient()
@@ -193,12 +210,8 @@ export async function POST(request: Request, context: RouteContext) {
       const ok = await supabaseUpdateProLocation(id, lat, lng)
       if (!ok) return NextResponse.json({ error: 'עדכון נכשל' }, { status: 500 })
 
-      const updated = await supabaseGetRequestById(id)
-      return NextResponse.json(buildState(updated!, { locale }))
-    }
-
-    if (backend === 'mock') {
-      return NextResponse.json({ error: 'Mock mode not available' }, { status: 503 })
+      const refreshed = await supabaseGetRequestById(id)
+      return NextResponse.json(buildState(refreshed!, { locale }))
     }
 
     return NextResponse.json({ error: 'No backend' }, { status: 503 })

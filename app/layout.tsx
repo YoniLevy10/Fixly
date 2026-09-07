@@ -3,9 +3,11 @@ import AppLayout from '@/components/layout/AppLayout'
 import AppProviders from '@/components/providers/AppProviders'
 import SWRegister from '@/components/pwa/SWRegister'
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics'
+import MetaPixel from '@/components/analytics/MetaPixel'
 import {
   DEFAULT_DESCRIPTION_HE,
   DEFAULT_TITLE_HE,
+  SEO_KEYWORDS_HE,
   SITE_URL,
 } from '@/lib/site-config'
 import './globals.css'
@@ -17,16 +19,7 @@ export const metadata: Metadata = {
   title: { default: DEFAULT_TITLE_HE, template: '%s | Fixly' },
   description: DEFAULT_DESCRIPTION_HE,
   applicationName: 'Fixly',
-  keywords: [
-    'Fixly',
-    'תיקונים',
-    'בעלי מקצוע',
-    'אינסטלטור',
-    'חשמלאי',
-    'שיפוצים',
-    'התאמת בעלי מקצוע',
-    'ישראל',
-  ],
+  keywords: [...SEO_KEYWORDS_HE],
   authors: [{ name: 'Fixly', url: SITE_URL }],
   creator: 'Fixly',
   publisher: 'Fixly',
@@ -115,6 +108,7 @@ export default function RootLayout({
         </AppProviders>
         <SWRegister />
         <GoogleAnalytics />
+        <MetaPixel />
       </body>
     </html>
   )

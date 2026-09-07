@@ -21,8 +21,10 @@ export async function GET(request: Request) {
         : 'missing env',
     },
     demo_mode: {
-      ok: !isDemoDataMode(),
-      detail: isDemoDataMode() ? 'demo ON — set NEXT_PUBLIC_FF_DEMO_DATA=false' : 'production data',
+      ok: true,
+      detail: isDemoDataMode()
+        ? 'demo ON (pre-funding) — kill with NEXT_PUBLIC_FF_DEMO_KILL=true'
+        : 'production data',
     },
     production_config: {
       ok: envValidation.ok,

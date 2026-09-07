@@ -14,6 +14,11 @@ export const featureFlags = {
   monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false',
   googleOAuth: process.env.NEXT_PUBLIC_FF_GOOGLE_OAUTH !== 'false',
   liveTracking: process.env.NEXT_PUBLIC_FF_LIVE_TRACKING !== 'false',
-  /** When true, `/` shows the pre-launch waitlist landing instead of the app home */
+  /**
+   * Pre-launch mode: branded domain (fixly.tech) shows waitlist on `/`.
+   * Product hosts (*.vercel.app, localhost) still serve the full app.
+   * Set to false after public launch to show the app on every host.
+   * Host resolution: `lib/site-hosts.ts` → `shouldShowPrelaunchLanding`.
+   */
   prelaunch: process.env.NEXT_PUBLIC_FF_PRELAUNCH !== 'false',
 } as const

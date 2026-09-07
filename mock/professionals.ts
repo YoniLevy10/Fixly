@@ -191,11 +191,23 @@ const SLUG_TO_CATEGORY: Record<string, string[]> = {
   locksmith: ['מנעולן', 'מנעולנות'],
   tiling: ['ריצוף'],
   moving: ['הובלות'],
+  elevators: ['מעליות', 'מעלית'],
+  pest_control: ['הדברה', 'מדביר'],
+  furniture: ['ריהוט', 'רהיט'],
+  appliance_repair: ['תיקון מכשירים', 'מכשיר', 'כביסה', 'מקרר'],
+  computers: ['מחשבים', 'מחשב'],
+  glazing: ['זגגות', 'זגג', 'זכוכית'],
+  renovations: ['שיפוצים', 'שיפוץ'],
+  waterproofing: ['איטום', 'רטיבות'],
+  aluminum: ['אלומיניום', 'תריס', 'פרגולה'],
+  drywall: ['גבס', 'טיח'],
+  solar: ['סולאר', 'שמש', 'קולט'],
   nails: ['מניקור', 'ציפורניים'],
   hair: ['תספורת', 'שיער', 'ספר'],
   makeup: ['איפור', 'מאפר'],
   manicure: ['מניקור', 'ציפורניים'],
   barber: ['תספורת', 'ספר'],
+  general: ['כללי', 'אחר'],
 }
 
 export function getFeaturedProfessionals(): Professional[] {

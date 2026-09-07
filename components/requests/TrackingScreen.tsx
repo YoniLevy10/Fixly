@@ -32,6 +32,10 @@ import { featureFlags } from '@/lib/feature-flags'
 import { isTrackingStatus } from '@/lib/tracking/geo'
 import { useLiveTracking } from '@/shared/hooks/use-live-tracking'
 import { useTrackingPushAlerts } from '@/shared/hooks/use-tracking-push-alerts'
+import {
+  DEMO_TOUR_EVENT,
+  readTourRequest,
+} from '@/lib/demo/tour-session'
 import dynamic from 'next/dynamic'
 
 const LiveTrackingMap = dynamic(
@@ -70,15 +74,68 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   )
 
   const loadRequest = useCallback(() => {
-    fetch(`/api/requests/${requestId}`)
+    // Prefer in-tab tour snapshot (survives multi-instance + stale SW caches)
+    const local = readTourRequest(requestId)
+    if (local) {
+      setRequest(local)
+      setLoading(false)
+    }
+
+    const statusRank = (s: string | undefined) => {
+      const i = STATUS_ORDER.indexOf(s as (typeof STATUS_ORDER)[number])
+      return i >= 0 ? i : -1
+    }
+
+    fetch(`/api/requests/${requestId}`, { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setRequest(data))
+      .then((data) => {
+        if (!data) {
+          if (!local) {
+            return fetch(
+              `/api/demo/requests?id=${encodeURIComponent(requestId)}`,
+              { cache: 'no-store' },
+            )
+              .then((r) => (r.ok ? r.json() : null))
+              .then((demo) => {
+                if (demo) setRequest(demo)
+              })
+          }
+          return
+        }
+        // Never let a stale API/SW response rewind a newer tour snapshot
+        const latestLocal = readTourRequest(requestId)
+        if (
+          latestLocal &&
+          statusRank(latestLocal.status) > statusRank(data.status)
+        ) {
+          setRequest(latestLocal)
+          return
+        }
+        setRequest(data)
+      })
       .finally(() => setLoading(false))
   }, [requestId])
 
   useEffect(() => {
     loadRequest()
   }, [loadRequest])
+
+  // Live updates from the investor tour (same tab)
+  useEffect(() => {
+    const onTour = (event: Event) => {
+      const detail = (event as CustomEvent<MockRequest>).detail
+      if (detail?.id === requestId) setRequest(detail)
+    }
+    window.addEventListener(DEMO_TOUR_EVENT, onTour)
+    const poll = window.setInterval(() => {
+      const local = readTourRequest(requestId)
+      if (local) setRequest(local)
+    }, 1200)
+    return () => {
+      window.removeEventListener(DEMO_TOUR_EVENT, onTour)
+      window.clearInterval(poll)
+    }
+  }, [requestId])
 
   useRequestRealtime(requestId, (updated) => setRequest(updated))
 

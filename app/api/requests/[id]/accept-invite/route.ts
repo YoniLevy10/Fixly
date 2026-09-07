@@ -6,12 +6,52 @@ import { handleLeadOnAccept } from '@/lib/monetization/record-billing'
 import { featureFlags } from '@/lib/feature-flags'
 import { trackError } from '@/lib/monitoring/track-error'
 import { emitWebhookForRequestId } from '@/lib/integrations/bamakor/jobs-service'
+import { resolveDataBackend } from '@/lib/data/resolve-backend'
+import { getRequestById, updateRequestStatus } from '@/lib/data/request-store'
+import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
+import { getProfessionalById } from '@/mock/professionals'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
 /** Pro accepts a multi-match invite — first accept wins */
 export async function POST(_request: Request, context: RouteContext) {
   const { id: requestId } = await context.params
+
+  // Investor demo — assign first available candidate (defaults to demo pro "1")
+  if (resolveDataBackend() === 'mock') {
+    const existing = getRequestById(requestId)
+    if (!existing || existing.status !== 'pending') {
+      return NextResponse.json({ error: 'Request not available' }, { status: 409 })
+    }
+    if (existing.professionalId) {
+      return NextResponse.json({ error: 'Already assigned' }, { status: 409 })
+    }
+
+    const invite =
+      existing.candidates?.find((c) => c.professionalId === DEMO_PROFESSIONAL_ID) ??
+      existing.candidates?.[0]
+    const proId = invite?.professionalId ?? DEMO_PROFESSIONAL_ID
+    const pro = getProfessionalById(proId)
+    const proName = invite?.name ?? pro?.name ?? 'איש מקצוע'
+
+    const updated = updateRequestStatus(requestId, 'accepted', {
+      professionalId: proId,
+      professionalName: proName,
+      candidates: existing.candidates?.map((c) => ({
+        ...c,
+        status: c.professionalId === proId ? 'accepted' : 'expired',
+      })),
+    })
+    if (!updated) {
+      return NextResponse.json({ error: 'Accept failed' }, { status: 500 })
+    }
+    return NextResponse.json({
+      ok: true,
+      professionalId: proId,
+      professionalName: proName,
+    })
+  }
+
   const supabase = await createServerSupabaseClient()
   if (!supabase) return NextResponse.json({ error: 'Auth required' }, { status: 401 })
 
@@ -125,6 +165,12 @@ export async function POST(_request: Request, context: RouteContext) {
 
 export async function GET(_request: Request, context: RouteContext) {
   const { id } = await context.params
+
+  if (resolveDataBackend() === 'mock') {
+    const req = getRequestById(id)
+    return NextResponse.json(req?.candidates ?? [])
+  }
+
   const supabase = await createServerSupabaseClient()
   if (!supabase) return NextResponse.json([])
 

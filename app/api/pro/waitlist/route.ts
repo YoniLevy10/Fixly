@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       email: body.email,
       category: body.category,
       city: body.city,
-      referralCode: body.referralCode,
+      referralCode: body.referralCode ?? undefined,
       audience,
       source: body.source ?? 'pro_join',
     })

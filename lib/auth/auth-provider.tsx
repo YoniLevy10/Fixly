@@ -6,14 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import { featureFlags } from '@/lib/feature-flags'
 import { createBrowserSupabaseClient } from '@/lib/supabase/browser'
 import { isSupabaseEnabled } from '@/lib/data/config'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
-import { GUEST_USER, type AppUser } from '@/lib/auth/types'
+import { DEMO_PRO_USER, GUEST_USER, type AppUser } from '@/lib/auth/types'
 
 type AuthContextValue = {
   user: AppUser
@@ -28,6 +30,8 @@ type AuthContextValue = {
   signInAnonymously: () => Promise<string | null>
   signInWithGoogle: () => Promise<string | null>
   claimProfessionalProfile: (professionalId: string) => Promise<string | null>
+  /** Investor demo only — flip between customer and pro without Supabase */
+  switchDemoRole: (role: 'customer' | 'professional') => void
   signOut: () => Promise<void>
 }
 
@@ -58,10 +62,16 @@ function mapSupabaseUser(sbUser: {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser>(GUEST_USER)
   const [isLoading, setIsLoading] = useState(true)
+  /** Keeps investor-tour role flips from being overwritten by Supabase auth events */
+  const demoRoleLockRef = useRef<'customer' | 'professional' | null>(null)
 
   const getClient = useCallback(() => createBrowserSupabaseClient(), [])
 
   const applySession = useCallback(async () => {
+    if (demoRoleLockRef.current) {
+      setIsLoading(false)
+      return
+    }
     const supabase = getClient()
     if (!supabase) {
       setUser(GUEST_USER)
@@ -90,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (demoRoleLockRef.current) return
       if (session?.user) {
         setUser(mapSupabaseUser(session.user))
       } else {
@@ -149,6 +160,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [getClient])
 
   const claimProfessionalProfile = useCallback(async (professionalId: string) => {
+    // Investor demo: bind local session to mock pro — no Supabase claim API
+    if (isDemoDataMode()) {
+      demoRoleLockRef.current = 'professional'
+      setUser({
+        ...DEMO_PRO_USER,
+        professionalId: professionalId || DEMO_PROFESSIONAL_ID,
+      })
+      return null
+    }
+
     const res = await fetch('/api/pro/claim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -165,7 +186,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }, [getClient])
 
+  const switchDemoRole = useCallback((role: 'customer' | 'professional') => {
+    if (!isDemoDataMode()) return
+    demoRoleLockRef.current = role
+    if (role === 'professional') {
+      setUser({ ...DEMO_PRO_USER, professionalId: DEMO_PROFESSIONAL_ID })
+    } else {
+      setUser(GUEST_USER)
+    }
+  }, [])
+
   const signOut = useCallback(async () => {
+    demoRoleLockRef.current = null
     const supabase = getClient()
     if (supabase) {
       await supabase.auth.signOut()
@@ -188,6 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInAnonymously,
       signInWithGoogle,
       claimProfessionalProfile,
+      switchDemoRole,
       signOut,
     }),
     [
@@ -198,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInAnonymously,
       signInWithGoogle,
       claimProfessionalProfile,
+      switchDemoRole,
       signOut,
     ]
   )

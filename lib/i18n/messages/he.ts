@@ -124,7 +124,22 @@ export const he: MessageTree = {
     pushArrivedBody: '{name} בקרבת הכתובת',
   },
   demo: {
-    banner: 'מצב הדגמה להצגה למשקיעים — נתונים מדומים · 58+ אנשי מקצוע · 120+ בקשות',
+    banner: 'מצב הדגמה למשקיעים',
+    bannerCta: 'התחל הזמנה מלאה',
+    tourStart: 'התחל סיור',
+    tourStop: 'עצור סיור',
+    tourRunning: 'בסיור',
+    tourError: 'הסיור נכשל — נסו שוב',
+    roleCustomer: 'לקוח',
+    rolePro: 'בעל מקצוע',
+    tourStepCreate: 'יוצרים הזמנה',
+    tourStepPending: 'ממתינים לאישור',
+    tourStepAccepted: 'בעל מקצוע אישר',
+    tourStepOnTheWay: 'בדרך אליכם',
+    tourStepMap: 'מפת מעקב חיה',
+    tourStepInProgress: 'עבודה בתהליך',
+    tourStepCompleted: 'העבודה הושלמה',
+    tourStepDone: 'מוכנים לביקורת',
     statsPros: 'אנשי מקצוע',
     statsActive: 'בקשות פעילות',
     statsJobs: 'עבודות שהושלמו',
@@ -247,6 +262,9 @@ export const he: MessageTree = {
     howWeUse: 'שימוש במידע',
     howWeUseBody:
       'המידע משמש להפעלת השירות, הצגת בקשות לאנשי מקצוע, שיפור חוויית המשתמש ותמיכה. איננו מוכרים את המידע לצדדים שלישיים.',
+    analytics: 'אנליטיקס ופרסום',
+    analyticsBody:
+      'כשמפעילים מדידה, ייתכן שנשתמש ב-Google Analytics וב-Meta Pixel כדי למדוד ביקורים והרשמות לרשימת המתנה ולשפר קמפיינים ממומנים. ניתן לחסום עוגיות דרך הגדרות הדפדפן.',
     storage: 'אחסון ואבטחה',
     storageBody:
       'הנתונים נשמרים ב-Supabase (ענן מאובטח). גישה מוגבלת לפי הרשאות משתמש (RLS).',
@@ -337,6 +355,9 @@ export const he: MessageTree = {
   },
   trust: {
     verified: 'מאומת Fixly',
+    midragVerified: 'מאומת מידרג',
+    midragVerifiedHint: 'פרופיל מאומת מול מידרג',
+    midragScore: 'דירוג מידרג {rating} · {count} חוות דעת',
     guaranteeTitle: 'אחריות Fixly',
     guaranteeBody: 'לא מרוצה מהעבודה? נעזור לפתור — או נשלח מקצוען חלופי.',
     guaranteeShort: 'מכוסה באחריות Fixly',
