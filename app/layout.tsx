@@ -96,8 +96,83 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he" dir="rtl" className="fixly-booting">
       <body>
+        {/* Static first-paint splash — Bamakor pattern; removed after AuthBootSplash. */}
+        <div
+          id="fixly-ssr-splash"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1.25rem',
+            backgroundColor: '#123563',
+            color: '#fff',
+            fontFamily: 'Heebo, system-ui, sans-serif',
+          }}
+          aria-hidden="true"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/fixly-icon.svg"
+            alt=""
+            width={96}
+            height={96}
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: '1.75rem',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+            }}
+          />
+          <div style={{ textAlign: 'center' }} dir="ltr">
+            <p
+              style={{
+                margin: 0,
+                fontSize: '1.875rem',
+                fontWeight: 900,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Fixly<span style={{ color: '#F59E0B' }}>.</span>
+            </p>
+            <p
+              style={{
+                margin: '0.25rem 0 0',
+                fontSize: '0.875rem',
+                color: 'rgba(255,255,255,0.7)',
+              }}
+              dir="rtl"
+            >
+              תחזוקה חכמה
+            </p>
+          </div>
+          <div
+            style={{
+              width: 176,
+              height: 6,
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.2)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                width: '45%',
+                height: '100%',
+                borderRadius: 999,
+                background: '#F59E0B',
+              }}
+            />
+          </div>
+          <p style={{ margin: 0, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+            טוען…
+          </p>
+        </div>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -6,10 +6,12 @@ import AppSplashScreen from '@/components/brand/AppSplashScreen'
 
 /** Keep the branded splash visible long enough to read logo + progress line. */
 const MIN_SPLASH_MS = 900
+const SSR_SPLASH_ID = 'fixly-ssr-splash'
 
 /**
  * Shows the branded Fixly entry splash while the auth session boots.
  * Matches Bamakor / OpticalCenter boot UX (logo + loading line).
+ * Also removes the static SSR splash from root layout (prevents white FOUC).
  */
 export default function AuthBootSplash({ children }: { children: ReactNode }) {
   const { isLoading } = useAuth()
@@ -21,6 +23,12 @@ export default function AuthBootSplash({ children }: { children: ReactNode }) {
   }, [])
 
   const showSplash = isLoading || !minTimeElapsed
+
+  useEffect(() => {
+    if (showSplash) return
+    document.getElementById(SSR_SPLASH_ID)?.remove()
+    document.documentElement.classList.remove('fixly-booting')
+  }, [showSplash])
 
   return (
     <>

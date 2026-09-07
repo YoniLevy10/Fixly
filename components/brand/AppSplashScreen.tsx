@@ -48,6 +48,7 @@ export default function AppSplashScreen({
         'pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]',
         className,
       )}
+      style={{ backgroundColor: '#123563' }}
       role="status"
       aria-live="polite"
       aria-busy="true"
