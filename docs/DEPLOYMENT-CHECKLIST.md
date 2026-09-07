@@ -15,6 +15,7 @@ Must all pass:
 | Migrations | Including `20260902090000_marketing_ready_rls.sql` |
 | Tranzila | Terminal + keys + `TRANZILA_WEBHOOK_SECRET` on notification URL |
 | Analytics | `NEXT_PUBLIC_FF_ANALYTICS=true` + `NEXT_PUBLIC_GA_MEASUREMENT_ID` |
+| Meta Pixel | `NEXT_PUBLIC_META_PIXEL_ID` — see `docs/META_WEEKEND_ADS.md` |
 | Push | `NEXT_PUBLIC_FF_PUSH=true` + VAPID keys |
 | Supply | ≥20 claimed, available pros in one pilot city |
 | E2E | request → match → accept → track → complete → review on production |
@@ -42,6 +43,7 @@ Set in **Vercel → Project → Settings → Environment Variables** (Production
 | `TRANZILA_API_SECRET_KEY` | ✅* | Tranzila API secret |
 | `TRANZILA_WEBHOOK_SECRET` | ✅* | Bearer / `?secret=` / `x-tranzila-secret` on webhook |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ✅* | *Required before paid ads measurement |
+| `NEXT_PUBLIC_META_PIXEL_ID` | ✅* | *Required before Meta Ads (CompleteRegistration) |
 | `NEXT_PUBLIC_FF_ANALYTICS` | ✅* | `true` before ads |
 | `NEXT_PUBLIC_FF_PUSH` | ✅* | `true` so invited pros get notified |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | ✅* | Web Push |
