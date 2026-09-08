@@ -14,9 +14,8 @@ test.describe('public pages', () => {
 
   test('waitlist page collects early access signups', async ({ page }) => {
     await page.goto('/waitlist')
-    await expect(
-      page.getByRole('heading', { name: /תיכנסו לפני|שמרו מקום|הרשמה מוקדמת/i }),
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: /יש תקלה בבית/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /אני לקוח/i })).toBeVisible()
     await expect(page.getByRole('tab', { name: /בעל\/ת מקצוע/i })).toBeVisible()
     await page.getByRole('tab', { name: /בעל\/ת מקצוע/i }).click()

@@ -12,12 +12,13 @@ import { useDemoTour } from '@/components/demo/DemoTourProvider'
 /**
  * Minimal investor-demo chrome.
  * Keep idle controls light; while the tour runs show only the active step + stop.
+ * Hidden on login and marketing/waitlist surfaces so branded/conversion pages stay clean.
  */
 export default function DemoModeBanner() {
   const { t } = useLocale()
   const { user, switchDemoRole } = useAuth()
-  const pathname = usePathname()
   const router = useRouter()
+  const pathname = usePathname()
   const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
 
   useEffect(() => {
@@ -28,10 +29,12 @@ export default function DemoModeBanner() {
     return () => window.clearTimeout(tmr)
   }, [tourRunning, tourError, tourStep])
 
+  const isMarketingSurface =
+    pathname === '/waitlist' || pathname.startsWith('/go/')
   // Keep branded login / splash surfaces clean (OpticalCenter / Bamakor style).
-  if (pathname === '/login') return null
+  const isLoginSurface = pathname === '/login'
 
-  if (!isDemoDataMode()) return null
+  if (!isDemoDataMode() || isMarketingSurface || isLoginSurface) return null
 
   const isPro = user.role === 'professional'
   const stepMeta = tourStep
