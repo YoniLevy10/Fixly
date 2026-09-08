@@ -756,6 +756,147 @@ export type Database = {
         }
         Relationships: []
       }
+      professional_prospects: {
+        Row: {
+          id: string
+          name: string
+          business_name: string | null
+          phone: string | null
+          whatsapp_phone: string | null
+          phone_normalized: string | null
+          city: string
+          category_id: string | null
+          source_name: string
+          source_url: string | null
+          external_id: string | null
+          status: string
+          verification_status: string
+          last_verified_at: string | null
+          contacted_at: string | null
+          consent_at: string | null
+          notes: string | null
+          waitlist_id: string | null
+          professional_id: string | null
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          business_name?: string | null
+          phone?: string | null
+          whatsapp_phone?: string | null
+          phone_normalized?: string | null
+          city?: string
+          category_id?: string | null
+          source_name?: string
+          source_url?: string | null
+          external_id?: string | null
+          status?: string
+          verification_status?: string
+          last_verified_at?: string | null
+          contacted_at?: string | null
+          consent_at?: string | null
+          notes?: string | null
+          waitlist_id?: string | null
+          professional_id?: string | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          business_name?: string | null
+          phone?: string | null
+          whatsapp_phone?: string | null
+          phone_normalized?: string | null
+          city?: string
+          category_id?: string | null
+          source_name?: string
+          source_url?: string | null
+          external_id?: string | null
+          status?: string
+          verification_status?: string
+          last_verified_at?: string | null
+          contacted_at?: string | null
+          consent_at?: string | null
+          notes?: string | null
+          waitlist_id?: string | null
+          professional_id?: string | null
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'professional_prospects_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'service_categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'professional_prospects_waitlist_id_fkey'
+            columns: ['waitlist_id']
+            isOneToOne: false
+            referencedRelation: 'pro_waitlist'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'professional_prospects_professional_id_fkey'
+            columns: ['professional_id']
+            isOneToOne: false
+            referencedRelation: 'professionals'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      professional_prospect_events: {
+        Row: {
+          id: string
+          prospect_id: string
+          actor_user_id: string | null
+          action: string
+          from_status: string | null
+          to_status: string | null
+          payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          prospect_id: string
+          actor_user_id?: string | null
+          action: string
+          from_status?: string | null
+          to_status?: string | null
+          payload?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          prospect_id?: string
+          actor_user_id?: string | null
+          action?: string
+          from_status?: string | null
+          to_status?: string | null
+          payload?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'professional_prospect_events_prospect_id_fkey'
+            columns: ['prospect_id']
+            isOneToOne: false
+            referencedRelation: 'professional_prospects'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       messages: {
         Row: {
           id: string

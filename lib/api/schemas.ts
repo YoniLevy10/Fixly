@@ -91,3 +91,61 @@ export const locationUpdateSchema = z.object({
   lat: z.coerce.number().finite().min(-90).max(90),
   lng: z.coerce.number().finite().min(-180).max(180),
 })
+
+export const prospectStatusSchema = z.enum([
+  'discovered',
+  'verified',
+  'approved',
+  'contacted',
+  'interested',
+  'joined',
+  'active',
+  'rejected',
+  'do_not_contact',
+])
+
+export const verificationStatusSchema = z.enum([
+  'unverified',
+  'pending',
+  'verified',
+  'failed',
+])
+
+export const createProspectSchema = z.object({
+  name: z.string().trim().min(2).max(200),
+  businessName: z.string().trim().max(200).optional().nullable(),
+  phone: z.string().trim().min(7).max(30).optional().nullable(),
+  whatsappPhone: z.string().trim().min(7).max(30).optional().nullable(),
+  city: z.string().trim().min(1).max(100).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  categorySlug: z.string().trim().max(50).optional().nullable(),
+  sourceUrl: z.string().trim().url().max(2000).optional().nullable(),
+  externalId: z.string().trim().max(200).optional().nullable(),
+  notes: z.string().trim().max(5000).optional().nullable(),
+}).refine(
+  (d) => Boolean(d.phone?.trim() || d.whatsappPhone?.trim() || d.externalId?.trim()),
+  { message: 'נדרש טלפון או מזהה חיצוני' },
+)
+
+export const updateProspectSchema = z.object({
+  status: prospectStatusSchema.optional(),
+  verificationStatus: verificationStatusSchema.optional(),
+  notes: z.string().trim().max(5000).optional().nullable(),
+  name: z.string().trim().min(2).max(200).optional(),
+  businessName: z.string().trim().max(200).optional().nullable(),
+  phone: z.string().trim().min(7).max(30).optional().nullable(),
+  whatsappPhone: z.string().trim().min(7).max(30).optional().nullable(),
+  city: z.string().trim().min(1).max(100).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  sourceUrl: z.union([z.string().trim().url().max(2000), z.literal('')]).optional().nullable(),
+  professionalId: z.string().uuid().optional().nullable(),
+})
+
+export const bulkProspectStatusSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(100),
+  status: prospectStatusSchema,
+})
+
+export const importProspectsCsvSchema = z.object({
+  csv: z.string().min(1).max(2_000_000),
+})

@@ -72,9 +72,17 @@ export default function AdminPage() {
 
   return (
     <main className="p-6 pb-28 space-y-6">
-      <div>
-        <p className="text-sm text-muted-foreground mb-1">Fixly Admin</p>
-        <h1 className="text-3xl font-bold">Operations Center</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground mb-1">Fixly Admin</p>
+          <h1 className="text-3xl font-bold">Operations Center</h1>
+        </div>
+        <a
+          href="/admin/prospects"
+          className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-bold"
+        >
+          גיוס אנשי מקצוע
+        </a>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

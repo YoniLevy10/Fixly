@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { proClaimSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
+import { linkProspectToProfessional } from '@/lib/prospects/service'
 
 export async function POST(request: Request) {
   const limited = await enforceRateLimit(request, 'pro-claim', 10, 60_000)
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
       .update({ user_id: user.id })
       .eq('id', professionalId)
       .is('user_id', null)
-      .select('id, title')
+      .select('id, title, phone, whatsapp_number')
       .maybeSingle()
 
     if (error || !data) {
@@ -49,6 +51,22 @@ export async function POST(request: Request) {
     await supabase.auth.updateUser({
       data: { role: 'professional', professional_id: professionalId },
     })
+
+    const admin = getAdminSupabaseClient()
+    if (admin) {
+      try {
+        await linkProspectToProfessional(admin, {
+          professionalId: data.id,
+          phone: (data.whatsapp_number as string | null) ?? (data.phone as string | null),
+          actorUserId: user.id,
+        })
+      } catch (linkError) {
+        console.warn(
+          '[prospects] claim link failed',
+          linkError instanceof Error ? linkError.message : linkError,
+        )
+      }
+    }
 
     return NextResponse.json({ ok: true, professional: data })
   } catch (error) {

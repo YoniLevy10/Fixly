@@ -7,12 +7,17 @@ export function getAdminEmails(): string[] {
     .filter(Boolean)
 }
 
+/**
+ * Admin authorization — never trust user_metadata for privileged roles.
+ * Prefer app_metadata.role (set only via service role / dashboard) or ADMIN_EMAILS.
+ */
 export function isAdminUser(user: {
   email?: string | null
+  app_metadata?: Record<string, unknown>
   user_metadata?: Record<string, unknown>
 } | null | undefined): boolean {
   if (!user) return false
-  if (user.user_metadata?.role === 'admin') return true
+  if (user.app_metadata?.role === 'admin') return true
   const email = user.email?.trim().toLowerCase()
   if (!email) return false
   return getAdminEmails().includes(email)
