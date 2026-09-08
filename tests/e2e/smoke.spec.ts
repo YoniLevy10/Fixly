@@ -6,9 +6,14 @@ test.describe('public pages', () => {
   test('home loads waitlist or marketplace', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Fixly/i)
-    // Prelaunch has multiple identical CTAs; marketplace has a search field
-    const waitlistCta = page.getByRole('link', { name: /הצטרפו בחינם|הצטרפו לרשימה/i }).first()
-    const search = page.getByPlaceholder(/מה צריך לתקן|What needs fixing/i)
+    // Prelaunch has multiple identical CTAs; marketplace has a search field.
+    // Use .first() — locale boot can briefly leave duplicate nodes under strict mode.
+    const waitlistCta = page
+      .getByRole('link', { name: /הצטרפו בחינם|הצטרפו לרשימה/i })
+      .first()
+    const search = page
+      .getByPlaceholder(/מה צריך לתקן|What needs fixing/i)
+      .first()
     await expect(waitlistCta.or(search)).toBeVisible()
   })
 
