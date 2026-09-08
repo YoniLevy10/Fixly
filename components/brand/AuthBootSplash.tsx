@@ -10,6 +10,7 @@ const MIN_SPLASH_MS = 900
 /**
  * Shows the branded Fixly entry splash while the auth session boots.
  * Matches Bamakor / OpticalCenter boot UX (logo + loading line).
+ * Clears html.fixly-booting when done (CSS first-paint gate in root layout).
  */
 export default function AuthBootSplash({ children }: { children: ReactNode }) {
   const { isLoading } = useAuth()
@@ -21,6 +22,11 @@ export default function AuthBootSplash({ children }: { children: ReactNode }) {
   }, [])
 
   const showSplash = isLoading || !minTimeElapsed
+
+  useEffect(() => {
+    if (showSplash) return
+    document.documentElement.classList.remove('fixly-booting')
+  }, [showSplash])
 
   return (
     <>

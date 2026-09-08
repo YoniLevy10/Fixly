@@ -97,8 +97,15 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he" dir="rtl" className="fixly-booting">
       <body>
+        {/* First-paint navy only — do NOT mount a React DOM node then .remove() it
+            (that corrupts reconciliation and can duplicate the app tree). */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: 'html.fixly-booting body{background-color:#123563;}',
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

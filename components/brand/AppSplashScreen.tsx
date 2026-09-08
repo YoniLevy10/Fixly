@@ -48,6 +48,7 @@ export default function AppSplashScreen({
         'pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]',
         className,
       )}
+      style={{ backgroundColor: '#123563' }}
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -63,10 +64,16 @@ export default function AppSplashScreen({
 
       <div className="relative flex flex-col items-center gap-6 px-6">
         <div className="fixly-splash-mark-pop">
-          <FixlyMark
-            size={96}
-            priority
-            className="rounded-[1.75rem] shadow-lg ring-1 ring-white/15"
+          {/* Plain <img> so the mark paints on first frame (no Next Image decode delay). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/fixly-icon.svg"
+            alt=""
+            width={96}
+            height={96}
+            className="h-24 w-24 rounded-[1.75rem] shadow-lg ring-1 ring-white/20"
+            decoding="sync"
+            fetchPriority="high"
           />
         </div>
 
@@ -80,7 +87,7 @@ export default function AppSplashScreen({
           </p>
         </div>
 
-        <div className="mt-2 flex w-40 flex-col items-center gap-3">
+        <div className="mt-2 flex w-44 flex-col items-center gap-3">
           <SplashProgressLine tone="on-dark" />
           <p className="text-xs font-medium text-white/60">{label}</p>
         </div>
@@ -98,7 +105,7 @@ function SplashProgressLine({
     <span
       aria-hidden
       className={cn(
-        'fixly-splash-track relative block h-1 w-full overflow-hidden rounded-full',
+        'fixly-splash-track relative block h-1.5 w-full overflow-hidden rounded-full',
         tone === 'on-dark' ? 'bg-white/20' : 'bg-muted',
       )}
     >
