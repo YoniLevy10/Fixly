@@ -1,14 +1,18 @@
 # Bamakor ↔ Fixly Integration Contract
 
-**Hard rule:** Bamakor production code is **not** changed in this workstream.  
+**Hard rule:** Bamakor production code is **not** changed in this Fixly workstream.  
 This document is the Fixly-side contract Bamakor can implement later (thin client).
 
+**Naming:** Bamakor = **BINO** in product differentiation docs. See [`DIFFERENTIATION.md`](./DIFFERENTIATION.md).
+
 Mental model:
-- **Bamakor** = source of truth for the **building ticket**
-- **Fixly** = source of truth for **matching / dispatching** the professional
+- **Bamakor (BINO)** = source of truth for the **building ticket** and **primary demand** into Fixly
+- **Internal maintenance** tries first; unresolved tickets **escalate** to Fixly
+- **Fixly** = source of truth for **matching / dispatching** the professional (execution network)
 - Integration = Bamakor creates a Fixly job; Fixly reports status back via webhook
 
 Fixly is seen as another provider/network in Bamakor’s world — everything goes over **API + webhook**, no shared database.
+Partner / Bamakor jobs are **never** blocked by consumer `launch_regions` density gates.
 
 ---
 
@@ -56,9 +60,16 @@ Keys on Fixly: `FIXLY_API_KEYS` (comma-separated) or `FIXLY_API_KEY`.
   },
   "media_urls": [],
   "assignment_mode": "broadcast_first_accept",
-  "callback_url": "https://bamakor.vercel.app/api/integrations/fixly/webhook"
+  "callback_url": "https://bamakor.vercel.app/api/integrations/fixly/webhook",
+  "escalation": {
+    "source": "internal_maintenance",
+    "reason": "צוות תחזוקה פנימי לא סגר תוך SLA",
+    "escalated_at": "2026-09-08T12:00:00.000Z"
+  }
 }
 ```
+
+When internal maintenance cannot close a ticket, Bamakor should POST with `escalation.source` (typically `internal_maintenance`). Partner jobs are **never** blocked by Fixly consumer `launch_regions`.
 
 **Response `201`:**
 

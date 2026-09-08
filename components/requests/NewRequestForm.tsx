@@ -11,7 +11,7 @@ import { fetchProfessional } from '@/lib/data/fetch-professional'
 import type { Professional } from '@/types/professional'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
-import { createRequestApi } from '@/shared/hooks/use-requests-api'
+import { createRequestApi, RegionClosedError } from '@/shared/hooks/use-requests-api'
 import { uploadRequestImage } from '@/lib/storage/upload-request-image'
 import { routes } from '@/lib/routes'
 import { featureFlags } from '@/lib/feature-flags'
@@ -148,6 +148,7 @@ export default function NewRequestForm() {
         title: form.title,
         description: form.description,
         location: form.location,
+        city: form.location.split(',').map((p) => p.trim()).at(-1),
         destinationLat,
         destinationLng,
         preferredDate: form.preferredDate || undefined,
@@ -160,6 +161,10 @@ export default function NewRequestForm() {
       track('request_created', { professionalId: pro?.id ?? proId ?? '' })
       router.push(routes.tracking(created.id))
     } catch (err) {
+      if (err instanceof RegionClosedError) {
+        router.push(err.waitlistPath)
+        return
+      }
       setError(err instanceof Error ? err.message : t('requests.submitError'))
     } finally {
       setLoading(false)

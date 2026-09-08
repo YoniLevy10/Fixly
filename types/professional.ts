@@ -28,6 +28,8 @@ export type Professional = {
   isVerified?: boolean
   experienceYears?: number
   completedJobs: number
+  performanceScore?: number | null
+  acceptRate?: number | null
   subscriptionTier?: 'free' | 'pro' | 'pro_plus'
   avgResponseMinutes?: number | null
   availabilitySummary?: string

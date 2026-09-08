@@ -1,6 +1,6 @@
-# Platform Features — Growth Playbook Implementation
+# Platform Features — Execution Network
 
-All three layers from the growth strategy are implemented in code.
+Aligned to [`DIFFERENTIATION.md`](./DIFFERENTIATION.md). Features exist to strengthen local liquidity, match quality, trust, and job economics — not to become a generic marketplace.
 
 ## Layer 1 — Quick wins
 
@@ -9,30 +9,33 @@ All three layers from the growth strategy are implemented in code.
 | WhatsApp deep links | `lib/contact/whatsapp-link.ts`, `WhatsAppButton`, tracking screen |
 | Response time badge | `avg_response_minutes` on pros, updated on accept |
 | Fixly Verified | `is_verified` column, `VerifiedBadge`, admin PATCH |
-| Review prompts | Badge on my-requests, cron `/api/cron/review-reminders` |
-| SEO city/category | `/services/[city]/[category]` — 48 static pages + sitemap |
+| Review prompts | Badge on my-requests, cron `/api/cron/review-reminders` (secondary signal) |
 | Referral loop | `/api/referrals`, `ReferralSharePanel`, capture on requests |
 
-## Layer 2 — Marketplace core
+## Layer 2 — Matching & lifecycle
 
 | Feature | Implementation |
 |---------|----------------|
 | Job payment (Stripe) | `/api/billing/job-checkout`, webhook `job_payment` |
-| 3-pro matching | `request_candidates`, quick request `matchMode`, accept-invite API |
+| Multi-pro matching | `request_candidates`, quick request `matchMode`, accept-invite API |
+| Objective performance | `performance_score` + aggregates on `professionals` |
 | In-app chat | `messages` table, `/api/requests/[id]/messages`, `RequestChat` |
 | Pro availability | `pro_availability_rules`, `/api/pro/availability`, editor UI |
+| Density gate | `launch_regions`, `lib/regions/consumer-access.ts` |
 
 ## Layer 3 — Trust & ops
 
 | Feature | Implementation |
 |---------|----------------|
 | Fixly Guarantee | `FixlyGuaranteeBanner` on tracking + quick request |
-| Response KPI | Pros sorted by response time in matching |
+| Performance ranking | Matching sorts by `performance_score` then verified / response |
 | Admin verify | `PATCH /api/admin/professionals/[id]` |
+| Admin regions | `PATCH /api/admin/launch-regions` |
+| Bamakor demand | `/api/v1/jobs` + escalation fields |
 
 ## Migration
 
-Run: `supabase/migrations/20260531300000_platform_features.sql`
+Run platform + differentiation migrations under `supabase/migrations/`.
 
 ## Cron jobs (vercel.json)
 

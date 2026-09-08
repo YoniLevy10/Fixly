@@ -8,7 +8,7 @@ import Label from '@/components/ui/Label'
 import Input from '@/components/ui/Input'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
-import { createRequestApi } from '@/shared/hooks/use-requests-api'
+import { createRequestApi, RegionClosedError } from '@/shared/hooks/use-requests-api'
 import { routes } from '@/lib/routes'
 import { track } from '@/lib/analytics/track'
 import { featureFlags } from '@/lib/feature-flags'
@@ -23,6 +23,7 @@ export default function QuickRequestPage() {
   const [location, setLocation] = useState(user.location ?? '')
   const [categorySlug, setCategorySlug] = useState('plumbing')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (!featureFlags.quickRequest) {
     router.replace(routes.newRequest)
@@ -32,6 +33,7 @@ export default function QuickRequestPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
     try {
       const created = await createRequestApi({
         customerName: user.fullName,
@@ -48,6 +50,12 @@ export default function QuickRequestPage() {
       })
       track('request_created', { quick: true, matchMode: true })
       router.push(routes.tracking(created.id))
+    } catch (err) {
+      if (err instanceof RegionClosedError) {
+        router.push(err.waitlistPath)
+        return
+      }
+      setError(err instanceof Error ? err.message : t('requests.submitError'))
     } finally {
       setLoading(false)
     }
@@ -60,6 +68,11 @@ export default function QuickRequestPage() {
         <h1 className="text-xl font-black">{t('improvements.quickRequest')}</h1>
       </div>
       <FixlyGuaranteeBanner compact />
+      {error ? (
+        <p className="mt-3 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
       <form onSubmit={submit} className="space-y-4 mt-4">
         <div>
           <Label>{t('requests.category')}</Label>

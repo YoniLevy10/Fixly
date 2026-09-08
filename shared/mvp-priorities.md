@@ -1,26 +1,34 @@
 # MVP Priorities
 
+Canonical differentiation: [`docs/DIFFERENTIATION.md`](../docs/DIFFERENTIATION.md).
+
 ## Priority 1
 
-Reliable request lifecycle.
+Reliable request lifecycle — especially Bamakor / partner demand.
 
 ---
 
 ## Priority 2
 
-Fast mobile UX.
+Objective matching (domain, area, availability, price, performance).
 
 ---
 
 ## Priority 3
 
-Trust perception.
+Density-gated consumer access (open one city only when ready).
 
 ---
 
 ## Priority 4
 
-Operational simplicity.
+Trust via verification + measurable outcomes (not stars alone).
+
+---
+
+## Priority 5
+
+Fast mobile UX and operational simplicity.
 
 ---
 
@@ -29,18 +37,21 @@ Operational simplicity.
 Avoid spending time on:
 
 - fancy animations
-- advanced filtering
+- generic directory / marketplace chrome
+- advanced filtering for browse-first discovery
 - AI features
 - complex onboarding
 - edge-case infrastructure
 - enterprise architecture
+- nationwide consumer acquisition before local density
 
 ---
 
 # Core Truth
 
-Users only care that:
+Partners and customers only care that:
 
-1. they can request help quickly
-2. professionals respond fast
-3. progress feels visible
+1. real jobs reach the right verified pro quickly
+2. progress is visible through completion
+3. past performance is measured objectively
+4. private consumers open only where the network is dense enough

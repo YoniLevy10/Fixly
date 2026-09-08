@@ -261,3 +261,23 @@ describe('memory marketplace flow', () => {
     assert.equal(webhook.payload.status, 'cancelled')
   })
 })
+
+describe('createJobSchema escalation', () => {
+  it('accepts escalation metadata from unresolved internal maintenance', async () => {
+    const { createJobSchema } = await import('../../lib/integrations/bamakor/schemas')
+    const parsed = createJobSchema.parse({
+      source: 'bamakor',
+      category: 'elevators',
+      title: 'escalated ticket',
+      description: 'internal team could not close',
+      location: { city: 'חדרה' },
+      escalation: {
+        source: 'internal_maintenance',
+        reason: 'SLA exceeded',
+        escalated_at: '2026-09-08T12:00:00.000Z',
+      },
+    })
+    assert.equal(parsed.escalation?.source, 'internal_maintenance')
+    assert.equal(parsed.escalation?.reason, 'SLA exceeded')
+  })
+})

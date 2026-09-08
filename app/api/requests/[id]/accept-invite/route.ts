@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { recordProResponseTime } from '@/lib/matching/response-time'
+import { refreshProfessionalPerformance } from '@/lib/matching/update-performance'
 import { handleLeadOnAccept } from '@/lib/monetization/record-billing'
 import { featureFlags } from '@/lib/feature-flags'
 import { trackError } from '@/lib/monitoring/track-error'
@@ -145,6 +146,7 @@ export async function POST(_request: Request, context: RouteContext) {
       .eq('status', 'invited')
 
     await recordProResponseTime(pro.id, req.created_at as string)
+    void refreshProfessionalPerformance(pro.id)
 
     if (featureFlags.monetization) {
       await handleLeadOnAccept(pro.id, requestId)

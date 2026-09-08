@@ -21,6 +21,9 @@ const PRO_SELECT_CORE = `
   availability_summary,
   subscription_tier,
   subscription_until,
+  jobs_completed,
+  performance_score,
+  accept_rate,
   service_categories ( name, name_he, slug )
 `
 
@@ -36,7 +39,11 @@ const PRO_SELECT_WITH_MIDRAG = `
 
 function isMissingColumnError(message: string | undefined): boolean {
   if (!message) return false
-  return /midrag_/i.test(message) && /does not exist|schema cache/i.test(message)
+  return (
+    (/midrag_|jobs_completed|performance_score|accept_rate/i.test(message) &&
+      /does not exist|schema cache/i.test(message)) ||
+    false
+  )
 }
 
 async function selectProfessionals(
@@ -46,7 +53,7 @@ async function selectProfessionals(
   const base = supabase.from('professionals').select(PRO_SELECT_WITH_MIDRAG)
   const withMidrag = id
     ? await base.eq('id', id).maybeSingle()
-    : await base.order('rating', { ascending: false })
+    : await base.order('performance_score', { ascending: false, nullsFirst: false })
 
   if (!withMidrag.error) return withMidrag
 

@@ -1,19 +1,21 @@
 # מפת דרכים להשקה — Fixly
 
-עדכון: מימוש תשתית לכל הצירים (Pro / OAuth / כסף / App Store / סקייל).
+עדכון: יישור לבידול רשת ביצוע ([`DIFFERENTIATION.md`](./DIFFERENTIATION.md)).  
+ביקוש ראשון מ־Bamakor (= BINO); צרכנים פרטיים רק אחרי צפיפות מקומית.
 
 ## סטטוס
 
 | ציר | תשתית בקוד | דורש הגדרה חיצונית | סטטוס |
 |-----|------------|---------------------|--------|
+| **בידול / ביצועים / צפיפות** | `performance_score`, `launch_regions`, escalation | מיגרציות + ops פתיחת ערים | [x] קוד / [ ] ops |
 | **25 שיפורי UX** | כן | — | [x] ב-`main` |
 | **סקייל** | Realtime מסונן, pagination, cache, rate limit | Supabase Pro, load test | [x] קוד / [ ] ops |
 | **Pro (ללא מידרג)** | `/pro/join` waitlist | שיווק, מיילים | [x] קוד / [ ] גיוס |
 | **Google OAuth** | כפתור + callback | Supabase + Google Console | [x] קוד / [ ] הגדרה |
 | **מונטיזציה** | DB + billing events + pricing | Tranzila keys + webhook secret | [x] קוד / [ ] keys |
-| **Marketing-ready** | Demo OFF, RLS multi-match, GA4, pro notify | Env + ≥20 Pros | [x] קוד / [ ] ops |
+| **Marketing-ready** | Demo OFF, density gate, GA4, pro notify | Env + צפיפות בעיר אחת | [x] קוד / [ ] ops |
 | **App Store** | Capacitor iOS, legal | Apple Developer, הגשה | [x] shell / [ ] הגשה |
-| **Bamakor API** | `/api/v1/jobs` + webhooks | `FIXLY_API_KEYS`, secret, Bamakor UI | [x] Fixly / [ ] Bamakor |
+| **Bamakor API** | `/api/v1/jobs` + webhooks + escalation | `FIXLY_API_KEYS`, secret, Bamakor UI | [x] Fixly / [ ] Bamakor |
 
 ## צ'קליסט לפני השקה
 
@@ -41,17 +43,20 @@
 ### מידרג
 - [ ] **אין הסכם** — רק waitlist + גיוס ידני עד שותפות
 
-## סדר עבודה מומלץ (שבועות)
+## סדר עבודה מומלץ
 
-1. **שבוע 1:** commit הכל → staging → בדיקות flow → מיגרציות
-2. **שבוע 2:** Google OAuth + Supabase production
-3. **שבוע 3:** Tranzila test mode + מנוי Pro + GA4
-4. **שבוע 4:** גיוס 20–50 Pro בעיר אחת + soft launch
-5. **שבוע 5+:** מודעות בתקציב, עמלות, ניטור, load test
+1. מיגרציות + staging + בדיקות flow (כולל `launch_regions` / performance)
+2. Google OAuth + Supabase production
+3. חיבור Bamakor UI («שלח ל-Fixly») + נפח כרטיסים אמיתי
+4. גיוס Pros בעיר אחת עד ספי צפיפות → פתיחת `launch_regions` ל־`open`
+5. Soft launch צרכנים **רק** באותה עיר; אחר כך עמלות, ניטור, ערים נוספות
+
+אין להריץ רכישת צרכנים ארצית לפני צפיפות מקומית + ביקוש Bamakor.
 
 ## מסמכים קשורים
 
-- [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) — **מדריך השקה מלא**
+- [DIFFERENTIATION.md](./DIFFERENTIATION.md) — **בידול מחייב**
+- [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) — מדריך השקה
 - [MONETIZATION.md](./MONETIZATION.md)
 - [IMPROVEMENTS_25.md](./IMPROVEMENTS_25.md)
 - [MOBILE_APP_STORE.md](./MOBILE_APP_STORE.md)

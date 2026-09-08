@@ -12,6 +12,7 @@ import {
 } from '@/lib/monetization/record-billing'
 import { canTransition } from '@/lib/guards/request-transition'
 import { recordProResponseTime } from '@/lib/matching/response-time'
+import { refreshProfessionalPerformance } from '@/lib/matching/update-performance'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { updateRequestSchema } from '@/lib/api/schemas'
@@ -82,6 +83,15 @@ export async function PATCH(request: Request, context: RouteContext) {
       if (fromSupabase) {
         if (status === 'accepted' && existing.professionalId) {
           await recordProResponseTime(existing.professionalId, existing.createdAt)
+          void refreshProfessionalPerformance(existing.professionalId)
+        }
+        if (
+          (status === 'on_the_way' ||
+            status === 'completed' ||
+            status === 'cancelled') &&
+          existing.professionalId
+        ) {
+          void refreshProfessionalPerformance(existing.professionalId)
         }
         if (status === 'completed' && existing.customerId) {
           await fulfillReferralReward(existing.customerId, id)

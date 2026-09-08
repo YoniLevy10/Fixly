@@ -33,6 +33,8 @@ export async function GET() {
       { count: completedRequests },
       { count: waitlist },
       { count: reviews },
+      { count: bamakorRequests },
+      { count: escalatedRequests },
       { data: recentWaitlist },
       { data: recentBilling },
     ] = await Promise.all([
@@ -42,6 +44,11 @@ export async function GET() {
       admin.from('requests').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
       admin.from('pro_waitlist').select('*', { count: 'exact', head: true }),
       admin.from('reviews').select('*', { count: 'exact', head: true }),
+      admin.from('requests').select('*', { count: 'exact', head: true }).eq('source', 'bamakor'),
+      admin
+        .from('requests')
+        .select('*', { count: 'exact', head: true })
+        .not('escalation_source', 'is', null),
       admin
         .from('pro_waitlist')
         .select('id, full_name, phone, city, category, audience, source, created_at')
@@ -62,6 +69,8 @@ export async function GET() {
         completedRequests: completedRequests ?? 0,
         waitlist: waitlist ?? 0,
         reviews: reviews ?? 0,
+        bamakorRequests: bamakorRequests ?? 0,
+        escalatedRequests: escalatedRequests ?? 0,
       },
       recentWaitlist: recentWaitlist ?? [],
       recentBilling: recentBilling ?? [],

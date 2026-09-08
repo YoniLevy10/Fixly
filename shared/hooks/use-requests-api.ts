@@ -62,6 +62,19 @@ export function useRequestsList(params?: { scope?: 'mine' | 'pro' }) {
   return { requests, loading, error, refresh, hasMore, loadMore }
 }
 
+export class RegionClosedError extends Error {
+  code = 'REGION_CLOSED' as const
+  waitlistPath: string
+  city: string
+
+  constructor(message: string, waitlistPath: string, city = '') {
+    super(message)
+    this.name = 'RegionClosedError'
+    this.waitlistPath = waitlistPath
+    this.city = city
+  }
+}
+
 export async function createRequestApi(
   input: Omit<CreateRequestInput, 'customerId'> & {
     customerName: string
@@ -78,6 +91,13 @@ export async function createRequestApi(
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
+    if (err.code === 'REGION_CLOSED' || res.status === 403) {
+      throw new RegionClosedError(
+        err.error || 'האזור עדיין לא פתוח לצרכנים',
+        err.waitlistPath || '/waitlist',
+        err.city || input.city || '',
+      )
+    }
     throw new Error(err.error || 'יצירת בקשה נכשלה')
   }
   return res.json()

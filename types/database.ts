@@ -108,6 +108,16 @@ export type Database = {
           midrag_reviews_count: number | null
           midrag_last_synced_at: string | null
           midrag_verified: boolean | null
+          jobs_completed: number
+          jobs_offered: number
+          jobs_accepted: number
+          accept_rate: number | null
+          avg_arrival_minutes: number | null
+          arrival_sample_count: number
+          price_accuracy_score: number | null
+          reopen_rate: number | null
+          close_quality_score: number | null
+          performance_score: number
           created_at: string
           updated_at: string
         }
@@ -143,6 +153,16 @@ export type Database = {
           midrag_reviews_count?: number | null
           midrag_last_synced_at?: string | null
           midrag_verified?: boolean | null
+          jobs_completed?: number
+          jobs_offered?: number
+          jobs_accepted?: number
+          accept_rate?: number | null
+          avg_arrival_minutes?: number | null
+          arrival_sample_count?: number
+          price_accuracy_score?: number | null
+          reopen_rate?: number | null
+          close_quality_score?: number | null
+          performance_score?: number
           created_at?: string
           updated_at?: string
         }
@@ -178,6 +198,16 @@ export type Database = {
           midrag_reviews_count?: number | null
           midrag_last_synced_at?: string | null
           midrag_verified?: boolean | null
+          jobs_completed?: number
+          jobs_offered?: number
+          jobs_accepted?: number
+          accept_rate?: number | null
+          avg_arrival_minutes?: number | null
+          arrival_sample_count?: number
+          price_accuracy_score?: number | null
+          reopen_rate?: number | null
+          close_quality_score?: number | null
+          performance_score?: number
           created_at?: string
           updated_at?: string
         }
