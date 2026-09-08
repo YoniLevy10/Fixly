@@ -1,18 +1,29 @@
 # FIXLY — FOUNDATION ARCHITECTURE
 
 ## Core Principle
-Fixly is NOT a generic marketplace.
+
+Fixly is **not** a generic marketplace and **not** “Uber for trades”.
+
+Fixly is an **execution network**:
+
+1. Real demand arrives from **Bamakor (= BINO)** and business customers
+2. Issues unresolved by internal maintenance escalate into Fixly
+3. Fixly matches verified professionals by domain, area, availability, price, and objective past performance
+4. Private consumers open only after local density is proven
+
+Canonical product rules: [`docs/DIFFERENTIATION.md`](./docs/DIFFERENTIATION.md).
 
 The core system is:
 
-REQUEST LIFECYCLE MANAGEMENT.
+**REQUEST LIFECYCLE MANAGEMENT.**
 
 Everything in the MVP revolves around:
-- request creation
-- assignment
+- request creation (partner-first; consumer density-gated)
+- assignment / matching
 - acceptance
 - progress tracking
 - completion
+- objective performance updates
 
 ---
 
@@ -99,6 +110,8 @@ Infrastructure.
 Examples:
 - supabase
 - api
+- matching / performance
+- regions (consumer density gate)
 - utilities
 - helpers
 
@@ -117,16 +130,22 @@ UI must work before backend exists.
 Base identity.
 
 ## professionals
-Professional profile layer.
+Professional profile layer + objective performance aggregates.
 
 ## categories
-Marketplace categories.
+Service categories (domain matching).
 
 ## requests
-Core lifecycle entity.
+Core lifecycle entity (consumer + Bamakor/partner sources).
+
+## request_candidates
+Offers / matching outcomes (accept rate source of truth).
 
 ## reviews
-Trust layer.
+Secondary trust layer (stars). Not the primary ranking signal.
+
+## launch_regions
+City (optional category) open / waitlist / closed for private consumers.
 
 ## images
 Attachments.
@@ -138,12 +157,13 @@ Attachments.
 ```txt
 pending
 accepted
+on_the_way
 in_progress
 completed
 cancelled
 ```
 
-NO extra statuses in MVP.
+Partner API maps alternate names in `lib/integrations/bamakor/status-map.ts`.
 
 ---
 
@@ -167,15 +187,22 @@ Frontend:
 
 ---
 
-# POST-MVP TRACK (in progress)
+# POST-MVP TRACK (aligned to differentiation)
 
 Launch pillars documented in `docs/ROADMAP_LAUNCH.md`:
 
-- Monetization foundation (`docs/MONETIZATION.md`) — lead credits, Pro subscription, commission accrual
+- Bamakor demand + escalation metadata (primary demand)
+- Objective performance scoring + matching
+- Density-gated consumer open (`launch_regions`)
+- Monetization foundation (`docs/MONETIZATION.md`)
 - Google OAuth (`/auth/callback`)
 - Scale: filtered Realtime, pagination, rate limits, DB indexes
 - Pro waitlist without Midrag scraping (`docs/PRO_OUTREACH.md`)
 - App Store shell (`docs/MOBILE_APP_STORE.md`)
+
+Do **not** prioritize generic directory SEO expansion, star-only ranking UX, or nationwide consumer ads before local liquidity.
+
+---
 
 # MVP NON-GOALS
 
@@ -183,13 +210,11 @@ Forbidden for core request lifecycle MVP:
 
 - AI
 - Full escrow payments (foundation only)
-- Chat
-- Notifications infra
-- Maps
-- Dispatch systems
+- Open consumer marketplace without density
+- Star-only reputation as the product
 - Wallets
-- Recommendation engine
-- Dynamic pricing
+- Dynamic pricing auctions
+- Premature national scale
 
 ---
 
@@ -197,7 +222,8 @@ Forbidden for core request lifecycle MVP:
 
 Before building anything:
 
-1. Check reuse from Naaryo
-2. Check reuse from Bamakor
-3. Check reuse from OpsBrain
-4. Only then build new
+1. Pass the feature test in `docs/DIFFERENTIATION.md`
+2. Check reuse from Naaryo
+3. Check reuse / demand path from Bamakor (BINO)
+4. Check reuse from OpsBrain
+5. Only then build new

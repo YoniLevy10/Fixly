@@ -215,6 +215,9 @@ export async function supabaseCreateRequest(
       categoryId,
       city,
       limit: 3,
+      preferredDate: input.preferredDate || null,
+      preferredTime: input.preferredTime || null,
+      categorySlug: input.categorySlug || null,
     })
 
     if (candidates.length) {
@@ -284,9 +287,14 @@ export async function supabaseUpdateRequest(
     patch.accepted_at = new Date().toISOString()
   }
   if (status === 'on_the_way') {
+    patch.on_the_way_at = new Date().toISOString()
     patch.live_tracking_active = true
   }
-  if (status === 'completed' || status === 'cancelled') {
+  if (status === 'completed') {
+    patch.completed_at = new Date().toISOString()
+    patch.live_tracking_active = false
+  }
+  if (status === 'cancelled') {
     patch.live_tracking_active = false
   }
 

@@ -68,6 +68,11 @@ export type CreateJobInput = {
   media_urls?: string[]
   assignment_mode?: AssignmentMode
   callback_url?: string | null
+  escalation?: {
+    source: 'internal_maintenance' | 'manager' | 'sla_timeout' | 'other'
+    reason?: string | null
+    escalated_at?: string | null
+  } | null
 }
 
 export type JobOfferView = {

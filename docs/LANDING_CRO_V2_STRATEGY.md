@@ -5,7 +5,9 @@
 
 ## Goal
 
-The homepage has one job in pre-launch: convert qualified visitors into waitlist signups without pretending Fixly already has marketplace liquidity that does not exist yet.
+The homepage has one job in pre-launch: convert qualified visitors into waitlist signups without pretending Fixly already has consumer liquidity that does not exist yet.
+
+Fixly is an **execution network** fed first by Bamakor (= BINO) and business demand. Private consumers open only after local density — see [`DIFFERENTIATION.md`](./DIFFERENTIATION.md).
 
 Primary conversion:
 - Customer: completed waitlist signup.
@@ -22,10 +24,10 @@ Secondary signals:
 V1 is clear and technically sound, but it reads like a polite waitlist page. It explains the product, yet does not make the visitor *feel* the pain disappearing.
 
 Main gaps:
-1. The hero describes a marketplace instead of dramatizing the before/after experience.
+1. The hero risks sounding like a generic marketplace instead of a managed execution flow.
 2. The visual is decorative rather than showing the product flow.
-3. The page has limited visual rhythm; sections are similar in density and energy.
-4. The value proposition competes with generic marketplace language such as “verified pros” and “matching”.
+3. The page has limited visual rhythm; sections are similar in energy.
+4. Generic language (“verified pros”, open matching) weakens differentiation.
 5. The page asks users to believe a future product before showing how the flow will actually feel.
 6. There is no persistent mobile conversion affordance.
 7. Because this is pre-launch, fake counters/reviews would be harmful; the page needs trust without fabricated proof.
@@ -35,9 +37,10 @@ Main gaps:
 ### Customer promise
 “יש תקלה בבית? שולחים פעם אחת. Fixly ממשיכה משם.”
 
-The positioning is not “another directory of professionals”. The category should be framed as a managed request flow:
+The positioning is not “another directory of professionals” and not an open marketplace.
+Frame a managed execution flow (demand → match → close), with consumer access density-gated by city:
 
-problem -> one request -> relevant matching -> visible status -> completion
+problem -> one request -> match by domain/area/availability/price/performance -> visible status -> completion
 
 ### Professional promise
 “פחות לידים קרים. יותר בקשות רלוונטיות.”
@@ -129,11 +132,11 @@ Do not promise a fixed number of leads unless the operational supply/demand mode
 Paid acquisition should not be the first source of truth. The repo production checklist already requires real supply and a soft launch before paid ads.
 
 Recommended order:
-1. Recruit 20+ usable professionals in one pilot geography/category cluster.
-2. Drive 20–50 real customer requests from communities, referrals, Bamakor cross-sell, and founder-led outreach.
-3. Interview at least 5 customers who completed or abandoned the flow.
-4. Replace assumptions on the landing page with real objections and proof.
-5. Only then scale Meta / Google campaigns.
+1. Wire Bamakor «שלח ל-Fixly» and establish real partner demand (primary).
+2. Recruit enough professionals in one city to hit density thresholds.
+3. Soft-open private consumers **only** in that city via `launch_regions`.
+4. Interview customers/partners who completed or abandoned the flow.
+5. Only then scale paid consumer acquisition — never nationwide before density.
 
 ## Campaign architecture
 

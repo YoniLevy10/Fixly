@@ -98,7 +98,7 @@ export const en: MessageTree = {
   },
   tracking: {
     liveTitle: 'Your pro is on the way',
-    liveHint: 'Location updates in real time (Wolt-style)',
+    liveHint: 'Location updates in real time until arrival',
     waitingForPro: 'Waiting for the pro to share location — it will appear here once they are en route.',
     destination: 'Job address',
     proLocation: 'Professional',
@@ -341,13 +341,13 @@ export const en: MessageTree = {
     notFound: 'Not found',
   },
   seo: {
-    defaultTitle: 'Fixly — Repairs & Professionals',
-    description: 'Find a home repair professional quickly — Fixly',
-    marketplaceHint: 'Local pros for home repairs',
+    defaultTitle: 'Fixly — Execution network for repairs',
+    description: 'Real demand, performance-based matching, tracked to completion — Fixly',
+    marketplaceHint: 'Local execution network — opens by city density',
   },
   quickRequest: {
     title: 'Quick request',
-    subtitle: 'Describe the issue — we will match a pro',
+    subtitle: 'Describe the issue — we match by trade, area, and performance',
     submit: 'Send quick request',
   },
   contact: { whatsapp: 'WhatsApp' },

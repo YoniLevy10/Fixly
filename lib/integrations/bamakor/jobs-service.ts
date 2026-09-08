@@ -284,6 +284,7 @@ export async function createJob(
     city: input.location.city,
     limit: 5,
     preferAdmin: true,
+    categorySlug: input.category,
   })
 
   const status = candidates.length === 0 ? 'no_providers' : 'pending'
@@ -317,6 +318,11 @@ export async function createJob(
       matched_providers_count: candidates.length,
       destination_lat: input.location.lat ?? null,
       destination_lng: input.location.lng ?? null,
+      escalation_source: input.escalation?.source ?? null,
+      escalation_reason: input.escalation?.reason ?? null,
+      escalated_at:
+        input.escalation?.escalated_at ??
+        (input.escalation?.source ? new Date().toISOString() : null),
     })
     .select(JOB_SELECT)
     .single()

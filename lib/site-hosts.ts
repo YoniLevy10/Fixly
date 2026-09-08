@@ -3,6 +3,9 @@
  * - fixly.tech → marketing waitlist landing (when demo is off)
  * - *.vercel.app / localhost → full product app
  *
+ * Consumer create-request is separately gated by `launch_regions` density
+ * (see lib/regions/consumer-access.ts). Host prelaunch ≠ city open.
+ *
  * While demo mode is on (pre-funding), marketing hosts also get the product UI
  * so the investor tour works on fixly.tech.
  */
@@ -33,8 +36,9 @@ export function isProductHost(host: string | null | undefined): boolean {
 
 /**
  * Show pre-launch waitlist on `/` for the branded domain only.
- * Product hosts (vercel.app / localhost) always get the marketplace home.
+ * Product hosts (vercel.app / localhost) always get the home UI.
  * Demo mode skips the waitlist so the full demo + tour run on fixly.tech.
+ * Private consumer jobs still require an `open` launch_regions city.
  *
  * Set NEXT_PUBLIC_FF_PRELAUNCH=false after full launch to show the app everywhere.
  * Set NEXT_PUBLIC_FF_DEMO_KILL=true to restore waitlist-only marketing hosts.

@@ -35,6 +35,20 @@ export const createJobSchema = z.object({
     .enum(['broadcast_first_accept', 'manual_select'])
     .default('broadcast_first_accept'),
   callback_url: z.string().url().max(2000).optional().nullable(),
+  /** Unresolved internal maintenance → Fixly escalation metadata */
+  escalation: z
+    .object({
+      source: z.enum([
+        'internal_maintenance',
+        'manager',
+        'sla_timeout',
+        'other',
+      ]),
+      reason: z.string().trim().max(2000).optional().nullable(),
+      escalated_at: z.string().datetime().optional().nullable(),
+    })
+    .optional()
+    .nullable(),
 })
 
 export const updateJobStatusSchema = z.object({

@@ -26,6 +26,9 @@ type ProfessionalRow = {
   availability_summary?: string | null
   subscription_tier?: string | null
   subscription_until?: string | null
+  jobs_completed?: number | null
+  performance_score?: number | null
+  accept_rate?: number | null
   midrag_profile_url?: string | null
   midrag_rating?: number | null
   midrag_reviews_count?: number | null
@@ -126,8 +129,15 @@ export function mapProfessionalRow(row: ProfessionalRow): Professional {
     isAvailable: row.available ?? false,
     isApproved: true,
     isVerified: row.is_verified ?? false,
-    isFeatured: isProTier || (row.rating ?? 0) >= 4.8,
-    completedJobs: row.reviews_count ?? 0,
+    isFeatured:
+      isProTier ||
+      (row.performance_score != null
+        ? Number(row.performance_score) >= 75
+        : (row.rating ?? 0) >= 4.8),
+    completedJobs: row.jobs_completed ?? 0,
+    performanceScore:
+      row.performance_score != null ? Number(row.performance_score) : null,
+    acceptRate: row.accept_rate != null ? Number(row.accept_rate) : null,
     subscriptionTier: (tier as Professional['subscriptionTier']) ?? 'free',
     avgResponseMinutes: row.avg_response_minutes ?? null,
     availableHours: row.availability_summary ?? undefined,

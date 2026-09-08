@@ -1,12 +1,20 @@
-# Marketplace Anti-Patterns
+# Fixly Anti-Patterns
+
+Canonical differentiation: [`docs/DIFFERENTIATION.md`](../docs/DIFFERENTIATION.md).
 
 ## Mistake 1
+
+Building an open consumer marketplace before Bamakor/business demand and local density exist.
+
+---
+
+## Mistake 2
 
 Overbuilding before validation.
 
 ---
 
-## Mistake 2
+## Mistake 3
 
 Too many request fields.
 
@@ -14,27 +22,33 @@ Kills conversion.
 
 ---
 
-## Mistake 3
+## Mistake 4
 
 Complex navigation.
 
-Marketplace users want speed.
-
----
-
-## Mistake 4
-
-Weak trust signals.
-
-Trust is the real product.
+Users want speed from request → match → close.
 
 ---
 
 ## Mistake 5
 
-Trying to solve scale too early.
+Weak trust signals — or trusting **stars alone**.
+
+Trust is objective outcomes + verification + visible lifecycle.
+
+---
+
+## Mistake 6
+
+Trying to solve national scale too early.
 
 MVPs die from premature complexity.
+
+---
+
+## Mistake 7
+
+Generic “Uber for X” / directory features that do not improve liquidity, match quality, trust, or job economics.
 
 ---
 
@@ -43,10 +57,10 @@ MVPs die from premature complexity.
 Every feature must answer:
 
 Does this increase:
-- requests
-- response speed
-- trust
-- completion rate
+- local liquidity
+- match quality
+- customer trust
+- job economics / completion rate
 
 If not:
 Do not build it now.

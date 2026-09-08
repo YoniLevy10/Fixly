@@ -98,7 +98,7 @@ export const he: MessageTree = {
   },
   tracking: {
     liveTitle: 'איש המקצוע בדרך אליך',
-    liveHint: 'המיקום מתעדכן בזמן אמת (כמו Wolt)',
+    liveHint: 'המיקום מתעדכן בזמן אמת עד ההגעה',
     waitingForPro: 'איש המקצוע עדיין לא שיתף מיקום — תקבל עדכון כאן ברגע שיצא לדרך.',
     destination: 'כתובת הבקשה',
     proLocation: 'איש המקצוע',
@@ -341,13 +341,13 @@ export const he: MessageTree = {
     notFound: 'לא נמצא',
   },
   seo: {
-    defaultTitle: 'Fixly — תיקונים ואנשי מקצוע',
-    description: 'מצא איש מקצוע לתיקון הבית במהירות — Fixly',
-    marketplaceHint: 'אנשי מקצוע לתיקוני בית באזורך',
+    defaultTitle: 'Fixly — רשת ביצוע לתיקונים',
+    description: 'ביקוש אמיתי, התאמה לפי ביצועים, מעקב עד סיום — Fixly',
+    marketplaceHint: 'רשת ביצוע מקומית לתיקונים — נפתחת לפי צפיפות באזור',
   },
   quickRequest: {
     title: 'בקשה מהירה',
-    subtitle: 'תאר את הבעיה — נמצא לך מקצוען',
+    subtitle: 'תאר את הבעיה — נתאים לפי תחום, אזור וביצועים',
     submit: 'שלח בקשה מהירה',
   },
   contact: {

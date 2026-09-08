@@ -225,10 +225,10 @@ export function getProfessionalById(id: string): Professional | undefined {
 export function filterProfessionals(options: {
   query?: string
   categorySlug?: string
-  sortBy?: 'rating' | 'price' | 'jobs'
+  sortBy?: 'rating' | 'price' | 'jobs' | 'performance'
 }): Professional[] {
   let list = getApprovedProfessionals()
-  const { query, categorySlug, sortBy = 'rating' } = options
+  const { query, categorySlug, sortBy = 'performance' } = options
 
   if (categorySlug) {
     const names = SLUG_TO_CATEGORY[categorySlug] ?? []
@@ -253,6 +253,7 @@ export function filterProfessionals(options: {
   return [...list].sort((a, b) => {
     if (sortBy === 'price') return a.startingPrice - b.startingPrice
     if (sortBy === 'jobs') return b.completedJobs - a.completedJobs
-    return b.rating - a.rating
+    if (sortBy === 'rating') return b.rating - a.rating
+    return (b.performanceScore ?? b.rating * 20) - (a.performanceScore ?? a.rating * 20)
   })
 }

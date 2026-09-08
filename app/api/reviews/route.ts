@@ -12,6 +12,7 @@ import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { createReviewSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
+import { refreshProfessionalPerformance } from '@/lib/matching/update-performance'
 
 export async function GET(request: Request) {
   const professionalId = new URL(request.url).searchParams.get('professionalId')
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
 
     if (!review) {
       return NextResponse.json({ error: 'לא ניתן לשמור ביקורת' }, { status: 400 })
+    }
+
+    if (parsed.data.professionalId) {
+      void refreshProfessionalPerformance(parsed.data.professionalId)
     }
 
     return NextResponse.json(review, { status: 201 })

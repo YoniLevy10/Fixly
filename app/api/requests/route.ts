@@ -18,6 +18,7 @@ import { parseJsonBody } from '@/lib/api/parse-body'
 import { createRequestSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
 import { recordReferralRedemption } from '@/lib/referrals/record-redemption'
+import { assertConsumerRegionOpen } from '@/lib/regions/consumer-access'
 
 async function resolveProfessionalIdFromAuth(): Promise<string | undefined> {
   const supabase = await createServerSupabaseClient()
@@ -109,6 +110,25 @@ export async function POST(request: Request) {
     const parsed = await parseJsonBody(request, createRequestSchema)
     if (!parsed.success) return parsed.response
     const body = parsed.data as CreateRequestInput
+
+    const cityHint =
+      body.city ||
+      (body.location
+        ? body.location.split(',').map((p) => p.trim()).at(-1)
+        : undefined)
+    const access = await assertConsumerRegionOpen(cityHint)
+    if (!access.allowed) {
+      return NextResponse.json(
+        {
+          error: access.error,
+          code: 'REGION_CLOSED',
+          status: access.status,
+          city: access.city,
+          waitlistPath: access.waitlistPath,
+        },
+        { status: 403 },
+      )
+    }
 
     const backend = resolveDataBackend()
 

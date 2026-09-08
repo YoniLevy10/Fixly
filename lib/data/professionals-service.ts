@@ -29,11 +29,11 @@ function applyListOptions(
   options?: {
     query?: string
     categorySlug?: string
-    sortBy?: 'rating' | 'price' | 'jobs'
+    sortBy?: 'rating' | 'price' | 'jobs' | 'performance'
   }
 ): Professional[] {
   let next = list
-  const { query, categorySlug, sortBy = 'rating' } = options ?? {}
+  const { query, categorySlug, sortBy = 'performance' } = options ?? {}
 
   if (categorySlug) {
     const slugMap: Record<string, string[]> = {
@@ -89,14 +89,15 @@ function applyListOptions(
   return [...next].sort((a, b) => {
     if (sortBy === 'price') return a.startingPrice - b.startingPrice
     if (sortBy === 'jobs') return b.completedJobs - a.completedJobs
-    return b.rating - a.rating
+    if (sortBy === 'rating') return b.rating - a.rating
+    return (b.performanceScore ?? 50) - (a.performanceScore ?? 50)
   })
 }
 
 export async function listProfessionals(options?: {
   query?: string
   categorySlug?: string
-  sortBy?: 'rating' | 'price' | 'jobs'
+  sortBy?: 'rating' | 'price' | 'jobs' | 'performance'
 }): Promise<Professional[]> {
   if (resolveDataBackend() === 'mock') {
     return filterProfessionals(options ?? {})
