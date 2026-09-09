@@ -61,13 +61,14 @@ const RETAIL_MARKERS = [
   /קרמיקה/,
   /פרקט/,
   /שיש\s/,
-  /משתלה/,
+  /משתל/,
   /חומרי\s*בניין/,
   /design\s*center/i,
   /סניף/,
 ]
 
-const INSTALLER_HINTS = /מתקין|רצף|התקנ|טכנאי|צבעי|גנן|מנעולן|אינסטלטור|חשמלאי|זגג|מדביר|נגר/
+const INSTALLER_HINTS =
+  /מתקין|רצף|התקנ|טכנאי|צבעי|גנן|מנעולן|אינסטלטור|חשמלאי|זגג|מדביר|נגר|קבלן|הנדימן|handyman/i
 
 /** Words that are trade / place / commercial — not a person's given name. */
 const NON_PERSONAL_WORDS = new Set(
@@ -84,9 +85,15 @@ const NON_PERSONAL_WORDS = new Set(
     'אאוטלט',
     'חנות',
     'משתלה',
+    'משתלת',
+    'דירה',
+    'דירות',
+    'בירושלים',
+    'ירושלים',
     'חומרי',
     'בניין',
     'סניף',
+    'ליין',
     'אינסטלטור',
     'אינסטלציה',
     'אינסטלטורים',
