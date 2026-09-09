@@ -41,7 +41,7 @@ export default function DesktopSidebar() {
   const { t } = useLocale()
 
   return (
-    <aside className="native-hide-desktop hidden lg:flex flex-col fixed top-0 right-0 h-screen w-64 border-l border-border bg-card z-40">
+    <aside className="native-hide-desktop hidden lg:flex flex-col fixed top-[var(--fixly-demo-banner-h,0px)] right-0 h-[calc(100dvh-var(--fixly-demo-banner-h,0px))] w-64 border-l border-border bg-card z-40">
       <div className="p-5 border-b border-border">
         <Link href={routes.home} className="flex items-center gap-3">
           <FixlyMark size={40} className="rounded-xl" />

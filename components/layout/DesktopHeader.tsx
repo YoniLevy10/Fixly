@@ -11,7 +11,7 @@ export default function DesktopHeader() {
   const { t } = useLocale()
 
   return (
-    <header className="native-hide-desktop hidden lg:flex items-center justify-between h-16 px-8 border-b border-border bg-card/80 backdrop-blur sticky top-0 z-30">
+    <header className="native-hide-desktop hidden lg:flex items-center justify-between h-16 px-8 border-b border-border bg-card/80 backdrop-blur sticky top-[var(--fixly-demo-banner-h,0px)] z-30">
       <div>
         <p className="text-sm text-muted-foreground">{t('nav.hello')},</p>
         <p className="font-bold">{user.fullName}</p>
