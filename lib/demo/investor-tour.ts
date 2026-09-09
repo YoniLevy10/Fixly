@@ -7,6 +7,7 @@ import {
   writeTourRequest,
   clearTourRequest,
 } from '@/lib/demo/tour-session'
+import { routes } from '@/lib/routes'
 
 export const DEMO_TOUR_STORAGE_KEY = 'fixly-demo-tour-request-id'
 
@@ -25,7 +26,7 @@ export type DemoTourStep = {
   labelKey: string
 }
 
-/** Ordered investor walkthrough (~2.5–3 min with default delays) */
+/** Ordered investor walkthrough — kept short so it always reaches a clean exit */
 export const DEMO_TOUR_STEPS: DemoTourStep[] = [
   { id: 'create', labelKey: 'demo.tourStepCreate' },
   { id: 'pending', labelKey: 'demo.tourStepPending' },
@@ -117,9 +118,8 @@ function withStatus(current: MockRequest, status: RequestStatus): MockRequest {
  * Creates a demo booking and advances it through the full lifecycle,
  * flipping customer ↔ pro so investors see both sides.
  *
- * Status updates go through sessionStorage + PUT /api/demo/requests (upsert)
- * so they survive Vercel's multi-instance memory isolation — the root cause
- * of "עדכון נכשל" on production.
+ * Always ends with a hard exit: clear tour session, customer role, home.
+ * Abort / stop must leave the same clean state (handled by the provider).
  */
 export async function runInvestorDemoTour(
   options: RunInvestorTourOptions
@@ -156,43 +156,40 @@ export async function runInvestorDemoTour(
 
   onStep?.('pending')
   navigate(`/tracking/${current.id}`)
-  // Linger so investors can read the pending tracking screen
-  await wait(4500)
+  await wait(1800)
 
   // Pro side: show dashboard, then auto-accept
   switchRole('professional')
   navigate('/pro/dashboard')
-  await wait(3500)
+  await wait(1400)
 
   for (const status of STATUS_FLOW) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     current = await persistTourRequest(withStatus(current, status))
     onStep?.(status as DemoTourStepId)
-    // Give each status a calm beat before flipping screens
-    await wait(status === 'on_the_way' ? 3200 : 3000)
+    await wait(status === 'on_the_way' ? 1400 : 1200)
 
     if (status === 'on_the_way') {
       switchRole('customer')
       onStep?.('customer_map')
       navigate(`/tracking/${current.id}`)
-      // Longest beat — live map is the money shot
-      await wait(8500)
+      // Live map beat — still the highlight, but shorter
+      await wait(4000)
       switchRole('professional')
       navigate('/pro/dashboard')
-      await wait(3000)
-    }
-
-    if (status === 'accepted') {
-      // Extra beat on pro dashboard after accept so investors see it land
-      await wait(2200)
+      await wait(1200)
     }
   }
 
   switchRole('customer')
   onStep?.('completed')
   navigate(`/tracking/${current.id}`)
-  await wait(3500)
+  await wait(1600)
   onStep?.('done')
+  await wait(900)
+
+  // Hard exit — never leave the UI stuck on the tour job / pro "done" tab
+  finishInvestorDemoTour({ switchRole, navigate })
 
   // Land on Yossi's live inbox — clear exit from tracking dead-end
   switchRole('professional')
@@ -200,6 +197,19 @@ export async function runInvestorDemoTour(
   await wait(800)
 
   return current.id
+}
+
+/** Shared cleanup for successful completion and manual stop */
+export function finishInvestorDemoTour(options: {
+  switchRole: (role: 'customer' | 'professional') => void
+  navigate: (path: string) => void
+}): void {
+  clearTourRequest()
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(DEMO_TOUR_STORAGE_KEY)
+  }
+  options.switchRole('customer')
+  options.navigate(routes.home)
 }
 
 /** Pure helper for unit tests — status sequence investors see */
