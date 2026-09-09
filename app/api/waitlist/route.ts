@@ -6,6 +6,7 @@ import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { waitlistSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
+import { tryLinkProspectAfterWaitlist } from '@/lib/prospects/waitlist-bridge'
 
 function compactAttribution(
   attribution: Record<string, string | undefined> | undefined
@@ -43,30 +44,56 @@ async function handleWaitlist(request: Request, route: string) {
           source: body.source ?? null,
         }
 
-        const withAttribution = await supabase.from('pro_waitlist').insert({
-          ...baseRow,
-          ...(attribution ? { attribution } : {}),
-        })
+        const withAttribution = await supabase
+          .from('pro_waitlist')
+          .insert({
+            ...baseRow,
+            ...(attribution ? { attribution } : {}),
+          })
+          .select('id')
+          .maybeSingle()
+
         if (!withAttribution.error) {
+          await tryLinkProspectAfterWaitlist({
+            phone: body.phone,
+            audience,
+            waitlistId: withAttribution.data?.id ?? null,
+          })
           return NextResponse.json({ ok: true, audience }, { status: 201 })
         }
 
-        // Older DBs without attribution — retry with audience/source only
-        const withAudience = await supabase.from('pro_waitlist').insert(baseRow)
+        const withAudience = await supabase
+          .from('pro_waitlist')
+          .insert(baseRow)
+          .select('id')
+          .maybeSingle()
         if (!withAudience.error) {
+          await tryLinkProspectAfterWaitlist({
+            phone: body.phone,
+            audience,
+            waitlistId: withAudience.data?.id ?? null,
+          })
           return NextResponse.json({ ok: true, audience }, { status: 201 })
         }
 
-        // Legacy schema without audience/source
-        const legacy = await supabase.from('pro_waitlist').insert({
-          full_name: body.fullName,
-          phone: body.phone,
-          email: body.email || null,
-          category: body.category ?? null,
-          city: body.city ?? null,
-          referral_code: body.referralCode ?? null,
-        })
+        const legacy = await supabase
+          .from('pro_waitlist')
+          .insert({
+            full_name: body.fullName,
+            phone: body.phone,
+            email: body.email || null,
+            category: body.category ?? null,
+            city: body.city ?? null,
+            referral_code: body.referralCode ?? null,
+          })
+          .select('id')
+          .maybeSingle()
         if (!legacy.error) {
+          await tryLinkProspectAfterWaitlist({
+            phone: body.phone,
+            audience,
+            waitlistId: legacy.data?.id ?? null,
+          })
           return NextResponse.json({ ok: true, audience }, { status: 201 })
         }
         trackError(withAttribution.error, { route })

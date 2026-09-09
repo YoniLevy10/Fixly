@@ -1,22 +1,64 @@
-# גיוס אנשי מקצוע (ללא מידרג)
+# גיוס אנשי מקצוע (Prospects + Superadmin)
 
-אין הסכם עם מידרג — **אין סקרייפינג או ייבוא אוטומטי**.
+אין הסכם עם מידרג — **אין סקרייפינג או ייבוא אוטומטי ממידרג**.
+אין איסוף מקבוצות פייסבוק פרטיות ואין עקיפת תנאי שימוש.
 
-## מה כן לעשות
+## ממשק
 
-1. **רשימת המתנה** — `/pro/join` שומרת ב-`pro_waitlist` (מיגרציה `20260529150000`).
-2. **גיוס ידני** — מודעות, קבוצות פייסבוק מקומיות, ועדי בתים.
-3. **Onboarding** — אחרי אישור: claim פרופיל → `/pro/pricing` (מנוי אופציונלי).
-4. **פיילוט בעיר אחת** — 20–50 מקצוענים לפני הרחבה.
+- **[`/superadmin`](../app/superadmin/page.tsx)** — מסך הגיוס הוויזואלי (מונים, טבלה, אישור, WhatsApp, גילוי).
+- `/admin/prospects` מפנה ל־`/superadmin`.
+- כניסה: התחברות עם אימייל שמופיע ב־`ADMIN_EMAILS` או `app_metadata.role=admin`.
 
-## מנגנון עתידי (רק עם רישיון)
+## מקורות גילוי מותרים
 
-- שדות `external_source`, `external_id` ב-`professionals`
-- ייבוא CSV מורשה
-- מעקב שליחות (נשלח / נפתח / נרשם)
+| מקור | סוג | Env |
+|------|-----|-----|
+| Google Places API | API רשמי | `GOOGLE_PLACES_API_KEY` |
+| OpenStreetMap Overpass | נתונים פתוחים (ODbL) | לא נדרש |
+| הזנה ידנית / CSV | מנהל | — |
 
-## KPI
+### איך משיגים Google Places key
 
-- זמן ממוצע לאישור בקשה
-- % בקשות שהושלמו
-- המרה waitlist → פרופיל פעיל
+1. Google Cloud Console → יצירת פרויקט / בחירת פרויקט
+2. Enable **Places API** (New)
+3. Credentials → API key → הגבלה ל־Places בלבד
+4. Billing חייב להיות פעיל
+5. להוסיף ב־Vercel: `GOOGLE_PLACES_API_KEY=...`
+
+## סוכן אוטומטי
+
+- Cron יומי: `GET /api/cron/discover-prospects` (Bearer `CRON_SECRET`) — רשום ב־`vercel.json` ב־07:00 UTC
+- הרצה ידנית: כפתור **הרץ גילוי עכשיו** ב־`/superadmin` → `POST /api/admin/prospects/discover`
+- לוג ריצות: טבלת `prospect_discovery_runs`
+
+## WhatsApp
+
+אין שליחה אוטומטית. אחרי אישור (`approved`) המנהל פותח `wa.me` מהטלפון שלו.
+מספר בקשות מתווסף להודעה **רק** אם יש ספירה אמיתית של בקשות פעילות מתאימות.
+
+## משפך סטטוסים
+
+`discovered → verified → approved → contacted → interested → joined → active`
+
+בנוסף: `rejected`, `do_not_contact`.
+
+## קישור להצטרפות
+
+`/pro/join` עם אותו טלפון → ליד עובר ל־`joined` (בלי ליצור `professionals` כפול).
+Claim פרופיל עם טלפון תואם → `active`.
+
+## Migrations (להחיל על Production)
+
+1. `supabase/migrations/20260909010000_professional_prospects.sql`
+2. `supabase/migrations/20260909120000_prospect_discovery_runs.sql`
+
+## Env נדרש
+
+```bash
+ADMIN_EMAILS=you@example.com
+CRON_SECRET=long-random
+GOOGLE_PLACES_API_KEY=your-places-key
+# optional:
+# FIXLY_RECRUIT_CITY=ירושלים
+# FIXLY_RECRUIT_CATEGORY_SLUGS=plumbing,electricity,...
+```
