@@ -144,6 +144,14 @@ export const he: MessageTree = {
     statsActive: 'בקשות פעילות',
     statsJobs: 'עבודות שהושלמו',
     statsRating: 'דירוג ממוצע',
+    viewYossiDashboard: 'צפה בדמו יוסי כהן',
+    backHome: 'חזרה לבית',
+    investorSummary: 'סיכום למשקיעים',
+    summaryJobs: 'עבודות בדשבורד',
+    summaryPaid: 'תשלומים שהתקבלו',
+    summaryQuoted: 'הכנסות צפויות מהמערכת',
+    billingMock: 'במצב דמו — ניהול מנוי זמין בפרודקשן',
+    subscribeMock: 'במצב דמו — המנוי כבר פעיל אצל יוסי כהן',
   },
   status: {
     pending: 'ממתין לאישור',
@@ -371,6 +379,7 @@ export const he: MessageTree = {
     empty: 'אין הודעות עדיין — שלח הודעה',
     placeholder: 'כתוב הודעה...',
     send: 'שלח',
+    demoUnavailable: 'צ׳אט חי זמין בפרודקשן — בדמו מוצג כאן מצב ריק ידידותי',
   },
   payment: {
     payNow: 'שלם {amount}',

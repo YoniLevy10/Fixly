@@ -101,7 +101,13 @@ function withStatus(current: MockRequest, status: RequestStatus): MockRequest {
     next.proLng = (current.destinationLng ?? 34.7698) - 0.008
     next.proLocationUpdatedAt = new Date().toISOString()
   }
-  if (status === 'completed' || status === 'cancelled') {
+  if (status === 'completed') {
+    next.liveTrackingActive = false
+    // Ensure JobPaymentButton appears for investors on the tracking screen
+    next.quotedAmount = current.quotedAmount ?? 420
+    next.paymentStatus = current.paymentStatus ?? 'pending'
+  }
+  if (status === 'cancelled') {
     next.liveTrackingActive = false
   }
   return next
@@ -187,6 +193,11 @@ export async function runInvestorDemoTour(
   navigate(`/tracking/${current.id}`)
   await wait(3500)
   onStep?.('done')
+
+  // Land on Yossi's live inbox — clear exit from tracking dead-end
+  switchRole('professional')
+  navigate('/pro/dashboard')
+  await wait(800)
 
   return current.id
 }

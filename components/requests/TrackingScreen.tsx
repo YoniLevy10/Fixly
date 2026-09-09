@@ -384,6 +384,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
                 requestId={request.id}
                 amountIls={request.quotedAmount}
                 paymentStatus={request.paymentStatus}
+                onPaid={(paid) => setRequest(paid)}
               />
               {request.professionalId && (
                 <Link

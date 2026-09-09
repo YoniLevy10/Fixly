@@ -133,6 +133,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       const updated = updateRequestStatus(id, status, {
         cancellationReason,
+        ...(quotedAmount != null ? { quotedAmount } : {}),
       })
       if (!updated) {
         return NextResponse.json({ error: 'לא נמצא' }, { status: 404 })

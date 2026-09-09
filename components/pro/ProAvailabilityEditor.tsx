@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 const DAYS = [
   { value: 0, key: 'sun' },
@@ -16,6 +17,27 @@ const DAYS = [
 
 type Rule = { dayOfWeek: number; startTime: string; endTime: string }
 
+const DEMO_AVAILABILITY_KEY = 'fixly-demo-pro-availability'
+
+function readDemoAvailability(): { rules: Rule[]; summary: string } | null {
+  if (typeof sessionStorage === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(DEMO_AVAILABILITY_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as { rules: Rule[]; summary: string }
+  } catch {
+    return null
+  }
+}
+
+function writeDemoAvailability(rules: Rule[], summary: string) {
+  if (typeof sessionStorage === 'undefined') return
+  sessionStorage.setItem(
+    DEMO_AVAILABILITY_KEY,
+    JSON.stringify({ rules, summary }),
+  )
+}
+
 export default function ProAvailabilityEditor() {
   const { user } = useAuth()
   const { t } = useLocale()
@@ -26,6 +48,24 @@ export default function ProAvailabilityEditor() {
 
   useEffect(() => {
     if (user.role !== 'professional') return
+    if (isDemoDataMode()) {
+      const local = readDemoAvailability()
+      if (local) {
+        setRules(local.rules ?? [])
+        setSummary(local.summary ?? '')
+        return
+      }
+      // Sensible demo defaults so the panel isn't empty
+      setRules([
+        { dayOfWeek: 0, startTime: '08:00', endTime: '16:00' },
+        { dayOfWeek: 1, startTime: '08:00', endTime: '18:00' },
+        { dayOfWeek: 2, startTime: '08:00', endTime: '18:00' },
+        { dayOfWeek: 3, startTime: '08:00', endTime: '18:00' },
+        { dayOfWeek: 4, startTime: '08:00', endTime: '18:00' },
+      ])
+      setSummary('זמין בימים א׳–ה׳ · חירום בתיאום')
+      return
+    }
     fetch('/api/pro/availability')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -48,6 +88,11 @@ export default function ProAvailabilityEditor() {
     setSaving(true)
     setSaved(false)
     try {
+      if (isDemoDataMode()) {
+        writeDemoAvailability(rules, summary)
+        setSaved(true)
+        return
+      }
       const res = await fetch('/api/pro/availability', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
