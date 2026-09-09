@@ -9,8 +9,8 @@ import {
   ingestFromAdapter,
   listProspects,
 } from '@/lib/prospects/service'
-import type { ProspectStatus } from '@/lib/prospects/types'
-import { PROSPECT_STATUSES } from '@/lib/prospects/types'
+import type { FitClass, ProspectStatus } from '@/lib/prospects/types'
+import { FIT_CLASSES, PROSPECT_STATUSES } from '@/lib/prospects/types'
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
@@ -26,6 +26,14 @@ export async function GET(request: Request) {
     const categoryId = url.searchParams.get('categoryId') ?? undefined
     const sourceName = url.searchParams.get('sourceName') ?? undefined
     const city = url.searchParams.get('city') ?? undefined
+    const fitClassParam = url.searchParams.get('fitClass') ?? undefined
+    const contactability =
+      (url.searchParams.get('contactability') as
+        | 'mobile'
+        | 'landline'
+        | 'unknown'
+        | 'none'
+        | null) ?? undefined
     const limit = Number(url.searchParams.get('limit') ?? 50)
     const offset = Number(url.searchParams.get('offset') ?? 0)
 
@@ -39,6 +47,16 @@ export async function GET(request: Request) {
       else if (valid.length > 1) status = valid
     }
 
+    let fitClass: FitClass | FitClass[] | undefined
+    if (fitClassParam) {
+      const parts = fitClassParam.split(',').map((s) => s.trim())
+      const valid = parts.filter((s): s is FitClass =>
+        (FIT_CLASSES as readonly string[]).includes(s),
+      )
+      if (valid.length === 1) fitClass = valid[0]
+      else if (valid.length > 1) fitClass = valid
+    }
+
     const [list, counters] = await Promise.all([
       listProspects(auth.admin, {
         q,
@@ -46,6 +64,8 @@ export async function GET(request: Request) {
         categoryId,
         sourceName,
         city,
+        fitClass,
+        contactability: contactability || undefined,
         limit: Number.isFinite(limit) ? limit : 50,
         offset: Number.isFinite(offset) ? offset : 0,
       }),

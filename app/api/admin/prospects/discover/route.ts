@@ -15,6 +15,8 @@ export const maxDuration = 300
 const discoverSchema = z.object({
   sources: z.array(z.enum(['google_places', 'osm'])).min(1).max(2).optional(),
   city: z.string().trim().min(1).max(100).optional(),
+  /** Opt-in only — default is cumulative merge */
+  replacePrevious: z.boolean().optional(),
 })
 
 export async function GET() {
@@ -46,10 +48,15 @@ export async function POST(request: Request) {
       actorUserId: auth.user.id,
       sources: parsed.data.sources,
       city: parsed.data.city,
+      replacePrevious: parsed.data.replacePrevious === true,
     })
-    return NextResponse.json(result, {
-      status: result.status === 'failed' && result.created === 0 ? 400 : 200,
-    })
+    const statusCode =
+      result.status === 'busy'
+        ? 409
+        : result.status === 'failed' && result.created === 0
+          ? 400
+          : 200
+    return NextResponse.json(result, { status: statusCode })
   } catch (error) {
     trackError(error, { route: 'POST /api/admin/prospects/discover' })
     return NextResponse.json({ error: 'Discovery failed' }, { status: 500 })

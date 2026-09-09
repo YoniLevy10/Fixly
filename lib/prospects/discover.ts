@@ -9,34 +9,43 @@ import {
 } from '@/lib/prospects/service'
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
 import {
+  getDiscoveryApiCallBudget,
   getDiscoveryPerCategoryCap,
   getDiscoveryTotalBudget,
   getRecruitCategorySlugs,
 } from '@/lib/prospects/config'
-import { scorePersonFit } from '@/lib/prospects/person-score'
+import { assessProspectFit } from '@/lib/prospects/fit-score'
+import {
+  hasRunningDiscovery,
+  loadQueryStats,
+  upsertQueryStats,
+} from '@/lib/prospects/query-stats-store'
 
 export type DiscoveryTrigger = 'cron' | 'manual'
 
 export type DiscoveryRunResult = {
   runId: string | null
-  status: 'completed' | 'failed'
+  status: 'completed' | 'failed' | 'busy'
   city: string
   sources: string[]
   found: number
   created: number
+  updated: number
   skipped: number
   errors: number
   deletedPrevious: number
   budget: number
+  apiCallBudget: number
   errorMessage?: string
   bySource: Record<
     string,
     {
       found: number
       created: number
+      updated: number
       skipped: number
       errors: string[]
-      stats?: Record<string, number | string[] | undefined>
+      stats?: Record<string, number | string | string[] | null | undefined>
     }
   >
 }
@@ -46,6 +55,8 @@ function buildAdapters(input?: {
   categorySlugs?: string[]
   city?: string
   totalBudget?: number
+  apiCallBudget?: number
+  queryStats?: Awaited<ReturnType<typeof loadQueryStats>>
 }): ProspectSourceAdapter[] {
   const wanted = new Set(input?.sources ?? ['google_places', 'osm'])
   const adapters: ProspectSourceAdapter[] = []
@@ -55,10 +66,12 @@ function buildAdapters(input?: {
     categorySlugs,
     city: input?.city ?? getDiscoveryCity(),
     totalBudget: budget,
+    apiCallBudget: input?.apiCallBudget ?? getDiscoveryApiCallBudget(),
     perCategoryLimit: Math.min(
       Math.ceil(budget / Math.max(1, categorySlugs.length)),
       getDiscoveryPerCategoryCap(),
     ),
+    queryStats: input?.queryStats,
   }
 
   if (wanted.has('google_places')) {
@@ -81,18 +94,42 @@ export async function runProspectDiscovery(
     sources?: Array<'google_places' | 'osm'>
     categorySlugs?: string[]
     city?: string
-    /** Default true: wipe prior Places/OSM leads that were not contacted yet */
+    /** Default false: cumulative merge. Opt-in wipe only. */
     replacePrevious?: boolean
   },
 ): Promise<DiscoveryRunResult> {
   const city = options.city ?? getDiscoveryCity()
   const budget = getDiscoveryTotalBudget()
-  const replacePrevious = options.replacePrevious !== false
+  const apiCallBudget = getDiscoveryApiCallBudget()
+  const replacePrevious = options.replacePrevious === true
+
+  if (await hasRunningDiscovery(admin)) {
+    return {
+      runId: null,
+      status: 'busy',
+      city,
+      sources: [],
+      found: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      errors: 1,
+      deletedPrevious: 0,
+      budget,
+      apiCallBudget,
+      errorMessage: 'ריצת גילוי כבר פעילה — נסו שוב בעוד כמה דקות',
+      bySource: {},
+    }
+  }
+
+  const queryStats = await loadQueryStats(admin, city).catch(() => [])
   const adapters = buildAdapters({
     sources: options.sources,
     categorySlugs: options.categorySlugs,
     city,
     totalBudget: budget,
+    apiCallBudget,
+    queryStats,
   })
 
   const sourceNames = adapters.map((a) => a.name)
@@ -116,9 +153,13 @@ export async function runProspectDiscovery(
   const bySource: DiscoveryRunResult['bySource'] = {}
   let found = 0
   let created = 0
+  let updated = 0
   let skipped = 0
   let errors = 0
   const topErrors: string[] = []
+  let stopReason: string | null = null
+  let totalApiCalls = 0
+  const queryYields: Array<Record<string, unknown>> = []
 
   if (adapters.length === 0) {
     const msg =
@@ -140,10 +181,12 @@ export async function runProspectDiscovery(
       sources: sourceNames,
       found: 0,
       created: 0,
+      updated: 0,
       skipped: 0,
       errors: 1,
       deletedPrevious: 0,
       budget,
+      apiCallBudget,
       errorMessage: msg,
       bySource,
     }
@@ -159,14 +202,27 @@ export async function runProspectDiscovery(
       bySource[adapter.name] = {
         found: 0,
         created: 0,
+        updated: 0,
         skipped: 0,
         errors: [],
       }
       try {
         const records = await adapter.fetchRecords()
         records.sort((a, b) => {
-          const sa = a.fitScore ?? scorePersonFit(a.name, a.businessName).score
-          const sb = b.fitScore ?? scorePersonFit(b.name, b.businessName).score
+          const sa =
+            a.fitScore ??
+            assessProspectFit({
+              name: a.name,
+              businessName: a.businessName,
+              phone: a.phone,
+            }).score
+          const sb =
+            b.fitScore ??
+            assessProspectFit({
+              name: b.name,
+              businessName: b.businessName,
+              phone: b.phone,
+            }).score
           return sb - sa
         })
         bySource[adapter.name].found = records.length
@@ -174,14 +230,20 @@ export async function runProspectDiscovery(
 
         if (adapter instanceof GooglePlacesProspectAdapter) {
           const s = adapter.lastStats
+          totalApiCalls += s.searchCalls
+          stopReason = stopReason ?? s.stopReason
           bySource[adapter.name].stats = {
             rawFetched: s.rawFetched,
             uniquePlaces: s.uniquePlaces,
             rejectedNoPhone: s.rejectedNoPhone,
             rejectedFilter: s.rejectedFilter,
             kept: s.kept,
+            suitable: s.suitable,
+            needsReview: s.needsReview,
             searchCalls: s.searchCalls,
+            stopReason: s.stopReason,
           }
+          queryYields.push(...s.queryYields)
           if (s.searchErrors.length > 0) {
             bySource[adapter.name].errors.push(...s.searchErrors.slice(0, 5))
             errors += s.searchErrors.length
@@ -189,6 +251,7 @@ export async function runProspectDiscovery(
               ...s.searchErrors.slice(0, 3).map((e) => `google_places: ${e}`),
             )
           }
+          await upsertQueryStats(admin, s.queryYields).catch(() => {})
         }
         if (adapter instanceof OsmOverpassProspectAdapter) {
           if (adapter.lastCategoryErrors.length > 0) {
@@ -214,22 +277,79 @@ export async function runProspectDiscovery(
           options.actorUserId,
         )
         bySource[adapter.name].created = result.created.length
+        bySource[adapter.name].updated = result.updated.length
         bySource[adapter.name].skipped = result.skipped.length
         bySource[adapter.name].errors.push(
           ...result.errors.map((e) => e.error),
         )
         created += result.created.length
+        updated += result.updated.length
         skipped += result.skipped.length
         errors += result.errors.length
         topErrors.push(
           ...result.errors.map((e) => `${adapter.name}: ${e.error}`),
         )
+
+        // Sightings (best-effort)
+        if (runId) {
+          const sightingRows = [
+            ...result.created.map((p) => ({
+              run_id: runId,
+              prospect_id: p.id,
+              source_name: adapter.name,
+              external_id: p.externalId,
+              outcome: 'kept',
+              fit_class: p.fitClass,
+              reason: 'created',
+            })),
+            ...result.updated.map((p) => ({
+              run_id: runId,
+              prospect_id: p.id,
+              source_name: adapter.name,
+              external_id: p.externalId,
+              outcome: 'updated',
+              fit_class: p.fitClass,
+              reason: 'merged',
+            })),
+            ...result.skipped.slice(0, 50).map((s) => ({
+              run_id: runId,
+              prospect_id: s.existingId ?? null,
+              source_name: adapter.name,
+              outcome: s.reason.startsWith('protected_')
+                ? 'duplicate'
+                : 'duplicate',
+              reason: s.reason,
+            })),
+          ]
+          if (sightingRows.length > 0) {
+            try {
+              await admin.from('prospect_discovery_sightings').insert(sightingRows)
+            } catch {
+              /* best-effort */
+            }
+          }
+        }
       } catch (e) {
         const message = e instanceof Error ? e.message : 'source failed'
         bySource[adapter.name].errors.push(message)
         errors += 1
         topErrors.push(`${adapter.name}: ${message}`)
       }
+    }
+
+    const details = {
+      bySource,
+      deletedPrevious,
+      budget,
+      apiCallBudget,
+      apiCalls: totalApiCalls,
+      stopReason,
+      created,
+      updated,
+      skipped,
+      queryYields: queryYields.slice(0, 40),
+      allErrors: topErrors.slice(0, 12),
+      replacePrevious,
     }
 
     if (runId) {
@@ -242,12 +362,7 @@ export async function runProspectDiscovery(
           skipped_count: skipped,
           error_count: errors,
           error_message: topErrors[0] ?? null,
-          details: {
-            bySource,
-            deletedPrevious,
-            budget,
-            allErrors: topErrors.slice(0, 12),
-          },
+          details,
           finished_at: new Date().toISOString(),
         })
         .eq('id', runId)
@@ -260,10 +375,12 @@ export async function runProspectDiscovery(
       sources: sourceNames,
       found,
       created,
+      updated,
       skipped,
       errors,
       deletedPrevious,
       budget,
+      apiCallBudget,
       errorMessage: topErrors[0],
       bySource,
     }
@@ -283,7 +400,11 @@ export async function runProspectDiscovery(
             bySource,
             deletedPrevious,
             budget,
+            apiCallBudget,
+            apiCalls: totalApiCalls,
+            updated,
             allErrors: [...topErrors, message].slice(0, 12),
+            replacePrevious,
           },
           finished_at: new Date().toISOString(),
         })
@@ -296,10 +417,12 @@ export async function runProspectDiscovery(
       sources: sourceNames,
       found,
       created,
+      updated,
       skipped,
       errors: errors + 1,
       deletedPrevious,
       budget,
+      apiCallBudget,
       errorMessage: message,
       bySource,
     }

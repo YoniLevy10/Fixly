@@ -8,8 +8,18 @@ import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { shouldKeepAsSoloProspect } from '@/lib/prospects/person-score'
+import {
+  contactabilityLabelHe,
+  fitClassLabelHe,
+} from '@/lib/prospects/fit-score'
 import { humanizeDiscoveryErrors } from '@/lib/prospects/humanize-discovery-error'
-import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/prospects/types'
+import {
+  FIT_CLASSES,
+  PROSPECT_STATUSES,
+  type Contactability,
+  type FitClass,
+  type ProspectStatus,
+} from '@/lib/prospects/types'
 
 type ProspectItem = {
   id: string
@@ -28,6 +38,10 @@ type ProspectItem = {
   verificationStatus: string
   notes: string | null
   fitScore?: number | null
+  fitClass?: FitClass | null
+  fitConfidence?: number | null
+  fitReasons?: string[] | null
+  contactability?: Contactability | null
   contactedAt: string | null
   createdAt: string
 }
@@ -44,6 +58,8 @@ type Counters = {
   byStatus: Record<string, number>
   byCategory: Array<{ categoryId: string | null; name: string; count: number }>
   byCity: Array<{ city: string; count: number }>
+  byFitClass?: Record<string, number>
+  needsReviewCount?: number
   total: number
   verifiedTarget: {
     city: string
@@ -85,6 +101,7 @@ type DiscoveryRunDetails = {
     {
       found?: number
       created?: number
+      updated?: number
       skipped?: number
       errors?: string[]
       stats?: {
@@ -93,13 +110,21 @@ type DiscoveryRunDetails = {
         rejectedNoPhone?: number
         rejectedFilter?: number
         kept?: number
+        suitable?: number
+        needsReview?: number
         searchCalls?: number
+        stopReason?: string | null
       }
     }
   >
   deletedPrevious?: number
   budget?: number
+  apiCallBudget?: number
+  apiCalls?: number
+  stopReason?: string | null
+  updated?: number
   allErrors?: string[]
+  replacePrevious?: boolean
 }
 
 type DiscoveryRun = {
@@ -135,6 +160,7 @@ function problemsForRun(run: DiscoveryRun): string[] {
 
 function placesFunnelForRun(run: DiscoveryRun): {
   rawFetched: number
+  uniquePlaces?: number
   rejectedNoPhone: number
   rejectedFilter: number
   kept: number
@@ -143,6 +169,7 @@ function placesFunnelForRun(run: DiscoveryRun): {
   if (!stats) return null
   return {
     rawFetched: stats.rawFetched ?? 0,
+    uniquePlaces: stats.uniquePlaces,
     rejectedNoPhone: stats.rejectedNoPhone ?? 0,
     rejectedFilter: stats.rejectedFilter ?? 0,
     kept: stats.kept ?? 0,
@@ -159,9 +186,12 @@ export default function ProspectsRecruitmentScreen() {
   const [error, setError] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
+  const [fitClass, setFitClass] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [sourceName, setSourceName] = useState('')
   const [city, setCity] = useState('')
+  const [replacePrevious, setReplacePrevious] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [detailId, setDetailId] = useState<string | null>(null)
   const [detail, setDetail] = useState<{
@@ -188,11 +218,12 @@ export default function ProspectsRecruitmentScreen() {
     const params = new URLSearchParams()
     if (q.trim()) params.set('q', q.trim())
     if (status) params.set('status', status)
+    if (fitClass) params.set('fitClass', fitClass)
     if (categoryId) params.set('categoryId', categoryId)
     if (sourceName.trim()) params.set('sourceName', sourceName.trim())
     if (city.trim()) params.set('city', city.trim())
     return params.toString()
-  }, [q, status, categoryId, sourceName, city])
+  }, [q, status, fitClass, categoryId, sourceName, city])
 
   const loadList = useCallback(async () => {
     setLoading(true)
@@ -303,9 +334,45 @@ export default function ProspectsRecruitmentScreen() {
       return
     }
     window.open(data.whatsappUrl, '_blank', 'noopener,noreferrer')
-    setActionMsg('נפתח קישור WhatsApp (ידני)')
+    setActionMsg('נפתח קישור WhatsApp — עדיין לא סומן כ«נוצר קשר»')
     await loadList()
     if (detailId === id) setDetailId(id)
+  }
+
+  const confirmWhatsAppSent = async (id: string) => {
+    setActionMsg(null)
+    const res = await fetch(`/api/admin/prospects/${id}/contact/confirm`, {
+      method: 'POST',
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setActionMsg(data.error ?? 'אישור שליחה נכשל')
+      return
+    }
+    setActionMsg('סומן שנשלחה הודעה (נוצר קשר)')
+    await loadList()
+    if (detailId === id) setDetailId(id)
+  }
+
+  const rejectWithReason = async (id: string) => {
+    setActionMsg(null)
+    const reason = rejectReason.trim() || 'נדחה ידנית'
+    const res = await fetch(`/api/admin/prospects/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        status: 'rejected',
+        notes: reason,
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setActionMsg(data.error ?? 'דחייה נכשלה')
+      return
+    }
+    setRejectReason('')
+    setActionMsg('הליד נדחה')
+    await loadList()
   }
 
   const runBulk = async (nextStatus: ProspectStatus) => {
@@ -430,7 +497,7 @@ export default function ProspectsRecruitmentScreen() {
       const res = await fetch('/api/admin/prospects/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ replacePrevious }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok && data.status !== 'completed') {
@@ -438,7 +505,7 @@ export default function ProspectsRecruitmentScreen() {
         return
       }
       setActionMsg(
-        `גילוי: נמחקו ${data.deletedPrevious ?? 0} קודמים · תקציב ${data.budget ?? 500} · נמצאו ${data.found ?? 0} · נשמרו ${data.created ?? 0} (ממוינים לפי דירוג)`,
+        `גילוי מצטבר: חדשים ${data.created ?? 0} · עודכנו ${data.updated ?? 0} · דולגו ${data.skipped ?? 0} · קריאות API ${data.bySource?.google_places?.stats?.searchCalls ?? '—'} · תקציב קריאות ${data.apiCallBudget ?? '—'}`,
       )
       await Promise.all([loadList(), loadRuns()])
     } finally {
@@ -501,6 +568,28 @@ export default function ProspectsRecruitmentScreen() {
             דחה חברות ({companyLikeOnPage.length})
           </button>
         </div>
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <label className="flex items-start gap-2 text-xs text-muted-foreground leading-snug">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={replacePrevious}
+              onChange={(e) => setReplacePrevious(e.target.checked)}
+            />
+            מחיקת לידים אוטומטיים לפני גילוי (אופציונלי — ברירת מחדל מיזוג מצטבר)
+          </label>
+          <button
+            type="button"
+            onClick={() => setFitClass('needs_review')}
+            className="rounded-xl border border-sky-600 text-sky-900 px-4 py-2 text-sm font-semibold whitespace-nowrap"
+          >
+            תור בדיקה (
+            {counters?.needsReviewCount ??
+              counters?.byFitClass?.needs_review ??
+              0}
+            )
+          </button>
+        </div>
       </div>
 
       {actionMsg && (
@@ -513,13 +602,14 @@ export default function ProspectsRecruitmentScreen() {
         <Card>
           <h2 className="font-bold mb-1">ריצות גילוי אחרונות</h2>
           <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-            לא כל תושבי ירושלים — רק אנשי מקצוע עצמאיים עם נייד (05x) שמופיעים
-            ב־Google Places / OSM. חברות, חנויות וטלפונים קוויים מסוננים החוצה.
+            גילוי מצטבר של מבצעי שירות אצל הלקוח (לא חנויות/רשתות). התאמה מקצועית
+            נפרדת מיכולת יצירת קשר (נייד/קווי). פתיחת WhatsApp אינה נספרת כשליחה.
           </p>
           <ul className="space-y-3">
             {runs.slice(0, 2).map((run) => {
               const problems = problemsForRun(run)
               const funnel = placesFunnelForRun(run)
+              const details = run.details
               const statusLabel = RUN_STATUS_LABELS[run.status] ?? run.status
               return (
                 <li
@@ -544,13 +634,13 @@ export default function ProspectsRecruitmentScreen() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
-                      <p className="text-[11px] text-muted-foreground">נמצאו</p>
+                      <p className="text-[11px] text-muted-foreground">גולמי/נמצאו</p>
                       <p className="text-lg font-extrabold tabular-nums">
                         {run.found_count}
                       </p>
                     </div>
                     <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
-                      <p className="text-[11px] text-muted-foreground">נשמרו</p>
+                      <p className="text-[11px] text-muted-foreground">חדשים</p>
                       <p className="text-lg font-extrabold tabular-nums">
                         {run.created_count}
                       </p>
@@ -562,11 +652,19 @@ export default function ProspectsRecruitmentScreen() {
                       </p>
                     </div>
                   </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    עודכנו {typeof details?.updated === 'number' ? details.updated : '—'}
+                    {' · '}
+                    קריאות API{' '}
+                    {typeof details?.apiCalls === 'number' ? details.apiCalls : '—'}
+                    {' · '}
+                    עצירה: {details?.stopReason ?? 'הושלם'}
+                    {details?.budget != null ? ` · תקציב תוצאות ${details.budget}` : ''}
+                  </p>
                   {funnel && funnel.rawFetched > 0 ? (
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Places סרק {funnel.rawFetched} · בלי טלפון{' '}
-                      {funnel.rejectedNoPhone} · חברה/לא נייד{' '}
-                      {funnel.rejectedFilter} · נשמרו לסינון {funnel.kept}
+                      Places סרק {funnel.rawFetched} · ייחודיים {funnel.uniquePlaces ?? '—'} ·
+                      נפסלו {funnel.rejectedFilter} · מתאימים/בדיקה {funnel.kept}
                     </p>
                   ) : null}
                   {problems.length > 0 ? (
@@ -636,7 +734,7 @@ export default function ProspectsRecruitmentScreen() {
       )}
 
       <Card>
-        <div className="grid md:grid-cols-5 gap-3">
+        <div className="grid md:grid-cols-6 gap-3">
           <div className="md:col-span-2">
             <Label>חיפוש</Label>
             <Input
@@ -647,7 +745,7 @@ export default function ProspectsRecruitmentScreen() {
             />
           </div>
           <div>
-            <Label>סטטוס</Label>
+            <Label>סטטוס גיוס</Label>
             <select
               className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
               value={status}
@@ -657,6 +755,21 @@ export default function ProspectsRecruitmentScreen() {
               {PROSPECT_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {STATUS_LABELS[s]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label>התאמה</Label>
+            <select
+              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
+              value={fitClass}
+              onChange={(e) => setFitClass(e.target.value)}
+            >
+              <option value="">הכל</option>
+              {FIT_CLASSES.map((c) => (
+                <option key={c} value={c}>
+                  {fitClassLabelHe(c)}
                 </option>
               ))}
             </select>
@@ -690,7 +803,7 @@ export default function ProspectsRecruitmentScreen() {
             <Input
               value={sourceName}
               onChange={(e) => setSourceName(e.target.value)}
-              placeholder="manual / csv / …"
+              placeholder="google_places / osm / manual"
               className="mt-1"
             />
           </div>
@@ -752,9 +865,22 @@ export default function ProspectsRecruitmentScreen() {
                   >
                     <div className="font-bold flex flex-wrap items-center gap-2">
                       <span className="break-words">{item.name}</span>
+                      {item.fitClass && (
+                        <span className="text-xs font-semibold rounded-md bg-sky-100 text-sky-900 px-2 py-0.5 shrink-0">
+                          {fitClassLabelHe(item.fitClass)}
+                          {typeof item.fitConfidence === 'number'
+                            ? ` · ${item.fitConfidence}%`
+                            : ''}
+                        </span>
+                      )}
                       {typeof item.fitScore === 'number' && (
                         <span className="text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 px-2 py-0.5 shrink-0">
-                          דירוג {item.fitScore}
+                          ציון {item.fitScore}
+                        </span>
+                      )}
+                      {item.contactability && (
+                        <span className="text-xs font-semibold rounded-md bg-slate-100 text-slate-800 px-2 py-0.5 shrink-0">
+                          קשר: {contactabilityLabelHe(item.contactability)}
                         </span>
                       )}
                     </div>
@@ -762,6 +888,11 @@ export default function ProspectsRecruitmentScreen() {
                       {item.businessName ? `${item.businessName} · ` : ''}
                       {item.categoryNameHe || item.categoryName || '—'} · {item.city}
                     </div>
+                    {item.fitReasons && item.fitReasons.length > 0 && (
+                      <div className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                        {item.fitReasons.slice(0, 4).join(' · ')}
+                      </div>
+                    )}
                     <div className="text-sm break-all" dir="ltr">
                       {item.phone || item.whatsappPhone || 'ללא טלפון'}
                     </div>
@@ -777,14 +908,25 @@ export default function ProspectsRecruitmentScreen() {
                   {(item.phone || item.whatsappPhone) &&
                     item.status !== 'rejected' &&
                     item.status !== 'do_not_contact' && (
-                      <button
-                        type="button"
-                        className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
-                        onClick={() => openWhatsApp(item.id)}
-                        title="פותח WhatsApp עם הודעת גיוס מוכנה"
-                      >
-                        WhatsApp
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
+                          onClick={() => openWhatsApp(item.id)}
+                          title="פותח קישור בלבד — לא מסמן נוצר קשר"
+                        >
+                          פתח WhatsApp
+                        </button>
+                        {item.status !== 'contacted' && (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold rounded-lg border border-green-700 text-green-800 px-2 py-1.5"
+                            onClick={() => confirmWhatsAppSent(item.id)}
+                          >
+                            סימנתי שנשלח
+                          </button>
+                        )}
+                      </>
                     )}
                   {item.status === 'discovered' && (
                     <button
@@ -807,7 +949,7 @@ export default function ProspectsRecruitmentScreen() {
                   <button
                     type="button"
                     className="text-xs rounded-lg border px-2 py-1"
-                    onClick={() => patchStatus(item.id, 'rejected')}
+                    onClick={() => rejectWithReason(item.id)}
                   >
                     דחה
                   </button>
@@ -847,18 +989,58 @@ export default function ProspectsRecruitmentScreen() {
                 {detail.prospect.categoryNameHe || detail.prospect.categoryName} ·{' '}
                 {detail.prospect.city} · {STATUS_LABELS[detail.prospect.status]}
               </p>
+              <p>
+                התאמה:{' '}
+                {fitClassLabelHe(detail.prospect.fitClass)} · ביטחון{' '}
+                {detail.prospect.fitConfidence ?? '—'}% · קשר:{' '}
+                {contactabilityLabelHe(detail.prospect.contactability)}
+              </p>
+              {detail.prospect.fitReasons && detail.prospect.fitReasons.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  סיבות: {detail.prospect.fitReasons.join(' · ')}
+                </p>
+              )}
               <p dir="ltr">{detail.prospect.phone || detail.prospect.whatsappPhone}</p>
               {(detail.prospect.phone || detail.prospect.whatsappPhone) &&
                 detail.prospect.status !== 'rejected' &&
                 detail.prospect.status !== 'do_not_contact' && (
-                  <button
-                    type="button"
-                    className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold"
-                    onClick={() => openWhatsApp(detail.prospect.id)}
-                  >
-                    פתח WhatsApp עם הודעת גיוס
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold"
+                      onClick={() => openWhatsApp(detail.prospect.id)}
+                    >
+                      פתח WhatsApp
+                    </button>
+                    {detail.prospect.status !== 'contacted' && (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-green-700 text-green-800 px-4 py-2 text-sm font-semibold"
+                        onClick={() => confirmWhatsAppSent(detail.prospect.id)}
+                      >
+                        סימנתי שנשלח
+                      </button>
+                    )}
+                  </div>
                 )}
+              <div className="flex flex-wrap gap-2 items-end">
+                <div className="flex-1 min-w-[12rem]">
+                  <Label>סיבת דחייה</Label>
+                  <Input
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder="למשל: חנות חומרים / לא מבצע שירות"
+                    className="mt-1"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="rounded-lg border px-4 py-2 text-sm"
+                  onClick={() => rejectWithReason(detail.prospect.id)}
+                >
+                  דחה עם סיבה
+                </button>
+              </div>
               {detail.prospect.sourceUrl && (
                 <p>
                   מקור:{' '}

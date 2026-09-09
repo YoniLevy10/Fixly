@@ -1,93 +1,100 @@
 # גיוס אנשי מקצוע (Prospects + Superadmin)
 
-**יעד:** אנשי מקצוע **פרטיים** בסגנון מידרג — שם אדם + מקצוע + נייד (05x), לא חנויות/רשתות/מוקדים.
+**יעד:** מבצעי שירות אצל הלקוח — עצמאים וצוותים קטנים בירושלים (ובהמשך ערים אחרות).  
+לא חנויות חומרים, רשתות או מוקדים.
 
-אין הסכם עם מידרג — **אין סקרייפינג או ייבוא אוטומטי ממידרג**.
-אין איסוף מקבוצות פייסבוק / Messenger / שיחות Meta — ראו סעיף Meta למטה.
+אין הסכם עם מידרג — **אין סקרייפינג ממידרג**.  
+אין איסוף מקבוצות פייסבוק / Messenger.
 
 ## ממשק
 
-- **[`/superadmin`](../app/superadmin/page.tsx)** — מסך הגיוס הוויזואלי (מונים, טבלה, אישור, WhatsApp, גילוי).
-- `/admin/prospects` מפנה ל־`/superadmin`.
-- כניסה: התחברות עם אימייל שמופיע ב־`ADMIN_EMAILS` או `app_metadata.role=admin`.
+- **[`/superadmin`](../app/superadmin/page.tsx)** — גיוס, תור בדיקה, WhatsApp ידני.
+- כניסה: אימייל ב־`ADMIN_EMAILS` או `app_metadata.role=admin`.
 
-## מקורות גילוי מותרים
+## דירוג התאמה (נפרד מסטטוס גיוס)
 
-| מקור | סוג | Env |
-|------|-----|-----|
-| Google Places API | API רשמי | `GOOGLE_PLACES_API_KEY` |
-| OpenStreetMap Overpass | נתונים פתוחים (ODbL) | לא נדרש |
-| הזנה ידנית / CSV | מנהל | — |
+| שדה | משמעות |
+|-----|--------|
+| `fit_class` | `suitable` / `needs_review` / `unsuitable` / `unknown` |
+| `fit_confidence` | 0–100 (כיול, לא מדע מדויק) |
+| `fit_reasons` | סיבות קריאות |
+| `contactability` | `mobile` / `landline` / `unknown` / `none` — **לא** קובע התאמה מקצועית |
 
-**סינון חובה אחרי גילוי:** שם בסגנון אדם / likely_person (score ≥ 55) **וגם** טלפון נייד ישראלי `05x`. קווי 02 / 1-700 / חנויות / חברות נזרקים. כפתור «דחה חברות» בממשק עדיין מחמיר (≥ 70).
-לידים ממוינים לפי `fit_score` (גבוה = מתאים יותר לפלטפורמה).
-בהרצת גילוי נמחקים אוטומטית לידים קודמים מ־Places/OSM בסטטוסים `discovered`/`verified`/`approved`/`rejected` (לא נוגעים ב־contacted / joined / DNC / ידני).
-תקציב חיפוש ברירת מחדל: **1200** תוצאות גולמיות (`FIXLY_DISCOVERY_TOTAL_BUDGET`), עם כיסוי שכונות בירושלים (פסגת זאב, רמות, גילה, תלפיות, …) — לא רק מרכז העיר.
+- מילים כמו «שירותי / התקנות / מערכות / פתרונות» **אינן** פוסלות אוטומטית.
+- שם ו־businessName זהים לא מקבלים קנס כפול.
+- שמות בעברית, ערבית ואנגלית נתמכים.
+- נייד ≠ WhatsApp מאומת.
 
-### איך משיגים Google Places key
+משקלים ב־[`lib/prospects/config.ts`](../lib/prospects/config.ts) (`FIT_WEIGHTS`).
 
-1. Google Cloud Console → יצירת פרויקט / בחירת פרויקט
-2. Enable **Places API** (New)
-3. Credentials → API key → הגבלה ל־Places בלבד
-4. Billing חייב להיות פעיל
-5. להוסיף ב־Vercel: `GOOGLE_PLACES_API_KEY=...`
+## מקורות גילוי
 
-## Meta / Facebook / WhatsApp — מה מותר ומה לא
+| מקור | Env |
+|------|-----|
+| Google Places API (New) | `GOOGLE_PLACES_API_KEY` |
+| OpenStreetMap Overpass | — |
+| ידני / CSV | — |
 
-בדיקה מול מדיניות Meta (Platform Terms + Automated Data Collection + WhatsApp Business Policy):
+### Places — מה מופעל
 
-| פעולה | מותר? | הערה |
-|--------|--------|------|
-| משיכה אוטומטית משיחות / קבוצות Facebook / Messenger | **לא** | Meta אוסרת איסוף נתונים ב־automated means בלי אישור כתוב מראש; רק דרך Platform APIs הרשמיים (וקבוצות/הודעות כמעט לא חשופות לכך לגיוס לידים) |
-| סקרייפינג פרופילים/פוסטים מקבוצות בעלי מקצוע | **לא** | מפר [תנאי שימוש](https://www.facebook.com/terms) סעיף 3.2.3 ו־[Automated Data Collection](https://developers.facebook.com/docs/development/terms-and-policies/automated-data-collection/) |
-| שליחת WhatsApp Business API / תבניות בלי opt-in | **לא** | [WhatsApp Business Policy](https://www.whatsapp.com/legal/business-policy): נדרש מספר שניתן ע״י האדם + הסכמה לקבל הודעות |
-| פתיחת `wa.me` ידנית מהטלפון האישי שלך לליד שמצאת ממקור חוקי | **כן (מוצר נוכחי)** | אין שליחה אוטומטית מהמערכת; אתה שולח ידנית. עדיין לכבד בקשות «אל תיצור קשר» ודין ספאם ישראלי |
-| שותפות / API רשמי עם Meta אחרי אישור | רק עם אישור Meta | לא רלוונטי כרגע |
+- `includePureServiceAreaBusinesses: true`
+- Pagination עם `pageToken` / `nextPageToken` (חובה ב־FieldMask)
+- תקציב **קריאות API**: `FIXLY_DISCOVERY_API_CALL_BUDGET` (ברירת מחדל 80)
+- תקציב תוצאות גולמיות: `FIXLY_DISCOVERY_TOTAL_BUDGET` (1200)
+- תור שאילתות עם רוטציה לפי `prospect_query_stats` (~15% ניסוי)
+- שאילתות HE / AR / EN + שכונות ירושלים; שאילתות פשוטות (לא תמיד «מומלץ/נייד»)
+- FieldMask מינימלי: id, displayName, address, phones, website, maps, types, pureServiceAreaBusiness, nextPageToken  
+  (שדות Enterprise כמו ביקורות/תמונות **לא** נמשכים — עלות גבוהה יותר)
 
-**מסקנה ל־Fixly:** לא בונים שאיבה משיחות Meta. הגיוס נשאר Places/OSM + הזנה ידנית, ואתה פונה בוואטסאפ ידנית מהטלפון שלך.
+### גאוגרפיה
 
-## סוכן אוטומטי
+- פרופיל עיר ב־`getCityGeoProfile` — שינוי `FIXLY_RECRUIT_CITY` (+ אופציונלי `FIXLY_RECRUIT_CITY_LAT/LNG/RADIUS_M`) משנה bbox/bias.
+- `business_address` / `search_city` נשמרים בנפרד; **אין** סימון אוטומטי של אזור שירות מאומת רק כי הופיע בשאילתה.
 
-- Cron יומי: `GET /api/cron/discover-prospects` (Bearer `CRON_SECRET`) — רשום ב־`vercel.json` ב־07:00 UTC
-- הרצה ידנית: כפתור **הרץ גילוי עכשיו** ב־`/superadmin` → `POST /api/admin/prospects/discover`
-- לוג ריצות: טבלת `prospect_discovery_runs`
-- שאילתות Places מכוונות ל־«מומלץ / נייד / עצמאי / עד הבית» (סגנון מידרג), לא לחנויות קרמיקה
+### גילוי מצטבר
+
+- ברירת מחדל: **ללא מחיקה** (`replacePrevious=false`).
+- כפילות → מיזוג (קטגוריות נוספות, fit, last_seen) בלי לדרוס `rejected` / DNC / contacted+.
+- נעילה אם יש ריצה ב־`status=running`.
 
 ## WhatsApp
 
-אין שליחה אוטומטית. בכל ליד עם טלפון (חוץ מ־`rejected` / `do_not_contact`) יש כפתור **WhatsApp** שפותח `wa.me` עם הודעת גיוס מוכנה מהטלפון שלך.
-לחיצה על הקישור מאשרת אוטומטית לידים ב־`discovered`/`verified` ומעדכנת ל־`contacted`.
-מספר בקשות מתווסף להודעה **רק** אם יש ספירה אמיתית של בקשות פעילות מתאימות.
+1. **פתח WhatsApp** → `contact_link_opened` בלבד (לא `contacted`).
+2. **סימנתי שנשלח** → `POST .../contact/confirm` → `contacted`.
 
-## משפך סטטוסים
+אין שליחה אוטומטית.
 
-`discovered → verified → approved → contacted → interested → joined → active`
+## מיגרציות
 
-בנוסף: `rejected`, `do_not_contact`.
+1. `20260909010000_professional_prospects.sql`
+2. `20260909120000_prospect_discovery_runs.sql`
+3. `20260909140000_expand_recruit_categories.sql`
+4. `20260909150000_prospect_fit_score.sql`
+5. **`20260909160000_prospect_fit_quality.sql`** — fit_class, contactability, categories junction, sightings, query_stats
 
-## קישור להצטרפות
+## משתני סביבה
 
-`/pro/join` עם אותו טלפון → ליד עובר ל־`joined` (בלי ליצור `professionals` כפול).
-Claim פרופיל עם טלפון תואם → `active`.
+| מפתח | תיאור |
+|------|--------|
+| `GOOGLE_PLACES_API_KEY` | חובה לגילוי Places |
+| `ADMIN_EMAILS` | גישת Superadmin |
+| `FIXLY_RECRUIT_CITY` | ברירת מחדל ירושלים |
+| `FIXLY_RECRUIT_CITY_LAT/LNG/RADIUS_M` | גאו לעיר שאינה ירושלים |
+| `FIXLY_DISCOVERY_TOTAL_BUDGET` | תוצאות גולמיות |
+| `FIXLY_DISCOVERY_API_CALL_BUDGET` | קריאות Places לריצה |
+| `FIXLY_DISCOVERY_PER_CATEGORY_CAP` | תקרת שמירה לקטגוריה |
+| `FIXLY_RECRUIT_CATEGORY_SLUGS` | אופציונלי, CSV של slugs |
 
-## יעד גיוס (ירושלים)
+## מדידת לפני/אחרי (מדגם 100)
 
-19 קטגוריות בית (כולל **ריצוף וקרמיקה**, שיפוצים, איטום, אלומיניום, גבס, סולאר/דודים, תיקון מכשירים, הדברה, זגגות, ריהוט) × 10 לידים מאומתים = יעד ברירת מחדל.
+1. ייצוא CSV לפני השדרוג (או snapshot).
+2. הרצת גילוי מצטבר אחרי דיפלוי + מיגרציה.
+3. ייצוא כולל `fit_class`, `fit_reasons`, `contactability`.
+4. סימון ידני של 100: TP/FP ל־suitable, ודיוק על unsuitable שנדחו.
+5. השוואת: ייחודיים חדשים מתאימים / קריאות API / זמן סינון ידני.
 
-## Migrations (להחיל על Production)
+## מה לא אומת מול שירות חי במסגרת הפיתוח
 
-1. `supabase/migrations/20260909010000_professional_prospects.sql`
-2. `supabase/migrations/20260909120000_prospect_discovery_runs.sql`
-3. `supabase/migrations/20260909140000_expand_recruit_categories.sql`
-4. `supabase/migrations/20260909150000_prospect_fit_score.sql`
-
-## Env נדרש
-
-```bash
-ADMIN_EMAILS=you@example.com
-CRON_SECRET=long-random
-GOOGLE_PLACES_API_KEY=your-places-key
-# optional:
-# FIXLY_RECRUIT_CITY=ירושלים
-# FIXLY_RECRUIT_CATEGORY_SLUGS=plumbing,electricity,...
-```
+- תגובות אמיתיות של Google Places / Overpass בפרוד
+- עלות חיוב מדויקת בחשבון Google (מוצג רק מספר קריאות / הערכה מסומנת)
+- דיוק השאילתות הערביות מול תוצאות מקומיות

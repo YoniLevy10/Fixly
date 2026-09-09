@@ -1,16 +1,16 @@
 import type { ProspectSourceAdapter } from '@/lib/prospects/adapters/types'
 import type { ProspectSourceRecord } from '@/lib/prospects/types'
 import {
-  JERUSALEM_BBOX,
+  getCityGeoProfile,
   getDiscoveryCity,
   getDiscoveryMappingsForSlugs,
   type DiscoveryCategoryMapping,
 } from '@/lib/prospects/discovery-mapping'
 import { getRecruitCategorySlugs } from '@/lib/prospects/config'
 import {
-  scorePersonFit,
+  assessProspectFit,
   shouldKeepDiscoveredProspect,
-} from '@/lib/prospects/person-score'
+} from '@/lib/prospects/fit-score'
 
 type OsmElement = {
   type: 'node' | 'way' | 'relation'
@@ -38,7 +38,7 @@ const DEFAULT_OVERPASS = 'https://overpass-api.de/api/interpreter'
 
 /**
  * Legal discovery via OpenStreetMap Overpass API (ODbL).
- * No API key. Phone coverage is sparse — only records with phone are kept.
+ * Bbox follows recruit city geo profile (not hardcoded Jerusalem when city changes).
  */
 export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
   readonly name = 'osm'
@@ -48,6 +48,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
   private readonly perCategoryLimit: number
   private readonly endpoint: string
   private readonly fetchImpl: typeof fetch
+  lastCategoryErrors: string[] = []
 
   constructor(options: OsmAdapterOptions = {}) {
     this.city = options.city ?? getDiscoveryCity()
@@ -80,46 +81,71 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
         seen.add(externalId)
 
         const tags = el.tags ?? {}
-        const phone = (tags.phone || tags['contact:phone'] || tags.mobile || '').trim()
-        if (!phone) continue
+        const phone = (
+          tags.phone ||
+          tags['contact:phone'] ||
+          tags.mobile ||
+          ''
+        ).trim()
 
         const name =
           tags.name?.trim() ||
           tags['name:he']?.trim() ||
+          tags['name:ar']?.trim() ||
+          tags['name:en']?.trim() ||
           tags.operator?.trim() ||
           mapping.placesQueryHe
+
+        const website = tags.website || tags['contact:website'] || null
+        const address = tags['addr:street']
+          ? `${tags['addr:street']}${tags['addr:housenumber'] ? ' ' + tags['addr:housenumber'] : ''}`
+          : null
+
+        const assessment = assessProspectFit({
+          name,
+          businessName: name,
+          phone: phone || null,
+          websiteUrl: website,
+          address,
+        })
 
         if (
           !shouldKeepDiscoveredProspect({
             name,
             businessName: name,
-            phone,
+            phone: phone || null,
+            websiteUrl: website,
+            address,
           })
         ) {
           continue
         }
 
-        const fit = scorePersonFit(name, name)
-        const sourceUrl = tags.website || tags['contact:website'] || null
-
         out.push({
           name,
           businessName: name,
-          phone,
-          whatsappPhone: phone,
+          phone: phone || null,
+          whatsappPhone:
+            assessment.contactability === 'mobile' ? phone || null : null,
           city: this.city,
+          searchCity: this.city,
+          businessAddress: address,
           categorySlug: mapping.slug,
           sourceName: 'osm',
-          sourceUrl,
+          sourceUrl: website,
           externalId,
           notes: [
-            tags['addr:street'] ? `רחוב: ${tags['addr:street']}` : null,
+            address ? `רחוב: ${address}` : null,
             'מקור: OpenStreetMap (ODbL)',
-            `דירוג התאמה: ${fit.score} (${fit.kind}) · נייד`,
+            `דירוג: ${assessment.score} · ${assessment.fitClass} · קשר: ${assessment.contactability}`,
           ]
             .filter(Boolean)
             .join(' · '),
-          fitScore: fit.score,
+          fitScore: assessment.score,
+          fitClass: assessment.fitClass,
+          fitConfidence: assessment.confidence,
+          fitReasons: assessment.reasons,
+          contactability: assessment.contactability,
           verificationStatus: 'unverified',
         })
       }
@@ -136,11 +162,8 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
     return out
   }
 
-  /** Partial Overpass failures (per category) from the last fetch. */
-  lastCategoryErrors: string[] = []
-
   buildOverpassQuery(mapping: DiscoveryCategoryMapping): string {
-    const { south, west, north, east } = JERUSALEM_BBOX
+    const { south, west, north, east } = getCityGeoProfile(this.city).bbox
     const bbox = `${south},${west},${north},${east}`
     const parts = mapping.osmFilters.flatMap((filter) => {
       const [k, v] = filter.split('=')
