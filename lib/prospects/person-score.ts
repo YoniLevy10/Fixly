@@ -45,17 +45,119 @@ const PERSON_HINTS = [
   /מומלץ/,
 ]
 
-/** Rough Hebrew personal-name shape: 2–4 short words without company markers. */
+/** Words that are trade / place / commercial — not a person's given name. */
+const NON_PERSONAL_WORDS = new Set(
+  [
+    'אינסטלטור',
+    'אינסטלציה',
+    'אינסטלטורים',
+    'חשמלאי',
+    'חשמל',
+    'חשמלאים',
+    'צבעי',
+    'צבעים',
+    'נגר',
+    'נגרות',
+    'מנעולן',
+    'מנעולים',
+    'גנן',
+    'גינון',
+    'הובלה',
+    'הובלות',
+    'רצף',
+    'ריצוף',
+    'ניקיון',
+    'מנקה',
+    'מזגן',
+    'מזגנים',
+    'מיזוג',
+    'טכנאי',
+    'טכנאים',
+    'שירות',
+    'שירותים',
+    'מוסמך',
+    'מוסמכים',
+    'דירות',
+    'בתים',
+    'בית',
+    'פרטי',
+    'פרטית',
+    'נייד',
+    'ירושלים',
+    'תל',
+    'אביב',
+    'חיפה',
+    'באר',
+    'שבע',
+    'ראשון',
+    'לציון',
+    'פתח',
+    'תקווה',
+    'מודיעין',
+    'ביתר',
+    'עילית',
+    'מעלה',
+    'אדומים',
+    'אזור',
+    'מרכז',
+    'צפון',
+    'דרום',
+    'מערב',
+    'מזרח',
+    'כללי',
+    'מהיר',
+    'זול',
+    'מקצועי',
+    'מקצועית',
+    'התקנה',
+    'תיקון',
+    'תיקונים',
+    'עבודות',
+    'קבלן',
+    'קבלנים',
+    'חברה',
+    'בעמ',
+    "בע\"מ",
+    'ltd',
+    'group',
+  ].map((w) => w.toLowerCase()),
+)
+
+function normalizeWord(w: string): string {
+  return w.replace(/["""''׳״.,]/g, '').trim().toLowerCase()
+}
+
+function isLikelyPersonalWord(word: string): boolean {
+  const w = normalizeWord(word)
+  if (w.length < 2) return false
+  if (NON_PERSONAL_WORDS.has(w)) return false
+  // Pure digits / Latin brand tokens
+  if (/^[0-9]+$/.test(w)) return false
+  if (/^[a-z0-9.&-]{3,}$/i.test(w) && !/[\u0590-\u05FF]/.test(w)) return false
+  return /[\u0590-\u05FF]{2,}/.test(w)
+}
+
+/**
+ * Person-shaped: 2–4 words with at least one personal-looking token
+ * (e.g. "דני אינסטלטור", "יוסי כהן") — not pure trade+city ("אינסטלציה ירושלים").
+ */
 function looksLikePersonName(raw: string): boolean {
   const name = raw.trim()
   if (!name) return false
   const words = name.split(/\s+/).filter(Boolean)
   if (words.length < 2 || words.length > 4) return false
-  // Prefer Hebrew letters in most words
+  if (/^[A-Z0-9\s.&-]{6,}$/.test(name)) return false
+
+  const personal = words.filter(isLikelyPersonalWord)
+  if (personal.length < 1) return false
+
+  // Need enough Hebrew content overall
   const hebrewWords = words.filter((w) => /[\u0590-\u05FF]{2,}/.test(w))
   if (hebrewWords.length < 2) return false
-  // Avoid all-caps Latin brands
-  if (/^[A-Z0-9\s.&-]{6,}$/.test(name)) return false
+
+  // If every word is non-personal trade/geo, reject
+  if (words.every((w) => NON_PERSONAL_WORDS.has(normalizeWord(w)))) return false
+
   return true
 }
 
@@ -85,7 +187,7 @@ export function scorePersonFit(name: string, businessName?: string | null): Pers
     score += 25
     reasons.push('business_looks_like_person')
   } else {
-    score -= 10
+    score -= 15
     reasons.push('not_person_shaped')
   }
 
