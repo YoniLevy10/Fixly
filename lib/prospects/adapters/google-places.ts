@@ -7,6 +7,10 @@ import {
   type DiscoveryCategoryMapping,
 } from '@/lib/prospects/discovery-mapping'
 import { getRecruitCategorySlugs } from '@/lib/prospects/config'
+import {
+  scorePersonFit,
+  shouldKeepAsSoloProspect,
+} from '@/lib/prospects/person-score'
 
 type PlacesTextSearchResult = {
   places?: Array<{
@@ -78,6 +82,13 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
           place.internationalPhoneNumber?.trim() ||
           null
         if (!phone) continue
+        if (!shouldKeepAsSoloProspect(name, name)) continue
+
+        const fit = scorePersonFit(name, name)
+        const addressNote = place.formattedAddress
+          ? `כתובת: ${place.formattedAddress}`
+          : null
+        const fitNote = `התאמת פרטי: ${fit.kind} (${fit.score})`
 
         out.push({
           name,
@@ -89,13 +100,17 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
           sourceName: 'google_places',
           sourceUrl: place.googleMapsUri || place.websiteUri || null,
           externalId: placeId,
-          notes: place.formattedAddress
-            ? `כתובת: ${place.formattedAddress}`
-            : null,
+          notes: [addressNote, fitNote].filter(Boolean).join(' · '),
           verificationStatus: 'unverified',
         })
       }
     }
+
+    out.sort((a, b) => {
+      const sa = scorePersonFit(a.name, a.businessName).score
+      const sb = scorePersonFit(b.name, b.businessName).score
+      return sb - sa
+    })
 
     return out
   }

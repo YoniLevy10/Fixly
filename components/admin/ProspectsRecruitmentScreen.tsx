@@ -360,7 +360,7 @@ export default function ProspectsRecruitmentScreen() {
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
           <h1 className="text-3xl font-bold mt-1">גיוס אנשי מקצוע</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            סוכן גילוי חוקי (Places + OSM) · WhatsApp ידני מהטלפון שלך · יעד{' '}
+            גילוי פרטיים (לא חברות) · WhatsApp עם הודעה מוכנה על כל ליד · יעד{' '}
             {targetTotal} בירושלים
           </p>
           {!authLoading && (
@@ -583,7 +583,19 @@ export default function ProspectsRecruitmentScreen() {
                   </div>
                 </button>
                 <div className="text-sm font-semibold">{STATUS_LABELS[item.status]}</div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 items-center">
+                  {(item.phone || item.whatsappPhone) &&
+                    item.status !== 'rejected' &&
+                    item.status !== 'do_not_contact' && (
+                      <button
+                        type="button"
+                        className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
+                        onClick={() => openWhatsApp(item.id)}
+                        title="פותח WhatsApp עם הודעת גיוס מוכנה"
+                      >
+                        WhatsApp
+                      </button>
+                    )}
                   {item.status === 'discovered' && (
                     <button
                       type="button"
@@ -600,21 +612,6 @@ export default function ProspectsRecruitmentScreen() {
                       onClick={() => patchStatus(item.id, 'approved')}
                     >
                       אשר
-                    </button>
-                  )}
-                  {[
-                    'approved',
-                    'contacted',
-                    'interested',
-                    'joined',
-                    'active',
-                  ].includes(item.status) && (
-                    <button
-                      type="button"
-                      className="text-xs rounded-lg bg-green-600 text-white px-2 py-1"
-                      onClick={() => openWhatsApp(item.id)}
-                    >
-                      WhatsApp
                     </button>
                   )}
                   <button
@@ -661,6 +658,17 @@ export default function ProspectsRecruitmentScreen() {
                 {detail.prospect.city} · {STATUS_LABELS[detail.prospect.status]}
               </p>
               <p dir="ltr">{detail.prospect.phone || detail.prospect.whatsappPhone}</p>
+              {(detail.prospect.phone || detail.prospect.whatsappPhone) &&
+                detail.prospect.status !== 'rejected' &&
+                detail.prospect.status !== 'do_not_contact' && (
+                  <button
+                    type="button"
+                    className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold"
+                    onClick={() => openWhatsApp(detail.prospect.id)}
+                  >
+                    פתח WhatsApp עם הודעת גיוס
+                  </button>
+                )}
               {detail.prospect.sourceUrl && (
                 <p>
                   מקור:{' '}

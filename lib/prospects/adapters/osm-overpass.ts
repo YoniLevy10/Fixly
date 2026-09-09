@@ -7,6 +7,7 @@ import {
   type DiscoveryCategoryMapping,
 } from '@/lib/prospects/discovery-mapping'
 import { getRecruitCategorySlugs } from '@/lib/prospects/config'
+import { shouldKeepAsSoloProspect } from '@/lib/prospects/person-score'
 
 type OsmElement = {
   type: 'node' | 'way' | 'relation'
@@ -74,6 +75,8 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
           tags['name:he']?.trim() ||
           tags.operator?.trim() ||
           mapping.placesQueryHe
+
+        if (!shouldKeepAsSoloProspect(name, name)) continue
 
         const sourceUrl = tags.website || tags['contact:website'] || null
 

@@ -106,6 +106,11 @@ describe('GooglePlacesProspectAdapter', () => {
                 formattedAddress: 'ירושלים',
               },
               {
+                id: 'places/company',
+                displayName: { text: 'שירותי אינסטלציה בע״מ' },
+                nationalPhoneNumber: '02-555-2222',
+              },
+              {
                 id: 'places/no-phone',
                 displayName: { text: 'בלי טלפון' },
               },
@@ -121,5 +126,19 @@ describe('GooglePlacesProspectAdapter', () => {
     assert.equal(records[0].externalId, 'places/abc')
     assert.equal(records[0].categorySlug, 'plumbing')
     assert.ok(records[0].phone)
+  })
+})
+
+describe('person-score solo filter', () => {
+  it('keeps person-shaped names and drops companies', async () => {
+    const { shouldKeepAsSoloProspect, scorePersonFit } = await import(
+      '@/lib/prospects/person-score'
+    )
+    assert.equal(shouldKeepAsSoloProspect('יוסי כהן'), true)
+    assert.equal(shouldKeepAsSoloProspect('דני אינסטלטור'), true)
+    assert.equal(shouldKeepAsSoloProspect('שירותי אינסטלציה בע״מ'), false)
+    assert.equal(shouldKeepAsSoloProspect('חברת הובלות ארציות'), false)
+    assert.ok(scorePersonFit('יוסי כהן').score >= 55)
+    assert.ok(scorePersonFit('מרכז שירות מזגנים').score < 55)
   })
 })

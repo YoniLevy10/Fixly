@@ -550,12 +550,23 @@ export async function prepareContactLink(
   const current = await getProspectById(admin, id)
   if (!current) throw new Error('Prospect not found')
 
-  const { prospect } = current
-  if (!isContactAllowed(prospect.status)) {
-    throw new Error('ניתן ליצור קשר רק אחרי אישור (approved) ומעלה')
-  }
+  let { prospect } = current
   if (prospect.status === 'do_not_contact' || prospect.status === 'rejected') {
     throw new Error('אין ליצור קשר עם ליד זה')
+  }
+
+  // One-click outreach: approving is implicit when admin opens WhatsApp
+  if (prospect.status === 'discovered' || prospect.status === 'verified') {
+    prospect = await updateProspect(
+      admin,
+      id,
+      { status: 'approved' },
+      actorUserId,
+    )
+  }
+
+  if (!isContactAllowed(prospect.status) && prospect.status !== 'approved') {
+    throw new Error('ניתן ליצור קשר רק אחרי אישור (approved) ומעלה')
   }
 
   const phone = prospect.whatsappPhone || prospect.phone
