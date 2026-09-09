@@ -37,6 +37,8 @@ const demoRequestSchema = z.object({
   proLocationUpdatedAt: z.string().optional(),
   liveTrackingActive: z.boolean().optional(),
   matchMode: z.enum(['single', 'multi']).optional(),
+  quotedAmount: z.number().finite().nonnegative().optional(),
+  paymentStatus: z.string().trim().max(32).optional(),
 })
 
 export async function PUT(request: Request) {
