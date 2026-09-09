@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -20,14 +19,6 @@ export default function DemoModeBanner() {
   const router = useRouter()
   const pathname = usePathname()
   const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
-
-  useEffect(() => {
-    if (tourRunning || tourError || !tourStep) return
-    const tmr = window.setTimeout(() => {
-      /* step owned by provider — leave visible briefly after success */
-    }, 2500)
-    return () => window.clearTimeout(tmr)
-  }, [tourRunning, tourError, tourStep])
 
   const isMarketingSurface =
     pathname === '/waitlist' || pathname.startsWith('/go/')

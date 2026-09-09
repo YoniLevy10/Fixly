@@ -32,6 +32,7 @@ import {
   DEMO_TOUR_EVENT,
   readTourRequest,
 } from '@/lib/demo/tour-session'
+import { useDemoTour } from '@/components/demo/DemoTourProvider'
 import Link from 'next/link'
 import { routes } from '@/lib/routes'
 import ProLocationSharing from '@/components/pro/ProLocationSharing'
@@ -48,18 +49,26 @@ type TabKey = 'pending' | 'active' | 'done' | 'stats'
 export default function ProDashboardScreen() {
   const { user, claimProfessionalProfile } = useAuth()
   const { locale, t } = useLocale()
+  const { tourRunning } = useDemoTour()
   const { requests: apiRequests, loading, refresh } = useRequestsList({
     scope: user.role === 'professional' ? 'pro' : undefined,
   })
 
-  // Merge investor-tour snapshot so the pro dashboard isn't empty across Vercel isolates
+  // Merge investor-tour snapshot only while the tour is actively running
   const [tourRequest, setTourRequest] = useState<MockRequest | null>(null)
   useEffect(() => {
     if (!isDemoDataMode()) return
-    const sync = () => setTourRequest(readTourRequest())
+    const sync = () => {
+      if (!tourRunning) {
+        setTourRequest(null)
+        return
+      }
+      setTourRequest(readTourRequest())
+    }
     sync()
     const onTour = (event: Event) => {
-      setTourRequest((event as CustomEvent<MockRequest>).detail ?? null)
+      const detail = (event as CustomEvent<MockRequest | null>).detail
+      setTourRequest(tourRunning ? detail ?? null : null)
     }
     window.addEventListener(DEMO_TOUR_EVENT, onTour)
     const poll = window.setInterval(sync, 1000)
@@ -67,13 +76,13 @@ export default function ProDashboardScreen() {
       window.removeEventListener(DEMO_TOUR_EVENT, onTour)
       window.clearInterval(poll)
     }
-  }, [])
+  }, [tourRunning])
 
   const requests = useMemo(() => {
-    if (!tourRequest) return apiRequests
+    if (!tourRunning || !tourRequest) return apiRequests
     const others = apiRequests.filter((r) => r.id !== tourRequest.id)
     return [tourRequest, ...others]
-  }, [apiRequests, tourRequest])
+  }, [apiRequests, tourRequest, tourRunning])
 
   useRequestsListRealtime(refresh, {
     professionalId: user.professionalId,
@@ -84,9 +93,12 @@ export default function ProDashboardScreen() {
   const [cancellationReason, setCancellationReason] = useState('')
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
 
-  // Auto-focus the live tour job so investors see accept / status advances
+  // Auto-focus the live tour job only while the walkthrough is running
   useEffect(() => {
-    if (!tourRequest) return
+    if (!tourRunning || !tourRequest) {
+      if (!tourRunning) setSelectedRequest(null)
+      return
+    }
     setSelectedRequest(tourRequest)
     if (tourRequest.status === 'pending') setActiveTab('pending')
     else if (
@@ -98,7 +110,7 @@ export default function ProDashboardScreen() {
     } else if (tourRequest.status === 'completed') {
       setActiveTab('done')
     }
-  }, [tourRequest])
+  }, [tourRequest, tourRunning])
   const [proBilling, setProBilling] = useState<{
     subscription_tier: string
     lead_credits: number

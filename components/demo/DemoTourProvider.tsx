@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useAuth } from '@/lib/auth/auth-provider'
 import {
+  finishInvestorDemoTour,
   runInvestorDemoTour,
   type DemoTourStepId,
 } from '@/lib/demo/investor-tour'
@@ -31,6 +32,9 @@ const DemoTourContext = createContext<DemoTourContextValue | null>(null)
  * Layout-level tour controller — survives route changes.
  * Critical: /demo must NOT own the AbortController, or navigating to
  * /tracking aborts the walkthrough mid-flight.
+ *
+ * Lifecycle: start → steps → done → hard exit (clear session, home, idle UI).
+ * Stop / abort uses the same hard exit so the pro dashboard never stays stuck.
  */
 export function DemoTourProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
@@ -45,13 +49,21 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   routerRef.current = router
   switchRef.current = switchDemoRole
 
-  const stopTour = useCallback(() => {
-    abortRef.current?.abort()
-    abortRef.current = null
+  const exitTourUi = useCallback(() => {
+    finishInvestorDemoTour({
+      switchRole: (role) => switchRef.current(role),
+      navigate: (path) => routerRef.current.push(path),
+    })
     runningRef.current = false
     setTourRunning(false)
     setTourStep(null)
   }, [])
+
+  const stopTour = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    exitTourUi()
+  }, [exitTourUi])
 
   const startTour = useCallback(async () => {
     if (!isDemoDataMode()) return
@@ -73,16 +85,25 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
         onStep: setTourStep,
         signal: ac.signal,
       })
+      // Successful finish already called finishInvestorDemoTour inside the runner
+      if (abortRef.current === ac) abortRef.current = null
+      runningRef.current = false
+      setTourRunning(false)
+      setTourStep(null)
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        // stopTour already ran exitTourUi
+        return
+      }
       console.error('[demo-tour]', err)
       setTourError(err instanceof Error ? err.message : 'הסיור נכשל — נסו שוב')
+      exitTourUi()
     } finally {
       if (abortRef.current === ac) abortRef.current = null
       runningRef.current = false
       setTourRunning(false)
     }
-  }, [])
+  }, [exitTourUi])
 
   const value = useMemo(
     () => ({ tourRunning, tourStep, tourError, startTour, stopTour }),
