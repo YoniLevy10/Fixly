@@ -1,16 +1,12 @@
 type CardProps = {
   children: React.ReactNode
+  className?: string
 }
 
-export default function Card({ children }: CardProps) {
+export default function Card({ children, className = '' }: CardProps) {
   return (
     <div
-      style={{
-        background: 'white',
-        borderRadius: '28px',
-        padding: '24px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-      }}
+      className={`bg-white rounded-[22px] sm:rounded-[28px] p-4 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.05)] min-w-0 overflow-hidden ${className}`}
     >
       {children}
     </div>

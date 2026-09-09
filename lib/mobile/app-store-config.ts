@@ -16,7 +16,10 @@ export const APP_STORE_CONFIG = {
   supportPath: '/about',
   /** Domains the WebView may navigate to (auth, API, CDN) */
   allowedNavigationHosts: [
+    'fixly.tech',
+    'www.fixly.tech',
     'fixly.vercel.app',
+    'fixly-five.vercel.app',
     'vercel.app',
     'supabase.co',
     'lfzxvmievofvdhxrwggo.supabase.co',

@@ -1,6 +1,7 @@
 import { describe, it, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  isLegacyVercelProductionHost,
   isMarketingHost,
   isProductHost,
   normalizeHost,
@@ -29,10 +30,12 @@ describe('site-hosts', () => {
     assert.equal(isMarketingHost('fixly.tech'), true)
     assert.equal(isMarketingHost('www.fixly.tech'), true)
     assert.equal(isMarketingHost('fixly.vercel.app'), false)
+    assert.equal(isProductHost('fixly.tech'), true)
     assert.equal(isProductHost('fixly.vercel.app'), true)
     assert.equal(isProductHost('fixly-git-main-yonilevy10s-projects.vercel.app'), true)
     assert.equal(isProductHost('localhost:3000'), true)
-    assert.equal(isProductHost('fixly.tech'), false)
+    assert.equal(isLegacyVercelProductionHost('fixly-five.vercel.app'), true)
+    assert.equal(isLegacyVercelProductionHost('fixly-git-main.vercel.app'), false)
   })
 
   it('skips waitlist on fixly.tech while demo mode is on (pre-funding)', () => {

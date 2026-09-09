@@ -72,6 +72,47 @@ const STATUS_LABELS: Record<ProspectStatus, string> = {
   do_not_contact: 'אין ליצור קשר',
 }
 
+const RUN_STATUS_LABELS: Record<string, string> = {
+  running: 'בתהליך',
+  completed: 'הושלם',
+  failed: 'נכשל',
+}
+
+/** Short Hebrew summary for discovery run errors (no raw API/SQL dumps). */
+function humanizeDiscoveryError(raw: string | null | undefined): string | null {
+  if (!raw?.trim()) return null
+  const msg = raw.toLowerCase()
+  if (
+    msg.includes('duplicate key') ||
+    msg.includes('idx_prospects_phone') ||
+    msg.includes('unique constraint')
+  ) {
+    return 'חלק מהמספרים כבר היו במערכת — נשמרו רק לידים חדשים'
+  }
+  if (
+    msg.includes('places api') &&
+    (msg.includes('disabled') || msg.includes('has not been used') || msg.includes('403'))
+  ) {
+    return 'Google Places לא פעיל בפרויקט — יש להפעיל Places API (New) ב-Google Cloud'
+  }
+  if (msg.includes('403')) {
+    return 'אין הרשאה ל-Google Places (403) — בדקו מפתח API והפעלת השירות'
+  }
+  if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted')) {
+    return 'חרגתם ממכסת Google Places — נסו שוב מאוחר יותר'
+  }
+  if (msg.includes('google_places_api_key') || msg.includes('api key')) {
+    return 'חסר או לא תקין מפתח Google Places'
+  }
+  if (msg.includes('אין מקורות')) {
+    return 'אין מקורות גילוי זמינים'
+  }
+  if (msg.includes('timeout') || msg.includes('aborted')) {
+    return 'החיפוש ארך יותר מדי ונקטע — נסו שוב'
+  }
+  return 'הייתה תקלה חלקית בזמן הגילוי'
+}
+
 type DiscoveryRun = {
   id: string
   trigger: string
@@ -389,39 +430,43 @@ export default function ProspectsRecruitmentScreen() {
     (target?.categorySlugs.length ?? 10) * (target?.perCategory ?? 10)
 
   return (
-    <main className="p-4 md:p-6 pb-28 space-y-6 max-w-6xl mx-auto" dir="rtl">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+    <main
+      className="p-3 sm:p-4 md:p-6 pb-28 space-y-5 max-w-6xl mx-auto overflow-x-hidden"
+      dir="rtl"
+    >
+      <div className="flex flex-col gap-4">
+        <div className="min-w-0">
           <Link href="/admin" className="text-sm text-muted-foreground hover:underline">
             ← Operations
           </Link>
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
-          <h1 className="text-3xl font-bold mt-1">גיוס אנשי מקצוע</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            גילוי מידרג-סטייל · מוחק קודמים · מדרג התאמה · תקציב 500 · WhatsApp ידני · יעד{' '}
-            {targetTotal} בירושלים
+          <h1 className="text-2xl sm:text-3xl font-bold mt-1 break-words">
+            גיוס אנשי מקצוע
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 break-words">
+            גילוי פרטיים + נייד · יעד {targetTotal} בירושלים
           </p>
           {!authLoading && (
-            <p className="text-xs mt-2" dir="ltr">
+            <p className="text-xs mt-2 break-all" dir="ltr">
               {user.isAnonymous || !user.email || user.email === 'אורח'
                 ? 'לא מחובר עם Google — לך ל־/profile והתחבר'
                 : `מחובר כ־${user.email}`}
             </p>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
           <button
             type="button"
             onClick={runDiscovery}
             disabled={discovering}
-            className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-bold disabled:opacity-50"
+            className="w-full rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-bold disabled:opacity-50"
           >
             {discovering ? 'מריץ גילוי…' : 'הרץ גילוי עכשיו'}
           </button>
           <button
             type="button"
             onClick={exportCsv}
-            className="rounded-xl border px-4 py-2 text-sm font-semibold"
+            className="w-full rounded-xl border px-4 py-2.5 text-sm font-semibold"
           >
             ייצוא CSV
           </button>
@@ -429,7 +474,7 @@ export default function ProspectsRecruitmentScreen() {
             type="button"
             onClick={rejectCompanyLike}
             disabled={companyLikeOnPage.length === 0}
-            className="rounded-xl border border-amber-600 text-amber-900 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            className="w-full rounded-xl border border-amber-600 text-amber-900 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
             title="דוחה לידים בעמוד הנוכחי שנראים כמו חברה ולא אדם פרטי"
           >
             דחה חברות ({companyLikeOnPage.length})
@@ -438,31 +483,69 @@ export default function ProspectsRecruitmentScreen() {
       </div>
 
       {actionMsg && (
-        <p className="text-sm rounded-xl bg-amber-50 text-amber-900 px-3 py-2">{actionMsg}</p>
+        <p className="text-sm rounded-xl bg-amber-50 text-amber-900 px-3 py-2 break-words">
+          {actionMsg}
+        </p>
       )}
 
       {runs.length > 0 && (
         <Card>
-          <h2 className="font-bold mb-2">ריצות גילוי אחרונות</h2>
-          <ul className="space-y-2 text-sm">
-            {runs.slice(0, 5).map((run) => (
-              <li key={run.id} className="border-b border-border pb-2">
-                <span className="font-semibold">{run.status}</span>
-                {' · '}
-                {run.trigger}
-                {' · '}
-                נמצאו {run.found_count} / נשמרו {run.created_count} / דולגו{' '}
-                {run.skipped_count}
-                {run.sources?.length ? ` · ${run.sources.join('+')}` : ''}
-                <span className="text-muted-foreground">
-                  {' · '}
-                  {new Date(run.started_at).toLocaleString('he-IL')}
-                </span>
-                {run.error_message ? (
-                  <div className="text-red-600 text-xs mt-1">{run.error_message}</div>
-                ) : null}
-              </li>
-            ))}
+          <h2 className="font-bold mb-3">ריצות גילוי אחרונות</h2>
+          <ul className="space-y-3">
+            {runs.slice(0, 2).map((run) => {
+              const problem = humanizeDiscoveryError(run.error_message)
+              const statusLabel = RUN_STATUS_LABELS[run.status] ?? run.status
+              return (
+                <li
+                  key={run.id}
+                  className="rounded-2xl border border-border/80 bg-slate-50/80 p-3 space-y-2 min-w-0"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span
+                      className={`text-sm font-bold ${
+                        run.status === 'failed'
+                          ? 'text-red-700'
+                          : run.status === 'running'
+                            ? 'text-amber-700'
+                            : 'text-emerald-800'
+                      }`}
+                    >
+                      {statusLabel}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(run.started_at).toLocaleString('he-IL')}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
+                      <p className="text-[11px] text-muted-foreground">נמצאו</p>
+                      <p className="text-lg font-extrabold tabular-nums">
+                        {run.found_count}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
+                      <p className="text-[11px] text-muted-foreground">נשמרו</p>
+                      <p className="text-lg font-extrabold tabular-nums">
+                        {run.created_count}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
+                      <p className="text-[11px] text-muted-foreground">דולגו</p>
+                      <p className="text-lg font-extrabold tabular-nums">
+                        {run.skipped_count}
+                      </p>
+                    </div>
+                  </div>
+                  {problem ? (
+                    <p className="text-sm text-amber-950 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 break-words">
+                      {problem}
+                    </p>
+                  ) : run.status === 'completed' ? (
+                    <p className="text-sm text-emerald-800">הריצה הסתיימה בהצלחה</p>
+                  ) : null}
+                </li>
+              )
+            })}
           </ul>
         </Card>
       )}
@@ -607,37 +690,47 @@ export default function ProspectsRecruitmentScreen() {
           </p>
           <ul className="divide-y">
             {items.map((item) => (
-              <li key={item.id} className="py-3 flex flex-wrap gap-3 items-start">
-                <input
-                  type="checkbox"
-                  checked={selected.has(item.id)}
-                  onChange={() => toggleSelect(item.id)}
-                  className="mt-1"
-                  aria-label={`בחר ${item.name}`}
-                />
-                <button
-                  type="button"
-                  className="flex-1 text-right"
-                  onClick={() => setDetailId(item.id)}
-                >
-                  <div className="font-bold flex flex-wrap items-center gap-2">
-                    <span>{item.name}</span>
-                    {typeof item.fitScore === 'number' && (
-                      <span className="text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 px-2 py-0.5">
-                        דירוג {item.fitScore}
-                      </span>
-                    )}
+              <li
+                key={item.id}
+                className="py-3 flex flex-col sm:flex-row sm:flex-wrap gap-3 items-stretch sm:items-start min-w-0"
+              >
+                <div className="flex gap-3 items-start min-w-0 flex-1">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(item.id)}
+                    onChange={() => toggleSelect(item.id)}
+                    className="mt-1 shrink-0"
+                    aria-label={`בחר ${item.name}`}
+                  />
+                  <button
+                    type="button"
+                    className="flex-1 min-w-0 text-right"
+                    onClick={() => setDetailId(item.id)}
+                  >
+                    <div className="font-bold flex flex-wrap items-center gap-2">
+                      <span className="break-words">{item.name}</span>
+                      {typeof item.fitScore === 'number' && (
+                        <span className="text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 px-2 py-0.5 shrink-0">
+                          דירוג {item.fitScore}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground break-words">
+                      {item.businessName ? `${item.businessName} · ` : ''}
+                      {item.categoryNameHe || item.categoryName || '—'} · {item.city}
+                    </div>
+                    <div className="text-sm break-all" dir="ltr">
+                      {item.phone || item.whatsappPhone || 'ללא טלפון'}
+                    </div>
+                    <div className="text-sm font-semibold mt-1 sm:hidden">
+                      {STATUS_LABELS[item.status]}
+                    </div>
+                  </button>
+                  <div className="text-sm font-semibold hidden sm:block shrink-0">
+                    {STATUS_LABELS[item.status]}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {item.businessName ? `${item.businessName} · ` : ''}
-                    {item.categoryNameHe || item.categoryName || '—'} · {item.city}
-                  </div>
-                  <div className="text-sm" dir="ltr">
-                    {item.phone || item.whatsappPhone || 'ללא טלפון'}
-                  </div>
-                </button>
-                <div className="text-sm font-semibold">{STATUS_LABELS[item.status]}</div>
-                <div className="flex flex-wrap gap-1 items-center">
+                </div>
+                <div className="flex flex-wrap gap-1 items-center ps-7 sm:ps-0">
                   {(item.phone || item.whatsappPhone) &&
                     item.status !== 'rejected' &&
                     item.status !== 'do_not_contact' && (
