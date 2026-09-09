@@ -73,7 +73,7 @@ export default function HomeScreen() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="lg:hidden bg-white px-4 pt-4 pb-3 flex items-center justify-between sticky top-0 z-10 shadow-sm safe-area-pt">
+      <div className="lg:hidden bg-white px-4 pt-4 pb-3 flex items-center justify-between sticky top-[var(--fixly-demo-banner-h,0px)] z-10 shadow-sm safe-area-pt">
         <LanguageToggle />
         <div className="text-center">
           <p className="font-bold text-sm text-foreground">

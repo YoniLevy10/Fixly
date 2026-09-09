@@ -31,6 +31,8 @@
     --warning-foreground: 222 47% 11%;
     --info: 199 89% 42%;
     --info-foreground: 0 0% 100%;
+    /* Investor demo bar height — published by DemoModeBanner so fixed chrome clears it */
+    --fixly-demo-banner-h: 0px;
   }
 }
 
