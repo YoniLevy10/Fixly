@@ -1,9 +1,12 @@
+/**
+ * Tunable weights for prospect fit scoring.
+ * Not scientific — calibrate from labeled samples.
+ */
+
 export const DEFAULT_RECRUIT_CITY = 'ירושלים'
 
 /**
  * Home-service categories for Jerusalem soft-launch recruitment.
- * Expanded beyond the first 10 after Places returned ceramic shops / renovators
- * that map better to dedicated trades (tiling+ceramics, renovations, solar, …).
  */
 export const CORE_RECRUIT_CATEGORY_SLUGS = [
   'plumbing',
@@ -32,17 +35,34 @@ export const RECRUIT_PER_CATEGORY_TARGET = 10
 export const RECRUIT_TOTAL_TARGET =
   CORE_RECRUIT_CATEGORY_SLUGS.length * RECRUIT_PER_CATEGORY_TARGET
 
-/**
- * Total Places candidate slots to fetch per discovery run
- * (before Midrag-style person+mobile filter).
- * Raised again for Jerusalem neighborhood coverage (was 500).
- */
+/** Raw Places results soft cap (before filter). */
 export const DISCOVERY_TOTAL_BUDGET = 1200
 
-/** Soft cap per category after person+mobile filter. */
+/** Soft cap per category after keep decision. */
 export const DISCOVERY_PER_CATEGORY_CAP = 120
 
+/** Hard cap on Places HTTP calls per discovery run. */
+export const DISCOVERY_API_CALL_BUDGET = 80
+
+/** Share of query budget reserved for experimental / low-stats queries. */
+export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
+
 export const JOIN_URL = 'https://fixly.tech/pro/join'
+
+/** Fit scorer weights (0–100 scale contributions). */
+export const FIT_WEIGHTS = {
+  serviceAtCustomer: 28,
+  businessTypePerformer: 22,
+  businessTypeRetailPenalty: -40,
+  businessTypeCompanyPenalty: -35,
+  evidencePhone: 12,
+  evidenceWebsite: 8,
+  evidenceAddress: 6,
+  evidenceSab: 14,
+  areaHint: 8,
+  personNameBonus: 10,
+  ambiguousName: 0,
+} as const
 
 export function getRecruitCity(): string {
   return process.env.FIXLY_RECRUIT_CITY?.trim() || DEFAULT_RECRUIT_CITY
@@ -73,4 +93,10 @@ export function getDiscoveryPerCategoryCap(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_PER_CATEGORY_CAP)
   if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 250)
   return DISCOVERY_PER_CATEGORY_CAP
+}
+
+export function getDiscoveryApiCallBudget(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_API_CALL_BUDGET)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 400)
+  return DISCOVERY_API_CALL_BUDGET
 }

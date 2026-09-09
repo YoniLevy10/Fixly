@@ -13,6 +13,7 @@ export {
   updateProspect,
   bulkUpdateStatus,
   prepareContactLink,
+  confirmContactSent,
   exportProspectsCsv,
   linkProspectOnWaitlistJoin,
   linkProspectToProfessional,
@@ -25,4 +26,12 @@ export {
   DISCOVERY_CATEGORY_MAP,
   isAllowedDiscoverySource,
   ALLOWED_DISCOVERY_SOURCES,
+  getCityGeoProfile,
 } from '@/lib/prospects/discovery-mapping'
+export {
+  assessProspectFit,
+  shouldKeepDiscoveredProspect,
+  shouldKeepAsSoloProspect,
+  fitClassLabelHe,
+  contactabilityLabelHe,
+} from '@/lib/prospects/fit-score'

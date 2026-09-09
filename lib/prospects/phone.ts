@@ -22,15 +22,25 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return digits
 }
 
+export type PhoneKind = 'mobile' | 'landline' | 'unknown' | 'none'
+
 /**
- * Midrag-style private pros almost always use Israeli mobile (05x),
- * not shop landlines (02/03/…) or 1-700 / 072 marketing numbers.
+ * Classify phone for contactability — independent of professional fit.
+ * Mobile is preferred for WhatsApp outreach but does not prove WhatsApp is active.
  */
-export function isIsraeliMobilePhone(raw: string | null | undefined): boolean {
+export function classifyPhoneKind(raw: string | null | undefined): PhoneKind {
+  if (!raw?.trim()) return 'none'
   const n = normalizePhone(raw)
-  if (!n) return false
-  // 9725xxxxxxxx (9 digits after 972, starting with 5)
-  return /^9725\d{8}$/.test(n)
+  if (!n) return 'unknown'
+  if (/^9725\d{8}$/.test(n)) return 'mobile'
+  // Israeli geographic / VoIP landline-ish
+  if (/^972[2-4,8-9]\d{7,8}$/.test(n)) return 'landline'
+  if (/^9727\d{8}$/.test(n)) return 'landline'
+  return 'unknown'
+}
+
+export function isIsraeliMobilePhone(raw: string | null | undefined): boolean {
+  return classifyPhoneKind(raw) === 'mobile'
 }
 
 export function phonesMatch(

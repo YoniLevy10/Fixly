@@ -7,7 +7,10 @@ import {
   type ExistingProspectLite,
 } from '@/lib/prospects/dedupe'
 import { normalizePhone } from '@/lib/prospects/phone'
-import { scorePersonFit } from '@/lib/prospects/person-score'
+import {
+  assessProspectFit,
+  scorePersonFit,
+} from '@/lib/prospects/fit-score'
 import { assertTransition, isContactAllowed } from '@/lib/prospects/status'
 import { buildRecruitWhatsAppMessage } from '@/lib/prospects/message'
 import { countMatchingOpenRequests } from '@/lib/prospects/demand'
@@ -18,7 +21,10 @@ import {
   getRecruitCity,
   getRecruitPerCategoryTarget,
 } from '@/lib/prospects/config'
+import { enrichFromWebsite } from '@/lib/prospects/enrich-website'
 import type {
+  Contactability,
+  FitClass,
   ProfessionalProspect,
   ProspectCounters,
   ProspectEvent,
@@ -43,6 +49,8 @@ type ProspectRow = {
   whatsapp_phone: string | null
   phone_normalized: string | null
   city: string
+  search_city?: string | null
+  business_address?: string | null
   category_id: string | null
   source_name: string
   source_url: string | null
@@ -54,6 +62,14 @@ type ProspectRow = {
   consent_at: string | null
   notes: string | null
   fit_score?: number | null
+  fit_class?: FitClass | null
+  fit_confidence?: number | null
+  fit_reasons?: string[] | null
+  contactability?: Contactability | null
+  service_areas?: string[] | null
+  services?: string[] | null
+  enrichment?: Record<string, unknown> | null
+  last_seen_at?: string | null
   waitlist_id: string | null
   professional_id: string | null
   created_by: string | null
@@ -79,6 +95,8 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
     whatsappPhone: row.whatsapp_phone,
     phoneNormalized: row.phone_normalized,
     city: row.city,
+    searchCity: row.search_city ?? null,
+    businessAddress: row.business_address ?? null,
     categoryId: row.category_id,
     sourceName: row.source_name,
     sourceUrl: row.source_url,
@@ -90,6 +108,14 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
     consentAt: row.consent_at,
     notes: row.notes,
     fitScore: row.fit_score ?? null,
+    fitClass: row.fit_class ?? null,
+    fitConfidence: row.fit_confidence ?? null,
+    fitReasons: Array.isArray(row.fit_reasons) ? row.fit_reasons : [],
+    contactability: row.contactability ?? null,
+    serviceAreas: row.service_areas ?? [],
+    services: row.services ?? [],
+    enrichment: row.enrichment ?? null,
+    lastSeenAt: row.last_seen_at ?? null,
     waitlistId: row.waitlist_id,
     professionalId: row.professional_id,
     createdBy: row.created_by,
@@ -104,8 +130,12 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
 
 const PROSPECT_SELECT = `
   id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
+  search_city, business_address,
   category_id, source_name, source_url, external_id, status, verification_status,
-  last_verified_at, contacted_at, consent_at, notes, fit_score, waitlist_id, professional_id,
+  last_verified_at, contacted_at, consent_at, notes, fit_score,
+  fit_class, fit_confidence, fit_reasons, contactability,
+  service_areas, services, enrichment, last_seen_at,
+  waitlist_id, professional_id,
   created_by, updated_by, created_at, updated_at,
   service_categories ( id, slug, name, name_he )
 `
@@ -177,32 +207,99 @@ export async function writeProspectEvent(
 
 export type IngestResult = {
   created: ProfessionalProspect[]
+  updated: ProfessionalProspect[]
   skipped: Array<{ reason: string; existingId?: string; name: string }>
   errors: Array<{ name: string; error: string }>
 }
+
+async function linkProspectCategory(
+  admin: SupabaseClient,
+  prospectId: string,
+  categoryId: string | null,
+  source = 'discovery',
+) {
+  if (!categoryId) return
+  await admin.from('professional_prospect_categories').upsert(
+    {
+      prospect_id: prospectId,
+      category_id: categoryId,
+      source,
+    },
+    { onConflict: 'prospect_id,category_id', ignoreDuplicates: true },
+  )
+}
+
+function buildFitFields(record: ProspectSourceRecord) {
+  const assessed =
+    record.fitClass && record.fitScore != null
+      ? {
+          score: record.fitScore,
+          confidence: record.fitConfidence ?? 50,
+          fitClass: record.fitClass,
+          reasons: record.fitReasons ?? [],
+          contactability: record.contactability ?? 'unknown',
+        }
+      : (() => {
+          const a = assessProspectFit({
+            name: record.name,
+            businessName: record.businessName,
+            phone: record.phone ?? record.whatsappPhone,
+            websiteUrl: record.sourceUrl,
+            address: record.businessAddress,
+            placeTypes: record.placeTypes,
+            pureServiceAreaBusiness: record.pureServiceAreaBusiness,
+          })
+          return {
+            score: a.score,
+            confidence: a.confidence,
+            fitClass: a.fitClass,
+            reasons: a.reasons,
+            contactability: a.contactability,
+          }
+        })()
+
+  return {
+    fit_score: assessed.score,
+    fit_class: assessed.fitClass,
+    fit_confidence: assessed.confidence,
+    fit_reasons: assessed.reasons,
+    contactability: assessed.contactability,
+  }
+}
+
+/**
+ * Protected statuses — never revive as fresh discovered or overwrite admin decisions.
+ */
+const PROTECTED_STATUSES = new Set<ProspectStatus>([
+  'rejected',
+  'do_not_contact',
+  'joined',
+  'active',
+  'interested',
+  'contacted',
+])
 
 export async function ingestFromAdapter(
   admin: SupabaseClient,
   adapter: ProspectSourceAdapter,
   actorUserId?: string | null,
+  options?: { enrichWebsites?: boolean },
 ): Promise<IngestResult> {
   const records = await adapter.fetchRecords()
-  // Best Midrag-style fits first
   const ranked = [...records].sort((a, b) => {
-    const sa =
-      a.fitScore ??
-      scorePersonFit(a.name, a.businessName).score
-    const sb =
-      b.fitScore ??
-      scorePersonFit(b.name, b.businessName).score
+    const sa = a.fitScore ?? scorePersonFit(a.name, a.businessName).score
+    const sb = b.fitScore ?? scorePersonFit(b.name, b.businessName).score
     return sb - sa
   })
 
   const categories = await loadCategoryMap(admin)
   const existing = await loadExistingForDedupe(admin)
   const created: ProfessionalProspect[] = []
+  const updated: ProfessionalProspect[] = []
   const skipped: IngestResult['skipped'] = []
   const errors: IngestResult['errors'] = []
+  const enrichLimit = options?.enrichWebsites === false ? 0 : 12
+  let enriched = 0
 
   for (const record of ranked) {
     const valid = assertSourceRecord(record)
@@ -213,30 +310,127 @@ export async function ingestFromAdapter(
 
     const categoryId = await resolveCategoryId(record, categories)
     const phoneNormalized = normalizePhone(record.phone ?? record.whatsappPhone)
+    const fitFields = buildFitFields(record)
+    const now = new Date().toISOString()
+
     const dup = findDuplicate(
       candidateFromSourceRecord(record, categoryId),
       existing,
     )
+
     if (dup) {
-      skipped.push({
-        reason: dup.reason,
-        existingId: dup.existingId,
-        name: record.name,
+      const { data: existingRow } = await admin
+        .from('professional_prospects')
+        .select(PROSPECT_SELECT)
+        .eq('id', dup.existingId)
+        .maybeSingle()
+
+      if (!existingRow) {
+        skipped.push({
+          reason: dup.reason,
+          existingId: dup.existingId,
+          name: record.name,
+        })
+        continue
+      }
+
+      const current = mapProspectRow(existingRow as ProspectRow)
+
+      // Never recreate rejected / DNC as new — merge soft fields only
+      if (PROTECTED_STATUSES.has(current.status)) {
+        await linkProspectCategory(admin, current.id, categoryId)
+        await admin
+          .from('professional_prospects')
+          .update({ last_seen_at: now })
+          .eq('id', current.id)
+        skipped.push({
+          reason: `protected_${current.status}`,
+          existingId: current.id,
+          name: record.name,
+        })
+        continue
+      }
+
+      const mergeServices = [
+        ...new Set([
+          ...(current.services ?? []),
+          ...(record.services ?? []),
+          ...(record.categorySlug ? [record.categorySlug] : []),
+        ]),
+      ]
+
+      const updates: Record<string, unknown> = {
+        last_seen_at: now,
+        updated_by: actorUserId ?? null,
+        services: mergeServices,
+        fit_score: fitFields.fit_score,
+        fit_class: fitFields.fit_class,
+        fit_confidence: fitFields.fit_confidence,
+        fit_reasons: fitFields.fit_reasons,
+        contactability: fitFields.contactability,
+      }
+      if (record.businessAddress && !current.businessAddress) {
+        updates.business_address = record.businessAddress
+      }
+      if (record.phone && !current.phone) {
+        updates.phone = record.phone
+        updates.phone_normalized = phoneNormalized
+      }
+      if (record.whatsappPhone && !current.whatsappPhone) {
+        updates.whatsapp_phone = record.whatsappPhone
+      }
+      if (record.sourceUrl && !current.sourceUrl) {
+        updates.source_url = record.sourceUrl
+      }
+      // Keep primary category; add junction for additional trade
+      if (categoryId && categoryId !== current.categoryId) {
+        await linkProspectCategory(admin, current.id, categoryId)
+      } else {
+        await linkProspectCategory(admin, current.id, categoryId ?? current.categoryId)
+      }
+
+      const { data: upd, error: updErr } = await admin
+        .from('professional_prospects')
+        .update(updates)
+        .eq('id', current.id)
+        .select(PROSPECT_SELECT)
+        .maybeSingle()
+
+      if (updErr || !upd) {
+        errors.push({
+          name: record.name,
+          error: updErr?.message ?? 'merge failed',
+        })
+        continue
+      }
+
+      const mapped = mapProspectRow(upd as ProspectRow)
+      await writeProspectEvent(admin, {
+        prospectId: mapped.id,
+        actorUserId,
+        action: 'discovery_merged',
+        fromStatus: current.status,
+        toStatus: mapped.status,
+        payload: {
+          source: adapter.name,
+          reason: dup.reason,
+          fitClass: fitFields.fit_class,
+        },
       })
+      updated.push(mapped)
       continue
     }
 
     const verificationStatus = record.verificationStatus ?? 'unverified'
-    const fitScore =
-      record.fitScore ??
-      scorePersonFit(record.name, record.businessName).score
-    const insertPayload = {
+    const insertPayload: Record<string, unknown> = {
       name: record.name.trim(),
       business_name: record.businessName?.trim() || null,
       phone: record.phone?.trim() || null,
       whatsapp_phone: record.whatsappPhone?.trim() || null,
       phone_normalized: phoneNormalized,
       city: record.city.trim(),
+      search_city: record.searchCity?.trim() || record.city.trim(),
+      business_address: record.businessAddress?.trim() || null,
       category_id: categoryId,
       source_name: record.sourceName.trim(),
       source_url: record.sourceUrl?.trim() || null,
@@ -244,11 +438,47 @@ export async function ingestFromAdapter(
       status: 'discovered' as const,
       verification_status: verificationStatus,
       last_verified_at:
-        verificationStatus === 'verified' ? new Date().toISOString() : null,
+        verificationStatus === 'verified' ? now : null,
       notes: record.notes?.trim() || null,
-      fit_score: fitScore,
+      ...fitFields,
+      services: [
+        ...new Set([
+          ...(record.services ?? []),
+          ...(record.categorySlug ? [record.categorySlug] : []),
+        ]),
+      ],
+      service_areas: record.serviceAreas ?? [],
+      last_seen_at: now,
       created_by: actorUserId ?? null,
       updated_by: actorUserId ?? null,
+    }
+
+    // Optional website enrichment for promising leads
+    if (
+      enriched < enrichLimit &&
+      (fitFields.fit_class === 'suitable' ||
+        fitFields.fit_class === 'needs_review') &&
+      record.sourceUrl?.startsWith('http')
+    ) {
+      // Prefer business website over maps URI for enrichment
+      const site =
+        record.sourceUrl.includes('google.com') ||
+        record.sourceUrl.includes('maps')
+          ? null
+          : record.sourceUrl
+      if (site) {
+        const enrichment = await enrichFromWebsite(site)
+        if (enrichment) {
+          insertPayload.enrichment = enrichment
+          insertPayload.services = [
+            ...new Set([
+              ...(insertPayload.services as string[]),
+              ...enrichment.services,
+            ]),
+          ]
+          enriched += 1
+        }
+      }
     }
 
     const { data, error } = await admin
@@ -258,13 +488,48 @@ export async function ingestFromAdapter(
       .single()
 
     if (error || !data) {
-      // Fallback if fit_score column not migrated yet
-      if (error?.message?.includes('fit_score')) {
-        const { fit_score: _omit, ...withoutFit } = insertPayload
+      // Graceful fallback if new columns not migrated yet
+      if (
+        error?.message?.includes('fit_class') ||
+        error?.message?.includes('fit_score') ||
+        error?.message?.includes('contactability') ||
+        error?.message?.includes('search_city')
+      ) {
+        const legacy = {
+          name: insertPayload.name,
+          business_name: insertPayload.business_name,
+          phone: insertPayload.phone,
+          whatsapp_phone: insertPayload.whatsapp_phone,
+          phone_normalized: insertPayload.phone_normalized,
+          city: insertPayload.city,
+          category_id: insertPayload.category_id,
+          source_name: insertPayload.source_name,
+          source_url: insertPayload.source_url,
+          external_id: insertPayload.external_id,
+          status: 'discovered',
+          verification_status: verificationStatus,
+          notes: insertPayload.notes,
+          fit_score: fitFields.fit_score,
+          created_by: actorUserId ?? null,
+          updated_by: actorUserId ?? null,
+        }
         const retry = await admin
           .from('professional_prospects')
-          .insert(withoutFit)
-          .select(PROSPECT_SELECT.replace(', fit_score', ''))
+          .insert(legacy)
+          .select(
+            PROSPECT_SELECT.replace(
+              /search_city, business_address,\n {2}/,
+              '',
+            )
+              .replace(
+                /fit_class, fit_confidence, fit_reasons, contactability,\n {2}/,
+                '',
+              )
+              .replace(
+                /service_areas, services, enrichment, last_seen_at,\n {2}/,
+                '',
+              ),
+          )
           .single()
         if (retry.error || !retry.data) {
           errors.push({
@@ -275,7 +540,7 @@ export async function ingestFromAdapter(
         }
         const mapped = mapProspectRow({
           ...(retry.data as unknown as ProspectRow),
-          fit_score: fitScore,
+          ...fitFields,
         })
         existing.push({
           id: mapped.id,
@@ -286,13 +551,14 @@ export async function ingestFromAdapter(
           categoryId: mapped.categoryId,
           city: mapped.city,
         })
+        await linkProspectCategory(admin, mapped.id, categoryId)
         await writeProspectEvent(admin, {
           prospectId: mapped.id,
           actorUserId,
           action: 'created',
           fromStatus: null,
           toStatus: 'discovered',
-          payload: { source: adapter.name, fitScore },
+          payload: { source: adapter.name, fitClass: fitFields.fit_class },
         })
         created.push(mapped)
         continue
@@ -311,20 +577,19 @@ export async function ingestFromAdapter(
       categoryId: mapped.categoryId,
       city: mapped.city,
     })
-
+    await linkProspectCategory(admin, mapped.id, categoryId)
     await writeProspectEvent(admin, {
       prospectId: mapped.id,
       actorUserId,
       action: 'created',
       fromStatus: null,
       toStatus: 'discovered',
-      payload: { source: adapter.name, fitScore },
+      payload: { source: adapter.name, fitClass: fitFields.fit_class },
     })
-
     created.push(mapped)
   }
 
-  return { created, skipped, errors }
+  return { created, updated, skipped, errors }
 }
 
 /**
@@ -376,6 +641,15 @@ export async function listProspects(
   if (filters.categoryId) query = query.eq('category_id', filters.categoryId)
   if (filters.sourceName) query = query.eq('source_name', filters.sourceName)
   if (filters.city) query = query.ilike('city', filters.city)
+  if (filters.fitClass) {
+    const classes = Array.isArray(filters.fitClass)
+      ? filters.fitClass
+      : [filters.fitClass]
+    query = query.in('fit_class', classes)
+  }
+  if (filters.contactability) {
+    query = query.eq('contactability', filters.contactability)
+  }
   if (filters.q?.trim()) {
     const q = filters.q.trim()
     const phoneQ = normalizePhone(q)
@@ -432,21 +706,28 @@ export async function getProspectCounters(
 ): Promise<ProspectCounters> {
   const { data, error } = await admin
     .from('professional_prospects')
-    .select('status, city, category_id, verification_status, service_categories(name, name_he, slug)')
+    .select(
+      'status, city, category_id, fit_class, verification_status, service_categories(name, name_he, slug)',
+    )
 
   if (error) throw error
   const rows = data ?? []
 
   const byStatus: Record<string, number> = {}
+  const byFitClass: Record<string, number> = {}
   const byCityMap = new Map<string, number>()
   const byCatMap = new Map<string, { categoryId: string | null; name: string; count: number }>()
 
   let verifiedCount = 0
+  let needsReviewCount = 0
   const recruitCity = getRecruitCity()
   const recruitSlugs = new Set(getRecruitCategorySlugs())
 
   for (const row of rows) {
     byStatus[row.status] = (byStatus[row.status] ?? 0) + 1
+    const fc = (row as { fit_class?: string | null }).fit_class || 'unknown'
+    byFitClass[fc] = (byFitClass[fc] ?? 0) + 1
+    if (fc === 'needs_review') needsReviewCount += 1
     const city = row.city || '—'
     byCityMap.set(city, (byCityMap.get(city) ?? 0) + 1)
 
@@ -481,6 +762,8 @@ export async function getProspectCounters(
     byCity: [...byCityMap.entries()]
       .map(([city, count]) => ({ city, count }))
       .sort((a, b) => b.count - a.count),
+    byFitClass,
+    needsReviewCount,
     total: rows.length,
     verifiedTarget: {
       city: recruitCity,
@@ -668,7 +951,7 @@ export async function prepareContactLink(
     throw new Error('אין ליצור קשר עם ליד זה')
   }
 
-  // One-click outreach: approving is implicit when admin opens WhatsApp
+  // Opening WhatsApp may auto-approve — does NOT mark contacted
   if (prospect.status === 'discovered' || prospect.status === 'verified') {
     prospect = await updateProspect(
       admin,
@@ -703,16 +986,47 @@ export async function prepareContactLink(
   const whatsappUrl = buildWhatsAppLink(phone, message)
   if (!whatsappUrl) throw new Error('מספר טלפון לא תקין')
 
-  let updated = prospect
-  if (prospect.status === 'approved') {
-    updated = await updateProspect(
+  await writeProspectEvent(admin, {
+    prospectId: id,
+    actorUserId,
+    action: 'contact_link_opened',
+    fromStatus: prospect.status,
+    toStatus: prospect.status,
+    payload: { channel: 'whatsapp_manual', note: 'link_open_is_not_send' },
+  })
+
+  return { whatsappUrl, message, prospect }
+}
+
+/** Explicit confirmation that a WhatsApp message was sent. */
+export async function confirmContactSent(
+  admin: SupabaseClient,
+  id: string,
+  actorUserId?: string | null,
+): Promise<ProfessionalProspect> {
+  const current = await getProspectById(admin, id)
+  if (!current) throw new Error('Prospect not found')
+
+  let { prospect } = current
+  if (prospect.status === 'do_not_contact' || prospect.status === 'rejected') {
+    throw new Error('אין ליצור קשר עם ליד זה')
+  }
+
+  if (prospect.status === 'discovered' || prospect.status === 'verified') {
+    prospect = await updateProspect(
       admin,
       id,
-      { status: 'contacted' },
+      { status: 'approved' },
       actorUserId,
     )
-  } else if (!prospect.contactedAt) {
-    const { data } = await admin
+  }
+
+  if (prospect.status === 'approved') {
+    return updateProspect(admin, id, { status: 'contacted' }, actorUserId)
+  }
+
+  if (!prospect.contactedAt) {
+    const { data, error } = await admin
       .from('professional_prospects')
       .update({
         contacted_at: new Date().toISOString(),
@@ -721,27 +1035,27 @@ export async function prepareContactLink(
       .eq('id', id)
       .select(PROSPECT_SELECT)
       .single()
-    if (data) updated = mapProspectRow(data as ProspectRow)
+    if (error || !data) throw new Error(error?.message ?? 'update failed')
     await writeProspectEvent(admin, {
       prospectId: id,
       actorUserId,
-      action: 'contacted',
-      fromStatus: prospect.status,
-      toStatus: updated.status,
-      payload: { channel: 'whatsapp_manual' },
-    })
-  } else {
-    await writeProspectEvent(admin, {
-      prospectId: id,
-      actorUserId,
-      action: 'contact_link_opened',
+      action: 'contact_confirmed',
       fromStatus: prospect.status,
       toStatus: prospect.status,
       payload: { channel: 'whatsapp_manual' },
     })
+    return mapProspectRow(data as ProspectRow)
   }
 
-  return { whatsappUrl, message, prospect: updated }
+  await writeProspectEvent(admin, {
+    prospectId: id,
+    actorUserId,
+    action: 'contact_confirmed',
+    fromStatus: prospect.status,
+    toStatus: prospect.status,
+    payload: { channel: 'whatsapp_manual', already: true },
+  })
+  return prospect
 }
 
 export async function exportProspectsCsv(
