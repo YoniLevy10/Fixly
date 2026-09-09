@@ -1,5 +1,6 @@
 import { normalizePhone } from '@/lib/prospects/phone'
 import type { ProspectSourceRecord } from '@/lib/prospects/types'
+import { normalizeWebsiteHost } from '@/lib/prospects/source-refs'
 
 export function normalizeBusinessKey(value: string | null | undefined): string {
   if (!value) return ''
@@ -17,6 +18,7 @@ export type DedupeCandidate = {
   businessName?: string | null
   categoryId?: string | null
   city?: string | null
+  websiteHost?: string | null
 }
 
 export type ExistingProspectLite = {
@@ -27,10 +29,11 @@ export type ExistingProspectLite = {
   businessName: string | null
   categoryId: string | null
   city: string
+  websiteHost?: string | null
 }
 
 export type DedupeMatch = {
-  reason: 'phone' | 'source_external' | 'business_category_city'
+  reason: 'phone' | 'website_domain' | 'source_external' | 'business_category_city'
   existingId: string
 }
 
@@ -42,6 +45,12 @@ export function findDuplicate(
   if (phone) {
     const hit = existing.find((e) => e.phoneNormalized && e.phoneNormalized === phone)
     if (hit) return { reason: 'phone', existingId: hit.id }
+  }
+
+  const host = candidate.websiteHost ?? null
+  if (host) {
+    const hit = existing.find((e) => e.websiteHost && e.websiteHost === host)
+    if (hit) return { reason: 'website_domain', existingId: hit.id }
   }
 
   if (candidate.sourceName && candidate.externalId) {
@@ -80,5 +89,6 @@ export function candidateFromSourceRecord(
     businessName: record.businessName ?? record.name,
     categoryId,
     city: record.city,
+    websiteHost: normalizeWebsiteHost(record.websiteUrl ?? record.sourceUrl),
   }
 }

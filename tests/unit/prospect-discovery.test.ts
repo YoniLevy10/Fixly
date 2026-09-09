@@ -59,6 +59,8 @@ describe('discovery mapping', () => {
   it('allowlists only legal sources', () => {
     assert.equal(isAllowedDiscoverySource('google_places'), true)
     assert.equal(isAllowedDiscoverySource('osm'), true)
+    assert.equal(isAllowedDiscoverySource('brave_web'), true)
+    assert.equal(isAllowedDiscoverySource('gov_pest_control'), true)
     assert.equal(isAllowedDiscoverySource('midrag'), false)
     assert.ok(ALLOWED_DISCOVERY_SOURCES.includes('manual'))
   })

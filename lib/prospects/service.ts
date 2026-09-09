@@ -22,6 +22,14 @@ import {
   getRecruitPerCategoryTarget,
 } from '@/lib/prospects/config'
 import { enrichFromWebsite } from '@/lib/prospects/enrich-website'
+import {
+  mergeSourceRefs,
+  normalizeWebsiteHost,
+  pickWebsiteUrl,
+  preferLicense,
+  type ProspectLicense,
+  type ProspectSourceRef,
+} from '@/lib/prospects/source-refs'
 import type {
   Contactability,
   FitClass,
@@ -54,6 +62,7 @@ type ProspectRow = {
   category_id: string | null
   source_name: string
   source_url: string | null
+  website_url?: string | null
   external_id: string | null
   status: ProspectStatus
   verification_status: VerificationStatus
@@ -69,6 +78,8 @@ type ProspectRow = {
   service_areas?: string[] | null
   services?: string[] | null
   enrichment?: Record<string, unknown> | null
+  source_refs?: unknown
+  license?: unknown
   last_seen_at?: string | null
   waitlist_id: string | null
   professional_id: string | null
@@ -87,6 +98,13 @@ function categoryRel(row: ProspectRow): CategoryRow | null {
 
 export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
   const cat = categoryRel(row)
+  const refs = Array.isArray(row.source_refs)
+    ? (row.source_refs as ProspectSourceRef[])
+    : []
+  const license =
+    row.license && typeof row.license === 'object'
+      ? (row.license as ProspectLicense)
+      : null
   return {
     id: row.id,
     name: row.name,
@@ -100,6 +118,7 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
     categoryId: row.category_id,
     sourceName: row.source_name,
     sourceUrl: row.source_url,
+    websiteUrl: row.website_url ?? null,
     externalId: row.external_id,
     status: row.status,
     verificationStatus: row.verification_status,
@@ -115,6 +134,8 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
     serviceAreas: row.service_areas ?? [],
     services: row.services ?? [],
     enrichment: row.enrichment ?? null,
+    sourceRefs: refs,
+    license,
     lastSeenAt: row.last_seen_at ?? null,
     waitlistId: row.waitlist_id,
     professionalId: row.professional_id,
@@ -140,11 +161,11 @@ export const PROSPECT_CATEGORY_EMBED =
 
 const PROSPECT_SELECT = `
   id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
-  search_city, business_address,
+  search_city, business_address, website_url,
   category_id, source_name, source_url, external_id, status, verification_status,
   last_verified_at, contacted_at, consent_at, notes, fit_score,
   fit_class, fit_confidence, fit_reasons, contactability,
-  service_areas, services, enrichment, last_seen_at,
+  service_areas, services, enrichment, source_refs, license, last_seen_at,
   waitlist_id, professional_id,
   created_by, updated_by, created_at, updated_at,
   ${PROSPECT_CATEGORY_EMBED}
@@ -180,7 +201,9 @@ async function loadExistingForDedupe(
 ): Promise<ExistingProspectLite[]> {
   const { data, error } = await admin
     .from('professional_prospects')
-    .select('id, phone_normalized, source_name, external_id, business_name, category_id, city')
+    .select(
+      'id, phone_normalized, source_name, external_id, business_name, category_id, city, website_url, source_url',
+    )
   if (error) throw error
   return (data ?? []).map((r) => ({
     id: r.id,
@@ -190,6 +213,10 @@ async function loadExistingForDedupe(
     businessName: r.business_name,
     categoryId: r.category_id,
     city: r.city,
+    websiteHost: normalizeWebsiteHost(
+      (r as { website_url?: string | null }).website_url ??
+        (r as { source_url?: string | null }).source_url,
+    ),
   }))
 }
 
@@ -254,7 +281,7 @@ function buildFitFields(record: ProspectSourceRecord) {
             name: record.name,
             businessName: record.businessName,
             phone: record.phone ?? record.whatsappPhone,
-            websiteUrl: record.sourceUrl,
+            websiteUrl: record.websiteUrl ?? record.sourceUrl,
             address: record.businessAddress,
             placeTypes: record.placeTypes,
             pureServiceAreaBusiness: record.pureServiceAreaBusiness,
@@ -377,6 +404,16 @@ export async function ingestFromAdapter(
         ]),
       ]
 
+      const website = pickWebsiteUrl(record.websiteUrl, record.sourceUrl)
+      const incomingRef: ProspectSourceRef = {
+        source: record.sourceName,
+        externalId: record.externalId ?? null,
+        url: website ?? record.sourceUrl ?? null,
+        seenAt: now,
+      }
+      const mergedRefs = mergeSourceRefs(current.sourceRefs, incomingRef)
+      const mergedLicense = preferLicense(current.license, record.license)
+
       const updates: Record<string, unknown> = {
         last_seen_at: now,
         updated_by: actorUserId ?? null,
@@ -386,7 +423,9 @@ export async function ingestFromAdapter(
         fit_confidence: fitFields.fit_confidence,
         fit_reasons: fitFields.fit_reasons,
         contactability: fitFields.contactability,
+        source_refs: mergedRefs,
       }
+      if (mergedLicense) updates.license = mergedLicense
       if (record.businessAddress && !current.businessAddress) {
         updates.business_address = record.businessAddress
       }
@@ -400,6 +439,31 @@ export async function ingestFromAdapter(
       if (record.sourceUrl && !current.sourceUrl) {
         updates.source_url = record.sourceUrl
       }
+      if (website && !current.websiteUrl) {
+        updates.website_url = website
+      }
+
+      // Enrich when we newly discover a business website
+      if (
+        enriched < enrichLimit &&
+        website &&
+        !current.websiteUrl &&
+        (fitFields.fit_class === 'suitable' ||
+          fitFields.fit_class === 'needs_review')
+      ) {
+        const enrichment = await enrichFromWebsite(website)
+        if (enrichment) {
+          updates.enrichment = enrichment
+          updates.services = [
+            ...new Set([
+              ...(updates.services as string[]),
+              ...enrichment.services,
+            ]),
+          ]
+          enriched += 1
+        }
+      }
+
       // Keep primary category; add junction for additional trade
       if (categoryId && categoryId !== current.categoryId) {
         await linkProspectCategory(admin, current.id, categoryId)
@@ -423,6 +487,14 @@ export async function ingestFromAdapter(
       }
 
       const mapped = mapProspectRow(upd as ProspectRow)
+      // Keep in-memory dedupe index fresh for website/phone
+      const lite = existing.find((e) => e.id === mapped.id)
+      if (lite) {
+        lite.phoneNormalized = mapped.phoneNormalized
+        lite.websiteHost = normalizeWebsiteHost(mapped.websiteUrl)
+        lite.businessName = mapped.businessName
+        lite.categoryId = mapped.categoryId
+      }
       await writeProspectEvent(admin, {
         prospectId: mapped.id,
         actorUserId,
@@ -440,6 +512,13 @@ export async function ingestFromAdapter(
     }
 
     const verificationStatus = record.verificationStatus ?? 'unverified'
+    const website = pickWebsiteUrl(record.websiteUrl, record.sourceUrl)
+    const insertRef: ProspectSourceRef = {
+      source: record.sourceName,
+      externalId: record.externalId ?? null,
+      url: website ?? record.sourceUrl ?? null,
+      seenAt: now,
+    }
     const insertPayload: Record<string, unknown> = {
       name: record.name.trim(),
       business_name: record.businessName?.trim() || null,
@@ -449,6 +528,7 @@ export async function ingestFromAdapter(
       city: record.city.trim(),
       search_city: record.searchCity?.trim() || record.city.trim(),
       business_address: record.businessAddress?.trim() || null,
+      website_url: website,
       category_id: categoryId,
       source_name: record.sourceName.trim(),
       source_url: record.sourceUrl?.trim() || null,
@@ -466,6 +546,8 @@ export async function ingestFromAdapter(
         ]),
       ],
       service_areas: record.serviceAreas ?? [],
+      source_refs: [insertRef],
+      license: record.license ?? null,
       last_seen_at: now,
       created_by: actorUserId ?? null,
       updated_by: actorUserId ?? null,
@@ -476,26 +558,18 @@ export async function ingestFromAdapter(
       enriched < enrichLimit &&
       (fitFields.fit_class === 'suitable' ||
         fitFields.fit_class === 'needs_review') &&
-      record.sourceUrl?.startsWith('http')
+      website
     ) {
-      // Prefer business website over maps URI for enrichment
-      const site =
-        record.sourceUrl.includes('google.com') ||
-        record.sourceUrl.includes('maps')
-          ? null
-          : record.sourceUrl
-      if (site) {
-        const enrichment = await enrichFromWebsite(site)
-        if (enrichment) {
-          insertPayload.enrichment = enrichment
-          insertPayload.services = [
-            ...new Set([
-              ...(insertPayload.services as string[]),
-              ...enrichment.services,
-            ]),
-          ]
-          enriched += 1
-        }
+      const enrichment = await enrichFromWebsite(website)
+      if (enrichment) {
+        insertPayload.enrichment = enrichment
+        insertPayload.services = [
+          ...new Set([
+            ...(insertPayload.services as string[]),
+            ...enrichment.services,
+          ]),
+        ]
+        enriched += 1
       }
     }
 
@@ -568,6 +642,7 @@ export async function ingestFromAdapter(
           businessName: mapped.businessName,
           categoryId: mapped.categoryId,
           city: mapped.city,
+          websiteHost: normalizeWebsiteHost(mapped.websiteUrl),
         })
         await linkProspectCategory(admin, mapped.id, categoryId)
         await writeProspectEvent(admin, {
@@ -594,6 +669,7 @@ export async function ingestFromAdapter(
       businessName: mapped.businessName,
       categoryId: mapped.categoryId,
       city: mapped.city,
+      websiteHost: normalizeWebsiteHost(mapped.websiteUrl),
     })
     await linkProspectCategory(admin, mapped.id, categoryId)
     await writeProspectEvent(admin, {
@@ -623,7 +699,12 @@ export async function clearReplaceableAutoProspects(
     'approved',
     'rejected',
   ]
-  const autoSources = ['google_places', 'osm']
+  const autoSources = [
+    'google_places',
+    'osm',
+    'brave_web',
+    'gov_pest_control',
+  ]
 
   const { data, error } = await admin
     .from('professional_prospects')
