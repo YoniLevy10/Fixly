@@ -231,7 +231,10 @@ export function scorePersonFit(name: string, businessName?: string | null): Pers
     reasons.push('retail_showroom')
   }
 
-  if (INSTALLER_HINTS.test(label)) {
+  // Boost only when there is both a craft signal and a person-shaped name
+  const personShaped =
+    looksLikePersonName(name) || looksLikePersonName(businessName ?? '')
+  if (INSTALLER_HINTS.test(label) && personShaped) {
     score += 20
     reasons.push('installer_hint')
   }
