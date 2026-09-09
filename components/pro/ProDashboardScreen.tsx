@@ -36,6 +36,7 @@ import Link from 'next/link'
 import { routes } from '@/lib/routes'
 import ProLocationSharing from '@/components/pro/ProLocationSharing'
 import ProAvailabilityEditor from '@/components/pro/ProAvailabilityEditor'
+import MidragLinkPanel from '@/components/pro/MidragLinkPanel'
 
 const TEMPLATES = [
   'improvements.templateApprove',
@@ -258,6 +259,7 @@ export default function ProDashboardScreen() {
       </p>
 
       <ProAvailabilityEditor />
+      <MidragLinkPanel />
 
       <div className="grid grid-cols-3 gap-3 mb-6 lg:gap-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 lg:p-4 text-center">

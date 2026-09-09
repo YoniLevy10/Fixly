@@ -36,7 +36,12 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3 className="font-bold text-sm">{pro.name}</h3>
                 {pro.isVerified && <VerifiedBadge />}
-                {pro.midragVerified && <MidragVerifiedBadge />}
+                {pro.midragVerified && (
+                  <MidragVerifiedBadge
+                    rating={pro.midragRating}
+                    reviewsCount={pro.midragReviewsCount}
+                  />
+                )}
                 <AvailableTodayBadge isAvailable={pro.isAvailable} />
                 {pro.isApproved && (
                   <span className="text-primary text-xs font-bold">✓</span>

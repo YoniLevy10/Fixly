@@ -17,6 +17,9 @@ export type AnalyticsEvent =
   | 'language_changed'
   | 'share_request'
   | 'job_checkout_started'
+  | 'midrag_linked'
+  | 'midrag_linked_demo'
+  | 'midrag_unlinked'
 
 /** Map product events → Meta standard events (Ads Manager optimization). */
 const META_STANDARD_EVENTS: Partial<Record<AnalyticsEvent, string>> = {
