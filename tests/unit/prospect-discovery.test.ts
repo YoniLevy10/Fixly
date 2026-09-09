@@ -11,9 +11,14 @@ import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpas
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
 
 describe('discovery mapping', () => {
-  it('covers ten core categories', () => {
-    assert.equal(DISCOVERY_CATEGORY_MAP.length, 10)
-    assert.ok(DISCOVERY_CATEGORY_MAP.every((m) => m.placesQueryHe && m.osmFilters.length))
+  it('covers expanded recruit categories including ceramics/tiling trades', () => {
+    assert.ok(DISCOVERY_CATEGORY_MAP.length >= 19)
+    assert.ok(DISCOVERY_CATEGORY_MAP.every((m) => m.placesQueryHe))
+    const tiling = DISCOVERY_CATEGORY_MAP.find((m) => m.slug === 'tiling')
+    assert.ok(tiling)
+    assert.ok(tiling!.placesQueriesHeExtra?.some((q) => q.includes('קרמיקה')))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'renovations'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
   })
 
   it('filters by slug list', () => {
@@ -137,11 +142,15 @@ describe('person-score solo filter', () => {
     assert.equal(shouldKeepAsSoloProspect('יוסי כהן'), true)
     assert.equal(shouldKeepAsSoloProspect('דני אינסטלטור'), true)
     assert.equal(shouldKeepAsSoloProspect('אבי לוי חשמלאי'), true)
+    assert.equal(shouldKeepAsSoloProspect('דני מתקין קרמיקה'), true)
     assert.equal(shouldKeepAsSoloProspect('שירותי אינסטלציה בע״מ'), false)
     assert.equal(shouldKeepAsSoloProspect('חברת הובלות ארציות'), false)
     assert.equal(shouldKeepAsSoloProspect('אינסטלציה ירושלים'), false)
     assert.equal(shouldKeepAsSoloProspect('חשמלאי מוסמך'), false)
     assert.equal(shouldKeepAsSoloProspect('מרכז שירות מזגנים'), false)
+    assert.equal(shouldKeepAsSoloProspect('בן יעקב קרמיקה'), false)
+    assert.equal(shouldKeepAsSoloProspect('חנות טובול חומרי בניין'), false)
+    assert.equal(shouldKeepAsSoloProspect('oz ceramica- OUTLET'), false)
     assert.ok(scorePersonFit('יוסי כהן').score >= 55)
     assert.ok(scorePersonFit('אינסטלציה ירושלים').score < 55)
   })

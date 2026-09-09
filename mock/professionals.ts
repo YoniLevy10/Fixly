@@ -189,7 +189,7 @@ const SLUG_TO_CATEGORY: Record<string, string[]> = {
   painting: ['צביעה', 'צבעי'],
   gardening: ['גינון'],
   locksmith: ['מנעולן', 'מנעולנות'],
-  tiling: ['ריצוף'],
+  tiling: ['ריצוף', 'קרמיקה', 'ריצוף וקרמיקה'],
   moving: ['הובלות'],
   elevators: ['מעליות', 'מעלית'],
   pest_control: ['הדברה', 'מדביר'],

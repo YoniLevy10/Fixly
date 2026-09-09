@@ -1,6 +1,10 @@
 export const DEFAULT_RECRUIT_CITY = 'ירושלים'
 
-/** Ten core home-service categories for the Jerusalem soft-launch target. */
+/**
+ * Home-service categories for Jerusalem soft-launch recruitment.
+ * Expanded beyond the first 10 after Places returned ceramic shops / renovators
+ * that map better to dedicated trades (tiling+ceramics, renovations, solar, …).
+ */
 export const CORE_RECRUIT_CATEGORY_SLUGS = [
   'plumbing',
   'electricity',
@@ -12,6 +16,15 @@ export const CORE_RECRUIT_CATEGORY_SLUGS = [
   'gardening',
   'moving',
   'tiling',
+  'renovations',
+  'waterproofing',
+  'aluminum',
+  'drywall',
+  'solar',
+  'appliance_repair',
+  'pest_control',
+  'glazing',
+  'furniture',
 ] as const
 
 export const RECRUIT_PER_CATEGORY_TARGET = 10

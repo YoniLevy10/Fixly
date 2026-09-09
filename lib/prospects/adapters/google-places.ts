@@ -4,6 +4,7 @@ import {
   JERUSALEM_CENTER,
   getDiscoveryCity,
   getDiscoveryMappingsForSlugs,
+  placesQueriesFor,
   type DiscoveryCategoryMapping,
 } from '@/lib/prospects/discovery-mapping'
 import { getRecruitCategorySlugs } from '@/lib/prospects/config'
@@ -66,43 +67,64 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     const seen = new Set<string>()
 
     for (const mapping of this.mappings) {
-      const query = `${mapping.placesQueryHe} ${this.city}`
-      const places = await this.textSearch(query)
-      for (const place of places.slice(0, this.perCategoryLimit)) {
-        const placeId = place.id?.trim()
-        if (!placeId || seen.has(placeId)) continue
-        seen.add(placeId)
+      const queries = placesQueriesFor(mapping)
+      const perQueryLimit = Math.max(
+        5,
+        Math.ceil(this.perCategoryLimit / queries.length),
+      )
 
-        const name =
-          place.displayName?.text?.trim() ||
-          place.name?.trim() ||
-          mapping.placesQueryHe
-        const phone =
-          place.nationalPhoneNumber?.trim() ||
-          place.internationalPhoneNumber?.trim() ||
-          null
-        if (!phone) continue
-        if (!shouldKeepAsSoloProspect(name, name)) continue
+      for (const queryBase of queries) {
+        const query = `${queryBase} ${this.city}`
+        const places = await this.textSearch(query, perQueryLimit)
+        for (const place of places) {
+          const placeId = place.id?.trim()
+          if (!placeId || seen.has(placeId)) continue
+          seen.add(placeId)
 
-        const fit = scorePersonFit(name, name)
-        const addressNote = place.formattedAddress
-          ? `כתובת: ${place.formattedAddress}`
-          : null
-        const fitNote = `התאמת פרטי: ${fit.kind} (${fit.score})`
+          const name =
+            place.displayName?.text?.trim() ||
+            place.name?.trim() ||
+            queryBase
+          const phone =
+            place.nationalPhoneNumber?.trim() ||
+            place.internationalPhoneNumber?.trim() ||
+            null
+          if (!phone) continue
+          if (!shouldKeepAsSoloProspect(name, name)) continue
 
-        out.push({
-          name,
-          businessName: name,
-          phone,
-          whatsappPhone: phone,
-          city: this.city,
-          categorySlug: mapping.slug,
-          sourceName: 'google_places',
-          sourceUrl: place.googleMapsUri || place.websiteUri || null,
-          externalId: placeId,
-          notes: [addressNote, fitNote].filter(Boolean).join(' · '),
-          verificationStatus: 'unverified',
-        })
+          const fit = scorePersonFit(name, name)
+          const addressNote = place.formattedAddress
+            ? `כתובת: ${place.formattedAddress}`
+            : null
+          const fitNote = `התאמת פרטי: ${fit.kind} (${fit.score})`
+
+          out.push({
+            name,
+            businessName: name,
+            phone,
+            whatsappPhone: phone,
+            city: this.city,
+            categorySlug: mapping.slug,
+            sourceName: 'google_places',
+            sourceUrl: place.googleMapsUri || place.websiteUri || null,
+            externalId: placeId,
+            notes: [addressNote, fitNote].filter(Boolean).join(' · '),
+            verificationStatus: 'unverified',
+          })
+
+          if (
+            out.filter((r) => r.categorySlug === mapping.slug).length >=
+            this.perCategoryLimit
+          ) {
+            break
+          }
+        }
+        if (
+          out.filter((r) => r.categorySlug === mapping.slug).length >=
+          this.perCategoryLimit
+        ) {
+          break
+        }
       }
     }
 
@@ -115,9 +137,10 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     return out
   }
 
-  private async textSearch(textQuery: string): Promise<
-    NonNullable<PlacesTextSearchResult['places']>
-  > {
+  private async textSearch(
+    textQuery: string,
+    maxResultCount: number,
+  ): Promise<NonNullable<PlacesTextSearchResult['places']>> {
     const res = await this.fetchImpl(
       'https://places.googleapis.com/v1/places:searchText',
       {
@@ -132,7 +155,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
           textQuery,
           languageCode: 'he',
           regionCode: 'IL',
-          maxResultCount: this.perCategoryLimit,
+          maxResultCount: Math.min(maxResultCount, this.perCategoryLimit),
           locationBias: {
             circle: {
               center: {

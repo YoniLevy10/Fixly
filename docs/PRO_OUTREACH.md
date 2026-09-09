@@ -49,10 +49,16 @@
 `/pro/join` עם אותו טלפון → ליד עובר ל־`joined` (בלי ליצור `professionals` כפול).
 Claim פרופיל עם טלפון תואם → `active`.
 
+## יעד גיוס (ירושלים)
+
+19 קטגוריות בית (כולל **ריצוף וקרמיקה**, שיפוצים, איטום, אלומיניום, גבס, סולאר/דודים, תיקון מכשירים, הדברה, זגגות, ריהוט) × 10 לידים מאומתים = יעד ברירת מחדל.
+שאילתות Places לריצוף מכוונות ל־**מתקינים** (`רצף דירות` / `מתקין קרמיקה`) ולא לחנויות קרמיקה.
+
 ## Migrations (להחיל על Production)
 
 1. `supabase/migrations/20260909010000_professional_prospects.sql`
 2. `supabase/migrations/20260909120000_prospect_discovery_runs.sql`
+3. `supabase/migrations/20260909140000_expand_recruit_categories.sql`
 
 ## Env נדרש
 

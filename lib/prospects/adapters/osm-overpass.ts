@@ -60,6 +60,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
     const seen = new Set<string>()
 
     for (const mapping of this.mappings) {
+      if (mapping.osmFilters.length === 0) continue
       const elements = await this.queryCategory(mapping)
       for (const el of elements.slice(0, this.perCategoryLimit)) {
         const externalId = `${el.type}/${el.id}`

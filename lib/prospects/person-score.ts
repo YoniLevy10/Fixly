@@ -35,6 +35,12 @@ const COMPANY_MARKERS = [
   /סוכנות/i,
   /מפעל/i,
   /תעשי/i,
+  /אאוטלט/i,
+  /\boutlet\b/i,
+  /חומרי\s+בניין/i,
+  /משתלה/i,
+  /design\s*center/i,
+  /סניף/i,
 ]
 
 const PERSON_HINTS = [
@@ -45,9 +51,42 @@ const PERSON_HINTS = [
   /מומלץ/,
 ]
 
+/** Retail / showroom signals from Places (esp. ceramics & flooring). */
+const RETAIL_MARKERS = [
+  /חנות/,
+  /אאוטלט/i,
+  /\boutlet\b/i,
+  /ceramica/i,
+  /ceramic/i,
+  /קרמיקה/,
+  /פרקט/,
+  /שיש\s/,
+  /משתלה/,
+  /חומרי\s*בניין/,
+  /design\s*center/i,
+  /סניף/,
+]
+
+const INSTALLER_HINTS = /מתקין|רצף|התקנ|טכנאי|צבעי|גנן|מנעולן|אינסטלטור|חשמלאי|זגג|מדביר|נגר/
+
 /** Words that are trade / place / commercial — not a person's given name. */
 const NON_PERSONAL_WORDS = new Set(
   [
+    'פרקט',
+    'פרקטים',
+    'קרמיקה',
+    'קרמיק',
+    'שיש',
+    'אריחים',
+    'אריח',
+    'חיפוי',
+    'outlet',
+    'אאוטלט',
+    'חנות',
+    'משתלה',
+    'חומרי',
+    'בניין',
+    'סניף',
     'אינסטלטור',
     'אינסטלציה',
     'אינסטלטורים',
@@ -178,6 +217,12 @@ export function scorePersonFit(name: string, businessName?: string | null): Pers
       reasons.push('company_marker')
       break
     }
+  }
+
+  // Ceramic / parquet showrooms dominate Places "tiling" results
+  if (RETAIL_MARKERS.some((re) => re.test(label)) && !INSTALLER_HINTS.test(label)) {
+    score -= 40
+    reasons.push('retail_showroom')
   }
 
   if (looksLikePersonName(name)) {

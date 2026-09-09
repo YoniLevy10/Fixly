@@ -17,7 +17,7 @@ export const CATEGORIES: Category[] = [
   { id: '7', name: 'הובלות', slug: 'moving', icon: '🚚', description: 'הובלת רהיטים ועסקים' },
   { id: '8', name: 'גינון', slug: 'gardening', icon: '🌿', description: 'טיפוח גינות וחצרות' },
   { id: '9', name: 'מנעולן', slug: 'locksmith', icon: '🔐', description: 'פתיחת מנעולים, הצלה' },
-  { id: '10', name: 'ריצוף', slug: 'tiling', icon: '🧱', description: 'ריצוף ואריחים' },
+  { id: '10', name: 'ריצוף וקרמיקה', slug: 'tiling', icon: '🧱', description: 'ריצוף, אריחים ומתקיני קרמיקה' },
   { id: '11', name: 'מעליות', slug: 'elevators', icon: '🛗', description: 'תיקון ותחזוקת מעליות' },
   { id: '12', name: 'הדברה', slug: 'pest_control', icon: '🐛', description: 'הדברת מזיקים' },
   { id: '13', name: 'ריהוט', slug: 'furniture', icon: '🛋️', description: 'הרכבה ותיקון רהיטים' },
@@ -28,7 +28,7 @@ export const CATEGORIES: Category[] = [
   { id: '22', name: 'איטום', slug: 'waterproofing', icon: '🛡️', description: 'איטום גגות, מרפסות ורטיבות' },
   { id: '23', name: 'אלומיניום', slug: 'aluminum', icon: '🪟', description: 'חלונות, תריסים ופרגולות' },
   { id: '24', name: 'גבס וטיח', slug: 'drywall', icon: '🧱', description: 'מחיצות ותקרות גבס' },
-  { id: '25', name: 'סולאר ואנרגיה', slug: 'solar', icon: '☀️', description: 'דודי שמש ומערכות סולאריות' },
+  { id: '25', name: 'סולאר ודודי שמש', slug: 'solar', icon: '☀️', description: 'דודי שמש ומערכות סולאריות' },
   { id: '19', name: 'מניקור וציפורניים', slug: 'nails', icon: '💅', description: 'מניקור, ג׳ל ופדיקור עד הבית' },
   { id: '20', name: 'תספורת ועיצוב', slug: 'hair', icon: '✂️', description: 'ספרים ומעצבי שיער ניידים' },
   { id: '21', name: 'איפור', slug: 'makeup', icon: '💄', description: 'מאפרות עד הבית, מלון או משרד' },
@@ -48,11 +48,13 @@ export const HOME_DISPLAY_CATEGORIES = [
   { name: 'ניקיון', slug: 'cleaning', emoji: '✨' },
   { name: 'גינון', slug: 'gardening', emoji: '🌿' },
   { name: 'נגרות', slug: 'carpentry', emoji: '🪚' },
-  { name: 'ריצוף', slug: 'tiling', emoji: '🧱' },
+  { name: 'ריצוף וקרמיקה', slug: 'tiling', emoji: '🧱' },
   { name: 'שיפוצים', slug: 'renovations', emoji: '🏗️' },
   { name: 'הדברה', slug: 'pest_control', emoji: '🐛' },
   { name: 'איטום', slug: 'waterproofing', emoji: '🛡️' },
   { name: 'אלומיניום', slug: 'aluminum', emoji: '🪟' },
+  { name: 'גבס וטיח', slug: 'drywall', emoji: '🧱' },
+  { name: 'סולאר ודודי שמש', slug: 'solar', emoji: '☀️' },
 ]
 
 /** Search / filter chips — full profession list */

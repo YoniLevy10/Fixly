@@ -292,9 +292,9 @@ export const DEMO_CATEGORY_DEFS: DemoCategoryDef[] = [
     ],
   },
   {
-    category: 'ריצוף',
+    category: 'ריצוף וקרמיקה',
     slug: 'tiling',
-    titleTemplates: ['רצף מקצועי', 'מומחה אריחים', 'ריצוף וחיפוי'],
+    titleTemplates: ['רצף מקצועי', 'מתקין קרמיקה', 'ריצוף וחיפוי'],
     count: 4,
     basePrice: 350,
     services: [
@@ -306,6 +306,7 @@ export const DEMO_CATEGORY_DEFS: DemoCategoryDef[] = [
       'ריצוף מקלחת',
       'אריח שבור',
       'חיפוי מטבח',
+      'התקנת קרמיקה',
       'ריצוף מרפסת',
     ],
   },
