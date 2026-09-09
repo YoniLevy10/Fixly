@@ -1,6 +1,9 @@
 'use client'
 
+<<<<<<< HEAD
 import { useEffect, useRef } from 'react'
+=======
+>>>>>>> origin/main
 import { usePathname, useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -38,6 +41,7 @@ export default function DemoModeBanner() {
   const visible =
     isDemoDataMode() && !isMarketingSurface && !isLoginSurface
 
+<<<<<<< HEAD
   useEffect(() => {
     if (tourRunning || tourError || !tourStep) return
     const tmr = window.setTimeout(() => {
@@ -53,6 +57,12 @@ export default function DemoModeBanner() {
     }
     const el = bannerRef.current
     if (!el) return
+=======
+  const isMarketingSurface =
+    pathname === '/waitlist' || pathname.startsWith('/go/')
+  // Keep branded login / splash surfaces clean (OpticalCenter / Bamakor style).
+  const isLoginSurface = pathname === '/login'
+>>>>>>> origin/main
 
     const publish = () => {
       document.documentElement.style.setProperty(

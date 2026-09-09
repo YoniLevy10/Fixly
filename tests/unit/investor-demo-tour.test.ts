@@ -2,6 +2,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   DEMO_TOUR_STEPS,
+  finishInvestorDemoTour,
   getInvestorTourStatusSequence,
 } from '../../lib/demo/investor-tour'
 
@@ -22,5 +23,17 @@ describe('investor demo tour', () => {
     assert.ok(ids.includes('done'))
     assert.equal(ids[0], 'create')
     assert.equal(ids[ids.length - 1], 'done')
+  })
+
+  it('hard-exits to customer home when finishing', () => {
+    const roles: string[] = []
+    const paths: string[] = []
+    finishInvestorDemoTour({
+      switchRole: (role) => roles.push(role),
+      navigate: (path) => paths.push(path),
+    })
+    assert.deepEqual(roles, ['customer'])
+    assert.ok(paths.length === 1)
+    assert.equal(paths[0], '/')
   })
 })
