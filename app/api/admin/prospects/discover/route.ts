@@ -6,6 +6,7 @@ import { z } from 'zod'
 import {
   listDiscoveryRuns,
   runProspectDiscovery,
+  type DiscoveryProgress,
 } from '@/lib/prospects/discover'
 import { trackError } from '@/lib/monitoring/track-error'
 
@@ -25,7 +26,15 @@ export async function GET() {
 
   try {
     const runs = await listDiscoveryRuns(auth.admin, 15)
-    return NextResponse.json({ runs })
+    const running = runs.find((r) => r.status === 'running')
+    const progress =
+      running &&
+      running.details &&
+      typeof running.details === 'object' &&
+      (running.details as { progress?: unknown }).progress
+        ? (running.details as { progress: DiscoveryProgress }).progress
+        : null
+    return NextResponse.json({ runs, progress, runningRunId: running?.id ?? null })
   } catch (error) {
     trackError(error, { route: 'GET /api/admin/prospects/discover' })
     return NextResponse.json({ error: 'Failed to list runs' }, { status: 500 })
