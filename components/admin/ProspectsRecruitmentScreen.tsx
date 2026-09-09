@@ -203,6 +203,8 @@ export default function ProspectsRecruitmentScreen() {
   const [csvText, setCsvText] = useState('')
   const [creating, setCreating] = useState(false)
   const [discovering, setDiscovering] = useState(false)
+  const [discoveryPercent, setDiscoveryPercent] = useState(0)
+  const [discoveryProgressLabel, setDiscoveryProgressLabel] = useState('')
   const [runs, setRuns] = useState<DiscoveryRun[]>([])
   const [newForm, setNewForm] = useState({
     name: '',
@@ -492,7 +494,29 @@ export default function ProspectsRecruitmentScreen() {
 
   const runDiscovery = async () => {
     setDiscovering(true)
+    setDiscoveryPercent(1)
+    setDiscoveryProgressLabel('מתחיל גילוי…')
     setActionMsg(null)
+
+    const poll = window.setInterval(async () => {
+      try {
+        const res = await fetch('/api/admin/prospects/discover')
+        if (!res.ok) return
+        const data = await res.json()
+        const p = data.progress as
+          | { percent?: number; labelHe?: string }
+          | null
+          | undefined
+        if (p && typeof p.percent === 'number') {
+          setDiscoveryPercent(Math.max(1, Math.min(99, Math.round(p.percent))))
+          if (p.labelHe) setDiscoveryProgressLabel(p.labelHe)
+        }
+        if (Array.isArray(data.runs)) setRuns(data.runs)
+      } catch {
+        /* ignore poll errors */
+      }
+    }, 800)
+
     try {
       const res = await fetch('/api/admin/prospects/discover', {
         method: 'POST',
@@ -504,12 +528,17 @@ export default function ProspectsRecruitmentScreen() {
         setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
         return
       }
+      setDiscoveryPercent(100)
+      setDiscoveryProgressLabel('הגילוי הסתיים')
       setActionMsg(
         `גילוי מצטבר: חדשים ${data.created ?? 0} · עודכנו ${data.updated ?? 0} · דולגו ${data.skipped ?? 0} · קריאות API ${data.bySource?.google_places?.stats?.searchCalls ?? '—'} · תקציב קריאות ${data.apiCallBudget ?? '—'}`,
       )
       await Promise.all([loadList(), loadRuns()])
     } finally {
+      window.clearInterval(poll)
       setDiscovering(false)
+      setDiscoveryPercent(0)
+      setDiscoveryProgressLabel('')
     }
   }
 
@@ -547,10 +576,30 @@ export default function ProspectsRecruitmentScreen() {
             type="button"
             onClick={runDiscovery}
             disabled={discovering}
-            className="w-full rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-bold disabled:opacity-50"
+            className="w-full rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-bold disabled:opacity-50 relative overflow-hidden"
+            aria-live="polite"
           >
-            {discovering ? 'מריץ גילוי…' : 'הרץ גילוי עכשיו'}
+            {discovering ? (
+              <span className="inline-flex items-center justify-center gap-2 w-full">
+                <span>מריץ גילוי…</span>
+                <span className="tabular-nums font-extrabold">{discoveryPercent}%</span>
+              </span>
+            ) : (
+              'הרץ גילוי עכשיו'
+            )}
+            {discovering && (
+              <span
+                className="absolute inset-y-0 end-0 bg-white/20 transition-[width] duration-300"
+                style={{ width: `${Math.max(4, discoveryPercent)}%` }}
+                aria-hidden
+              />
+            )}
           </button>
+          {discovering && discoveryProgressLabel ? (
+            <p className="text-xs text-muted-foreground sm:col-span-3 -mt-1">
+              {discoveryProgressLabel}
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={exportCsv}

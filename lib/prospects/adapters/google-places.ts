@@ -89,6 +89,13 @@ export type GooglePlacesAdapterOptions = {
   searchAreas?: DiscoverySearchArea[]
   queryStats?: QueryStatRow[]
   fetchImpl?: typeof fetch
+  /** Fired after each search call / job step for UI progress */
+  onProgress?: (p: {
+    jobsDone: number
+    jobsTotal: number
+    searchCalls: number
+    apiCallBudget: number
+  }) => void | Promise<void>
 }
 
 export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
@@ -103,6 +110,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
   private readonly searchAreas: DiscoverySearchArea[]
   private readonly queryStats: QueryStatRow[]
   private readonly fetchImpl: typeof fetch
+  private readonly onProgress?: GooglePlacesAdapterOptions['onProgress']
   lastStats: GooglePlacesFetchStats = emptyStats()
 
   constructor(options: GooglePlacesAdapterOptions = {}) {
@@ -113,6 +121,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     this.apiKey = key
     this.city = options.city ?? getDiscoveryCity()
     this.fetchImpl = options.fetchImpl ?? fetch
+    this.onProgress = options.onProgress
     this.mappings = getDiscoveryMappingsForSlugs(
       options.categorySlugs ?? getRecruitCategorySlugs(),
     )
@@ -153,6 +162,21 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     const jobBudget = Math.max(1, Math.floor(this.apiCallBudget * 0.7))
     const selected = selectJobsForBudget(allJobs, this.queryStats, jobBudget)
     const keptByCategory = new Map<string, number>()
+    let jobsDone = 0
+
+    const emitProgress = async () => {
+      if (!this.onProgress) return
+      try {
+        await this.onProgress({
+          jobsDone,
+          jobsTotal: selected.length,
+          searchCalls: stats.searchCalls,
+          apiCallBudget: this.apiCallBudget,
+        })
+      } catch {
+        /* ignore progress errors */
+      }
+    }
 
     for (const job of selected) {
       if (stats.searchCalls >= this.apiCallBudget) {
@@ -164,7 +188,10 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
         break
       }
       const keptCat = keptByCategory.get(job.categorySlug) ?? 0
-      if (keptCat >= this.perCategoryLimit) continue
+      if (keptCat >= this.perCategoryLimit) {
+        jobsDone += 1
+        continue
+      }
 
       const yieldRow = yieldMap.get(job.queryKey) ?? {
         queryKey: job.queryKey,
@@ -316,8 +343,12 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
         stats.searchErrors.push(`${job.queryKey}: ${message}`)
       }
 
+      jobsDone += 1
       yieldMap.set(job.queryKey, yieldRow)
+      await emitProgress()
     }
+
+    await emitProgress()
 
     if (!stats.stopReason && stats.searchCalls >= this.apiCallBudget) {
       stats.stopReason = 'api_call_budget'
