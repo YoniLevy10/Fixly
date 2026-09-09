@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ProspectSourceAdapter } from '@/lib/prospects/adapters/types'
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
 import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpass'
+import { GovPestControlProspectAdapter } from '@/lib/prospects/adapters/gov-pest-control'
 import {
   clearReplaceableAutoProspects,
   ingestFromAdapter,
@@ -22,6 +23,11 @@ import {
 } from '@/lib/prospects/query-stats-store'
 
 export type DiscoveryTrigger = 'cron' | 'manual'
+
+export type DiscoveryAutoSource =
+  | 'google_places'
+  | 'osm'
+  | 'gov_pest_control'
 
 export type DiscoveryRunResult = {
   runId: string | null
@@ -45,6 +51,8 @@ export type DiscoveryRunResult = {
       updated: number
       skipped: number
       errors: string[]
+      uniqueToSource?: number
+      mergedIntoExisting?: number
       stats?: Record<string, number | string | string[] | null | undefined>
     }
   >
@@ -52,7 +60,14 @@ export type DiscoveryRunResult = {
 
 export type DiscoveryProgress = {
   percent: number
-  phase: 'starting' | 'places' | 'osm' | 'ingest' | 'done' | 'failed'
+  phase:
+    | 'starting'
+    | 'places'
+    | 'osm'
+    | 'gov'
+    | 'ingest'
+    | 'done'
+    | 'failed'
   labelHe: string
   apiCalls?: number
   apiCallBudget?: number
@@ -61,7 +76,7 @@ export type DiscoveryProgress = {
 }
 
 function buildAdapters(input?: {
-  sources?: Array<'google_places' | 'osm'>
+  sources?: DiscoveryAutoSource[]
   categorySlugs?: string[]
   city?: string
   totalBudget?: number
@@ -71,7 +86,10 @@ function buildAdapters(input?: {
     ConstructorParameters<typeof GooglePlacesProspectAdapter>[0]
   >['onProgress']
 }): ProspectSourceAdapter[] {
-  const wanted = new Set(input?.sources ?? ['google_places', 'osm'])
+  const wanted = new Set(
+    input?.sources ??
+      (['google_places', 'osm', 'gov_pest_control'] as DiscoveryAutoSource[]),
+  )
   const adapters: ProspectSourceAdapter[] = []
   const budget = input?.totalBudget ?? getDiscoveryTotalBudget()
   const categorySlugs = input?.categorySlugs ?? getRecruitCategorySlugs()
@@ -99,6 +117,18 @@ function buildAdapters(input?: {
   }
   if (wanted.has('osm')) {
     adapters.push(new OsmOverpassProspectAdapter(common))
+  }
+  if (wanted.has('gov_pest_control')) {
+    if (
+      categorySlugs.includes('pest_control') ||
+      input?.sources?.includes('gov_pest_control')
+    ) {
+      adapters.push(
+        new GovPestControlProspectAdapter({
+          city: common.city,
+        }),
+      )
+    }
   }
 
   return adapters
@@ -138,7 +168,7 @@ export async function runProspectDiscovery(
   options: {
     trigger: DiscoveryTrigger
     actorUserId?: string | null
-    sources?: Array<'google_places' | 'osm'>
+    sources?: DiscoveryAutoSource[]
     categorySlugs?: string[]
     city?: string
     /** Default false: cumulative merge. Opt-in wipe only. */
@@ -251,7 +281,7 @@ export async function runProspectDiscovery(
 
   if (adapters.length === 0) {
     const msg =
-      'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY או הפעל מקור OSM'
+      'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY או הפעל OSM / מאגר מדבירים'
     if (runId) {
       await admin
         .from('prospect_discovery_runs')
@@ -310,9 +340,17 @@ export async function runProspectDiscovery(
       try {
         if (adapter.name === 'osm') {
           await reportProgress({
-            percent: 78,
+            percent: 62,
             phase: 'osm',
             labelHe: 'סורק OpenStreetMap…',
+            apiCallBudget,
+            apiCalls: totalApiCalls,
+          })
+        } else if (adapter.name === 'gov_pest_control') {
+          await reportProgress({
+            percent: 82,
+            phase: 'gov',
+            labelHe: 'טוען מאגר מדבירים מורשים…',
             apiCallBudget,
             apiCalls: totalApiCalls,
           })
@@ -377,13 +415,27 @@ export async function runProspectDiscovery(
             )
           }
         }
+        if (adapter instanceof GovPestControlProspectAdapter) {
+          bySource[adapter.name].stats = {
+            fetched: adapter.lastFetched,
+            kept: adapter.lastKept,
+          }
+          if (adapter.lastErrors.length > 0) {
+            bySource[adapter.name].errors.push(...adapter.lastErrors.slice(0, 5))
+          }
+        }
 
         const wrap: ProspectSourceAdapter = {
           name: adapter.name,
           fetchRecords: async () => records,
         }
         await reportProgress({
-          percent: adapter.name === 'osm' ? 88 : 76,
+          percent:
+            adapter.name === 'gov_pest_control'
+              ? 90
+              : adapter.name === 'osm'
+                ? 70
+                : 55,
           phase: 'ingest',
           labelHe: `שומר לידים מ־${adapter.name}…`,
           apiCallBudget,
@@ -397,6 +449,10 @@ export async function runProspectDiscovery(
         bySource[adapter.name].created = result.created.length
         bySource[adapter.name].updated = result.updated.length
         bySource[adapter.name].skipped = result.skipped.length
+        // Contribution: newly created = unique-to-this-source this run;
+        // updated = merged into an existing row from another/prior source.
+        bySource[adapter.name].uniqueToSource = result.created.length
+        bySource[adapter.name].mergedIntoExisting = result.updated.length
         bySource[adapter.name].errors.push(
           ...result.errors.map((e) => e.error),
         )

@@ -308,6 +308,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
               categorySlug: job.categorySlug,
               sourceName: 'google_places',
               sourceUrl: place.googleMapsUri || website || null,
+              websiteUrl: website,
               externalId: placeId,
               notes: [address ? `כתובת: ${address}` : null, fitNote]
                 .filter(Boolean)

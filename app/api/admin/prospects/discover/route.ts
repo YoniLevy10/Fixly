@@ -14,7 +14,11 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
 const discoverSchema = z.object({
-  sources: z.array(z.enum(['google_places', 'osm'])).min(1).max(2).optional(),
+  sources: z
+    .array(z.enum(['google_places', 'osm', 'gov_pest_control']))
+    .min(1)
+    .max(3)
+    .optional(),
   city: z.string().trim().min(1).max(100).optional(),
   /** Opt-in only — default is cumulative merge */
   replacePrevious: z.boolean().optional(),

@@ -103,6 +103,8 @@ type DiscoveryRunDetails = {
       created?: number
       updated?: number
       skipped?: number
+      uniqueToSource?: number
+      mergedIntoExisting?: number
       errors?: string[]
       stats?: {
         rawFetched?: number
@@ -114,6 +116,8 @@ type DiscoveryRunDetails = {
         needsReview?: number
         searchCalls?: number
         stopReason?: string | null
+        fetched?: number
+        sitesFetched?: number
       }
     }
   >
@@ -721,6 +725,30 @@ export default function ProspectsRecruitmentScreen() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Places סרק {funnel.rawFetched} · ייחודיים {funnel.uniquePlaces ?? '—'} ·
                       נפסלו {funnel.rejectedFilter} · מתאימים/בדיקה {funnel.kept}
+                    </p>
+                  ) : null}
+                  {details?.bySource?.osm ? (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      OSM ייחודיים חדשים{' '}
+                      {details.bySource.osm.uniqueToSource ??
+                        details.bySource.osm.created ??
+                        0}
+                      {' · '}
+                      מוזגו לקיימים{' '}
+                      {details.bySource.osm.mergedIntoExisting ??
+                        details.bySource.osm.updated ??
+                        0}
+                    </p>
+                  ) : null}
+                  {details?.bySource?.gov_pest_control ? (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      מאגר מדבירים נשמרו{' '}
+                      {(details.bySource.gov_pest_control.uniqueToSource ??
+                        details.bySource.gov_pest_control.created ??
+                        0) +
+                        (details.bySource.gov_pest_control.mergedIntoExisting ??
+                          details.bySource.gov_pest_control.updated ??
+                          0)}
                     </p>
                   ) : null}
                   {problems.length > 0 ? (
