@@ -183,25 +183,24 @@ function isLikelyPersonalWord(word: string): boolean {
   return /[\u0590-\u05FF]{2,}/.test(w)
 }
 
-/**
- * Person-shaped: 2–4 words with at least one personal-looking token
- * (e.g. "דני אינסטלטור", "יוסי כהן") — not pure trade+city ("אינסטלציה ירושלים").
- */
+/** Rough person shape: short labels with ≥1 personal token, or longer labels that mix a personal token with an installer craft. */
 function looksLikePersonName(raw: string): boolean {
   const name = raw.trim()
   if (!name) return false
-  const words = name.split(/\s+/).filter(Boolean)
-  if (words.length < 2 || words.length > 4) return false
+  const words = name
+    .split(/[\s|/·•,]+/)
+    .map((w) => w.replace(/^[-–—]+|[-–—]+$/g, ''))
+    .filter((w) => w && w !== '-' && !/^[A-Z]{2,}$/.test(w))
+  if (words.length < 2 || words.length > 8) return false
   if (/^[A-Z0-9\s.&-]{6,}$/.test(name)) return false
 
   const personal = words.filter(isLikelyPersonalWord)
   if (personal.length < 1) return false
 
-  // Need enough Hebrew content overall
   const hebrewWords = words.filter((w) => /[\u0590-\u05FF]{2,}/.test(w))
-  if (hebrewWords.length < 2) return false
+  // Allow Latin given name + Hebrew craft (e.g. Handy Vadim הנדימן)
+  if (hebrewWords.length < 1 && personal.length < 2) return false
 
-  // If every word is non-personal trade/geo, reject
   if (words.every((w) => NON_PERSONAL_WORDS.has(normalizeWord(w)))) return false
 
   return true
@@ -230,6 +229,11 @@ export function scorePersonFit(name: string, businessName?: string | null): Pers
   if (RETAIL_MARKERS.some((re) => re.test(label)) && !INSTALLER_HINTS.test(label)) {
     score -= 40
     reasons.push('retail_showroom')
+  }
+
+  if (INSTALLER_HINTS.test(label)) {
+    score += 20
+    reasons.push('installer_hint')
   }
 
   if (looksLikePersonName(name)) {
