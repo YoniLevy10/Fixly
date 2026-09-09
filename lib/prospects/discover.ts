@@ -50,6 +50,16 @@ export type DiscoveryRunResult = {
   >
 }
 
+export type DiscoveryProgress = {
+  percent: number
+  phase: 'starting' | 'places' | 'osm' | 'ingest' | 'done' | 'failed'
+  labelHe: string
+  apiCalls?: number
+  apiCallBudget?: number
+  jobsDone?: number
+  jobsTotal?: number
+}
+
 function buildAdapters(input?: {
   sources?: Array<'google_places' | 'osm'>
   categorySlugs?: string[]
@@ -57,6 +67,9 @@ function buildAdapters(input?: {
   totalBudget?: number
   apiCallBudget?: number
   queryStats?: Awaited<ReturnType<typeof loadQueryStats>>
+  onPlacesProgress?: NonNullable<
+    ConstructorParameters<typeof GooglePlacesProspectAdapter>[0]
+  >['onProgress']
 }): ProspectSourceAdapter[] {
   const wanted = new Set(input?.sources ?? ['google_places', 'osm'])
   const adapters: ProspectSourceAdapter[] = []
@@ -76,7 +89,12 @@ function buildAdapters(input?: {
 
   if (wanted.has('google_places')) {
     if (process.env.GOOGLE_PLACES_API_KEY?.trim()) {
-      adapters.push(new GooglePlacesProspectAdapter(common))
+      adapters.push(
+        new GooglePlacesProspectAdapter({
+          ...common,
+          onProgress: input?.onPlacesProgress,
+        }),
+      )
     }
   }
   if (wanted.has('osm')) {
@@ -84,6 +102,35 @@ function buildAdapters(input?: {
   }
 
   return adapters
+}
+
+async function writeRunProgress(
+  admin: SupabaseClient,
+  runId: string | null,
+  progress: DiscoveryProgress,
+) {
+  if (!runId) return
+  const percent = Math.max(0, Math.min(100, Math.round(progress.percent)))
+  const { data: current } = await admin
+    .from('prospect_discovery_runs')
+    .select('details')
+    .eq('id', runId)
+    .eq('status', 'running')
+    .maybeSingle()
+  const prevDetails =
+    current?.details && typeof current.details === 'object'
+      ? (current.details as Record<string, unknown>)
+      : {}
+  await admin
+    .from('prospect_discovery_runs')
+    .update({
+      details: {
+        ...prevDetails,
+        progress: { ...progress, percent },
+      },
+    })
+    .eq('id', runId)
+    .eq('status', 'running')
 }
 
 export async function runProspectDiscovery(
@@ -123,6 +170,25 @@ export async function runProspectDiscovery(
   }
 
   const queryStats = await loadQueryStats(admin, city).catch(() => [])
+
+  let lastProgressWrite = 0
+  const reportProgress = async (progress: DiscoveryProgress) => {
+    const now = Date.now()
+    // Throttle DB writes (~700ms) except for terminal-ish jumps
+    if (
+      progress.percent < 99 &&
+      now - lastProgressWrite < 700 &&
+      progress.phase === 'places'
+    ) {
+      return
+    }
+    lastProgressWrite = now
+    await writeRunProgress(admin, runId, progress).catch(() => {})
+  }
+
+  // runId assigned below — placeholder; reassigned after insert
+  let runId: string | null = null
+
   const adapters = buildAdapters({
     sources: options.sources,
     categorySlugs: options.categorySlugs,
@@ -130,10 +196,24 @@ export async function runProspectDiscovery(
     totalBudget: budget,
     apiCallBudget,
     queryStats,
+    onPlacesProgress: async (p) => {
+      const jobRatio =
+        p.jobsTotal > 0 ? p.jobsDone / p.jobsTotal : p.searchCalls / Math.max(1, p.apiCallBudget)
+      const callRatio = p.searchCalls / Math.max(1, p.apiCallBudget)
+      const ratio = Math.min(1, Math.max(jobRatio, callRatio * 0.85))
+      await reportProgress({
+        percent: 8 + ratio * 67,
+        phase: 'places',
+        labelHe: `סורק Google Places… ${Math.round(ratio * 100)}%`,
+        apiCalls: p.searchCalls,
+        apiCallBudget: p.apiCallBudget,
+        jobsDone: p.jobsDone,
+        jobsTotal: p.jobsTotal,
+      })
+    },
   })
 
   const sourceNames = adapters.map((a) => a.name)
-  let runId: string | null = null
   let deletedPrevious = 0
 
   const { data: runRow } = await admin
@@ -144,6 +224,14 @@ export async function runProspectDiscovery(
       city,
       status: 'running',
       actor_user_id: options.actorUserId ?? null,
+      details: {
+        progress: {
+          percent: 2,
+          phase: 'starting',
+          labelHe: 'מתחיל גילוי…',
+          apiCallBudget,
+        } satisfies DiscoveryProgress,
+      },
     })
     .select('id')
     .maybeSingle()
@@ -194,9 +282,22 @@ export async function runProspectDiscovery(
 
   try {
     if (replacePrevious) {
+      await reportProgress({
+        percent: 5,
+        phase: 'starting',
+        labelHe: 'מנקה לידים ישנים…',
+        apiCallBudget,
+      })
       const cleared = await clearReplaceableAutoProspects(admin)
       deletedPrevious = cleared.deleted
     }
+
+    await reportProgress({
+      percent: 8,
+      phase: 'places',
+      labelHe: 'מתחיל סריקת Places…',
+      apiCallBudget,
+    })
 
     for (const adapter of adapters) {
       bySource[adapter.name] = {
@@ -207,6 +308,16 @@ export async function runProspectDiscovery(
         errors: [],
       }
       try {
+        if (adapter.name === 'osm') {
+          await reportProgress({
+            percent: 78,
+            phase: 'osm',
+            labelHe: 'סורק OpenStreetMap…',
+            apiCallBudget,
+            apiCalls: totalApiCalls,
+          })
+        }
+
         const records = await adapter.fetchRecords()
         records.sort((a, b) => {
           const sa =
@@ -271,6 +382,13 @@ export async function runProspectDiscovery(
           name: adapter.name,
           fetchRecords: async () => records,
         }
+        await reportProgress({
+          percent: adapter.name === 'osm' ? 88 : 76,
+          phase: 'ingest',
+          labelHe: `שומר לידים מ־${adapter.name}…`,
+          apiCallBudget,
+          apiCalls: totalApiCalls,
+        })
         const result: IngestResult = await ingestFromAdapter(
           admin,
           wrap,
@@ -350,6 +468,13 @@ export async function runProspectDiscovery(
       queryYields: queryYields.slice(0, 40),
       allErrors: topErrors.slice(0, 12),
       replacePrevious,
+      progress: {
+        percent: 100,
+        phase: 'done' as const,
+        labelHe: 'הגילוי הסתיים',
+        apiCalls: totalApiCalls,
+        apiCallBudget,
+      },
     }
 
     if (runId) {
