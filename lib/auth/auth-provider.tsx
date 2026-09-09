@@ -30,7 +30,6 @@ type AuthContextValue = {
   signInAnonymously: () => Promise<string | null>
   signInWithGoogle: () => Promise<string | null>
   claimProfessionalProfile: (professionalId: string) => Promise<string | null>
-  /** Investor demo only — flip between customer and pro without Supabase */
   switchDemoRole: (role: 'customer' | 'professional') => void
   signOut: () => Promise<void>
 }
@@ -39,31 +38,42 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 function mapSupabaseUser(sbUser: {
   id: string
-  email?: string
+  email?: string | null
   user_metadata?: Record<string, unknown>
   is_anonymous?: boolean
 }): AppUser {
   const meta = sbUser.user_metadata ?? {}
+  const isAnonymous = Boolean(sbUser.is_anonymous)
   return {
     id: sbUser.id,
-    email: sbUser.email ?? (sbUser.is_anonymous ? 'אורח' : ''),
+    email: sbUser.email ?? (isAnonymous ? 'אורח' : ''),
     fullName:
       (meta.full_name as string) ||
       (meta.fullName as string) ||
-      (sbUser.is_anonymous ? 'אורח' : 'משתמש'),
+      (meta.name as string) ||
+      (isAnonymous ? 'אורח' : 'משתמש'),
     phone: (meta.phone as string) || undefined,
     avatarUrl: (meta.avatar_url as string) || undefined,
     location: (meta.location as string) || 'תל אביב-יפו',
     role: (meta.role as AppUser['role']) || 'customer',
     professionalId: (meta.professional_id as string) || undefined,
+    isAnonymous,
   }
+}
+
+function shouldAutoAnon(): boolean {
+  if (typeof window === 'undefined') return false
+  const params = new URLSearchParams(window.location.search)
+  if (params.has('code') || params.get('auth') === 'error') return false
+  if (window.location.pathname.startsWith('/auth/callback')) return false
+  return true
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser>(GUEST_USER)
   const [isLoading, setIsLoading] = useState(true)
-  /** Keeps investor-tour role flips from being overwritten by Supabase auth events */
   const demoRoleLockRef = useRef<'customer' | 'professional' | null>(null)
+  const bootDoneRef = useRef(false)
 
   const getClient = useCallback(() => createBrowserSupabaseClient(), [])
 
@@ -79,31 +89,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const { data } = await supabase.auth.getSession()
-    if (data.session?.user) {
-      setUser(mapSupabaseUser(data.session.user))
-    } else if (isSupabaseEnabled()) {
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      setUser(mapSupabaseUser(userData.user))
+      setIsLoading(false)
+      return
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession()
+    if (sessionData.session?.user) {
+      setUser(mapSupabaseUser(sessionData.session.user))
+      setIsLoading(false)
+      return
+    }
+
+    if (isSupabaseEnabled() && shouldAutoAnon()) {
       const { data: anon, error } = await supabase.auth.signInAnonymously()
       if (!error && anon.user) {
         setUser(mapSupabaseUser(anon.user))
       } else {
         setUser(GUEST_USER)
       }
+    } else {
+      setUser(GUEST_USER)
     }
     setIsLoading(false)
   }, [getClient])
 
   useEffect(() => {
-    applySession()
+    if (bootDoneRef.current) return
+    bootDoneRef.current = true
+    void applySession()
 
     const supabase = getClient()
     if (!supabase) return
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (demoRoleLockRef.current) return
       if (session?.user) {
         setUser(mapSupabaseUser(session.user))
-      } else {
+        setIsLoading(false)
+        return
+      }
+      if (event === 'SIGNED_OUT') {
         setUser(GUEST_USER)
       }
     })
@@ -118,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       return error?.message ?? null
     },
-    [getClient]
+    [getClient],
   )
 
   const signUpWithEmail = useCallback(
@@ -134,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       return error?.message ?? null
     },
-    [getClient]
+    [getClient],
   )
 
   const signInAnonymously = useCallback(async () => {
@@ -148,43 +176,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!featureFlags.googleOAuth) return 'Google OAuth מושבת'
     const supabase = getClient()
     if (!supabase) return 'Supabase לא מוגדר'
-    const origin =
-      typeof window !== 'undefined' ? window.location.origin : ''
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    try {
+      const { data } = await supabase.auth.getUser()
+      if (data.user?.is_anonymous) {
+        await supabase.auth.signOut()
+      }
+    } catch {
+      /* ignore */
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: `${origin}/auth/callback?next=/profile`,
+        queryParams: { prompt: 'select_account' },
       },
     })
     return error?.message ?? null
   }, [getClient])
 
-  const claimProfessionalProfile = useCallback(async (professionalId: string) => {
-    // Investor demo: bind local session to mock pro — no Supabase claim API
-    if (isDemoDataMode()) {
-      demoRoleLockRef.current = 'professional'
-      setUser({
-        ...DEMO_PRO_USER,
-        professionalId: professionalId || DEMO_PROFESSIONAL_ID,
+  const claimProfessionalProfile = useCallback(
+    async (professionalId: string) => {
+      if (isDemoDataMode()) {
+        demoRoleLockRef.current = 'professional'
+        setUser({
+          ...DEMO_PRO_USER,
+          professionalId: professionalId || DEMO_PROFESSIONAL_ID,
+        })
+        return null
+      }
+
+      const res = await fetch('/api/pro/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ professionalId }),
       })
+      const json = await res.json()
+      if (!res.ok) return json.error || 'שגיאה'
+
+      const supabase = getClient()
+      if (supabase) {
+        const { data } = await supabase.auth.getUser()
+        if (data.user) setUser(mapSupabaseUser(data.user))
+      }
       return null
-    }
-
-    const res = await fetch('/api/pro/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ professionalId }),
-    })
-    const json = await res.json()
-    if (!res.ok) return json.error || 'שגיאה'
-
-    const supabase = getClient()
-    if (supabase) {
-      const { data } = await supabase.auth.getUser()
-      if (data.user) setUser(mapSupabaseUser(data.user))
-    }
-    return null
-  }, [getClient])
+    },
+    [getClient],
+  )
 
   const switchDemoRole = useCallback((role: 'customer' | 'professional') => {
     if (!isDemoDataMode()) return
@@ -233,7 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       claimProfessionalProfile,
       switchDemoRole,
       signOut,
-    ]
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

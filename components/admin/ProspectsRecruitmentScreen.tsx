@@ -6,6 +6,7 @@ import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
+import { useAuth } from '@/lib/auth/auth-provider'
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/prospects/types'
 
 type ProspectItem = {
@@ -85,6 +86,7 @@ type DiscoveryRun = {
 }
 
 export default function ProspectsRecruitmentScreen() {
+  const { user, isLoading: authLoading } = useAuth()
   const [items, setItems] = useState<ProspectItem[]>([])
   const [total, setTotal] = useState(0)
   const [counters, setCounters] = useState<Counters | null>(null)
@@ -133,9 +135,19 @@ export default function ProspectsRecruitmentScreen() {
     setError(null)
     try {
       const res = await fetch(`/api/admin/prospects?${queryString}`)
-      if (res.status === 403) throw new Error('אין הרשאת מנהל')
-      if (!res.ok) throw new Error(await res.text())
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(
+          typeof data.error === 'string'
+            ? data.error
+            : 'אין הרשאת מנהל — התחבר עם Google והוסף את המייל ל־ADMIN_EMAILS',
+        )
+      }
+      if (!res.ok) {
+        throw new Error(
+          typeof data.error === 'string' ? data.error : 'שגיאה בטעינה',
+        )
+      }
       setItems(data.items ?? [])
       setTotal(data.total ?? 0)
       setCounters(data.counters ?? null)
@@ -348,8 +360,16 @@ export default function ProspectsRecruitmentScreen() {
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
           <h1 className="text-3xl font-bold mt-1">גיוס אנשי מקצוע</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            סוכן גילוי חוקי (Places + OSM) · WhatsApp ידני מהטלפון שלך · יעד {targetTotal} בירושלים
+            סוכן גילוי חוקי (Places + OSM) · WhatsApp ידני מהטלפון שלך · יעד{' '}
+            {targetTotal} בירושלים
           </p>
+          {!authLoading && (
+            <p className="text-xs mt-2" dir="ltr">
+              {user.isAnonymous || !user.email || user.email === 'אורח'
+                ? 'לא מחובר עם Google — לך ל־/profile והתחבר'
+                : `מחובר כ־${user.email}`}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button

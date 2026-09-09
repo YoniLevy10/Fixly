@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth, DEMO_PROFESSIONAL_ID } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { featureFlags } from '@/lib/feature-flags'
@@ -15,6 +15,7 @@ export default function AuthPanel() {
   const {
     user,
     isSupabase,
+    isLoading,
     signInWithEmail,
     signUpWithEmail,
     signInWithGoogle,
@@ -30,10 +31,24 @@ export default function AuthPanel() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('auth') === 'error') {
+      setError(
+        'התחברות Google נכשלה — נסה שוב. ודא ש־redirect URLs מוגדרים ב־Supabase.',
+      )
+    }
+  }, [])
+
   if (!isSupabase) {
     return (
       <p className="text-sm text-muted-foreground">{t('auth.devNoSupabase')}</p>
     )
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground">טוען מצב התחברות…</p>
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,6 +64,7 @@ export default function AuthPanel() {
   }
 
   const isGuestLike =
+    Boolean(user.isAnonymous) ||
     user.id === GUEST_USER_ID ||
     user.email === 'guest@fixly.app' ||
     user.email === 'אורח' ||
@@ -64,6 +80,18 @@ export default function AuthPanel() {
 
   return (
     <div className="space-y-4">
+      {!isGuestLike && (
+        <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+          <p className="font-bold text-green-900">מחובר בהצלחה</p>
+          <p className="text-sm text-green-800 mt-1" dir="ltr">
+            {user.email}
+          </p>
+          <p className="text-xs text-green-700 mt-1">
+            ל־Superadmin: המייל הזה חייב להופיע ב־ADMIN_EMAILS ב־Vercel
+          </p>
+        </div>
+      )}
+
       {isGuestLike && featureFlags.googleOAuth && (
         <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-4">
           <p className="font-bold text-foreground mb-1">{t('auth.signInPromptTitle')}</p>
@@ -82,9 +110,15 @@ export default function AuthPanel() {
 
       <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
         <p className="font-bold text-foreground">{user.fullName}</p>
-        <p className="text-sm text-foreground/70">{user.email || user.id.slice(0, 8)}</p>
+        <p className="text-sm text-foreground/70" dir="ltr">
+          {user.email || user.id.slice(0, 8)}
+        </p>
         <p className="text-xs font-semibold text-primary mt-1">
-          {user.role === 'professional' ? t('auth.rolePro') : t('auth.roleCustomer')}
+          {isGuestLike
+            ? 'אורח (לא מחובר עם Google)'
+            : user.role === 'professional'
+              ? t('auth.rolePro')
+              : t('auth.roleCustomer')}
           {user.professionalId ? ` • ${user.professionalId.slice(0, 8)}…` : ''}
         </p>
       </div>
@@ -109,7 +143,10 @@ export default function AuthPanel() {
         <span className="flex-1 h-px bg-border" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-3 bg-white rounded-2xl border border-gray-200 p-4 shadow-sm"
+      >
         <div className="flex gap-2 mb-2">
           <button
             type="button"
