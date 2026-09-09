@@ -94,6 +94,17 @@ export default function DemoModeBanner() {
 
         <button
           type="button"
+          onClick={() => {
+            switchDemoRole('professional')
+            router.push(routes.proDashboard)
+          }}
+          className="underline underline-offset-2 hover:opacity-90"
+        >
+          {t('demo.viewYossiDashboard')}
+        </button>
+
+        <button
+          type="button"
           onClick={() => void startTour()}
           className="underline underline-offset-2 hover:opacity-90"
         >

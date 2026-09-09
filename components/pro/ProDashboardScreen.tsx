@@ -1,16 +1,18 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   CheckCircle,
   XCircle,
   BarChart3,
   Settings,
+  Home,
 } from 'lucide-react'
 import RequestStatusBadge from '@/components/shared/RequestStatusBadge'
 import Textarea from '@/components/ui/Textarea'
 import { useAuth, DEMO_PROFESSIONAL_ID } from '@/lib/auth/auth-provider'
 import { formatDate } from '@/lib/i18n/format-date'
+import { formatPrice } from '@/lib/i18n/format-locale'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import {
   updateRequestStatusApi,
@@ -31,6 +33,7 @@ import { isDemoDataMode } from '@/lib/data/demo-mode'
 import {
   DEMO_TOUR_EVENT,
   readTourRequest,
+  writeTourRequest,
 } from '@/lib/demo/tour-session'
 import Link from 'next/link'
 import { routes } from '@/lib/routes'
@@ -44,14 +47,22 @@ const TEMPLATES = [
   'improvements.templateThanks',
 ] as const
 
+const DEMO_BILLING = {
+  subscription_tier: 'pro',
+  lead_credits: 48,
+  subscription_until: new Date(Date.now() + 1000 * 60 * 60 * 24 * 22).toISOString(),
+  stripe_customer_id: null as string | null,
+}
+
 type TabKey = 'pending' | 'active' | 'done' | 'stats'
 
 export default function ProDashboardScreen() {
-  const { user, claimProfessionalProfile } = useAuth()
+  const { user, claimProfessionalProfile, switchDemoRole } = useAuth()
   const { locale, t } = useLocale()
   const { requests: apiRequests, loading, refresh } = useRequestsList({
     scope: user.role === 'professional' ? 'pro' : undefined,
   })
+  const settingsRef = useRef<HTMLDivElement>(null)
 
   // Merge investor-tour snapshot so the pro dashboard isn't empty across Vercel isolates
   const [tourRequest, setTourRequest] = useState<MockRequest | null>(null)
@@ -105,10 +116,14 @@ export default function ProDashboardScreen() {
     lead_credits: number
     subscription_until: string | null
     stripe_customer_id: string | null
-  } | null>(null)
+  } | null>(isDemoDataMode() ? DEMO_BILLING : null)
 
   useEffect(() => {
     if (user.role !== 'professional') return
+    if (isDemoDataMode()) {
+      setProBilling(DEMO_BILLING)
+      return
+    }
     let cancelled = false
     fetch('/api/pro/billing-status')
       .then((res) => (res.ok ? res.json() : null))
@@ -122,6 +137,10 @@ export default function ProDashboardScreen() {
   }, [user.role])
 
   const openBillingPortal = async () => {
+    if (isDemoDataMode()) {
+      alert(t('demo.billingMock'))
+      return
+    }
     const res = await fetch('/api/billing/portal', { method: 'POST' })
     const data = await res.json().catch(() => ({}))
     if (!res.ok || !data.url) {
@@ -141,6 +160,27 @@ export default function ProDashboardScreen() {
     }),
     [requests],
   )
+
+  const investorSummary = useMemo(() => {
+    if (!isDemoDataMode()) return null
+    const completed = requests.filter((r) => r.status === 'completed')
+    const paidTotal = completed.reduce(
+      (sum, r) => sum + (r.paymentStatus === 'paid' ? r.quotedAmount ?? 0 : 0),
+      0,
+    )
+    const quotedTotal = completed.reduce(
+      (sum, r) => sum + (r.quotedAmount ?? 0),
+      0,
+    )
+    return {
+      total: requests.length,
+      pending: stats.pending,
+      active: stats.active,
+      completed: stats.completed,
+      paidTotal,
+      quotedTotal,
+    }
+  }, [requests, stats])
 
   const filtered = requests.filter((r) => {
     if (activeTab === 'pending') return r.status === 'pending'
@@ -162,15 +202,25 @@ export default function ProDashboardScreen() {
     return acc.slice(-6)
   }, [requests, locale])
 
+  const keepSheetOpen = isDemoDataMode()
+
   const acceptInvite = async (reqId: string) => {
     const res = await fetch(`/api/requests/${reqId}/accept-invite`, { method: 'POST' })
+    const json = (await res.json().catch(() => null)) as
+      | (MockRequest & { error?: string })
+      | null
     if (!res.ok) {
-      alert((await res.json().catch(() => ({}))).error ?? 'Failed')
+      alert(json?.error ?? 'Failed')
       return
     }
     track('pro_accepted', { requestId: reqId, invite: true })
-    setSelectedRequest(null)
-    refresh()
+    await refresh()
+    if (keepSheetOpen && json && 'id' in json) {
+      setSelectedRequest(json)
+      if (json.id === readTourRequest()?.id) writeTourRequest(json)
+    } else {
+      setSelectedRequest(null)
+    }
   }
 
   const updateStatus = async (
@@ -191,7 +241,18 @@ export default function ProDashboardScreen() {
       )
     }
     await refresh()
-    setSelectedRequest(null)
+    if (keepSheetOpen) {
+      setSelectedRequest(result)
+      const tour = readTourRequest()
+      if (tour?.id === result.id) writeTourRequest(result)
+      if (newStatus === 'pending') setActiveTab('pending')
+      else if (ACTIVE_REQUEST_STATUSES.includes(newStatus)) setActiveTab('active')
+      else if (newStatus === 'completed' || newStatus === 'cancelled') {
+        setActiveTab('done')
+      }
+    } else {
+      setSelectedRequest(null)
+    }
     setCancellationReason('')
   }
 
@@ -208,6 +269,13 @@ export default function ProDashboardScreen() {
       return
     }
     await updateStatus(reqId, 'completed', { quotedAmount: amount })
+  }
+
+  const openSettings = () => {
+    setActiveTab('stats')
+    window.requestAnimationFrame(() => {
+      settingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
   }
 
   const TABS: { key: TabKey; labelKey: string; count: number | null }[] = [
@@ -243,23 +311,86 @@ export default function ProDashboardScreen() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 lg:px-8">
-      <div className="flex items-center justify-between mb-2">
+    <div
+      className="max-w-4xl mx-auto px-4 py-6 lg:px-8"
+      onTouchStart={pull.onTouchStart}
+      onTouchMove={pull.onTouchMove}
+      onTouchEnd={pull.onTouchEnd}
+    >
+      <PullToRefreshIndicator pulling={pull.pulling} />
+      <div className="flex items-center justify-between mb-2 gap-3">
         <h1 className="text-2xl font-black lg:text-3xl">{t('pro.dashboard')}</h1>
-        <button
-          type="button"
-          className="p-2 rounded-full hover:bg-muted text-muted-foreground"
-          aria-label={t('common.settings')}
-        >
-          <Settings size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          {isDemoDataMode() && (
+            <Link
+              href={routes.home}
+              onClick={() => switchDemoRole('customer')}
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-primary px-2.5 py-2 rounded-xl hover:bg-primary/10"
+            >
+              <Home size={16} />
+              {t('demo.backHome')}
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={openSettings}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+            aria-label={t('common.settings')}
+          >
+            <Settings size={20} />
+          </button>
+        </div>
       </div>
       <p className="text-muted-foreground text-sm mb-6">
         {t('nav.hello')}, {user.fullName}
       </p>
 
-      <ProAvailabilityEditor />
-      <MidragLinkPanel />
+      {investorSummary && (
+        <div className="bg-secondary/15 border-2 border-secondary/40 rounded-2xl p-4 mb-5">
+          <p className="text-xs font-bold text-secondary uppercase tracking-wide mb-2">
+            {t('demo.investorSummary')}
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+            <div>
+              <p className="text-2xl font-black">{investorSummary.total}</p>
+              <p className="text-xs text-muted-foreground">{t('demo.summaryJobs')}</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-yellow-700">
+                {investorSummary.pending}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('pro.statPending')}</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-blue-700">
+                {investorSummary.active}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('pro.statActive')}</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-green-700">
+                {investorSummary.completed}
+              </p>
+              <p className="text-xs text-muted-foreground">{t('pro.statCompleted')}</p>
+            </div>
+            <div className="col-span-2 sm:col-span-2">
+              <p className="text-2xl font-black">
+                {formatPrice(locale, investorSummary.paidTotal || investorSummary.quotedTotal)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {investorSummary.paidTotal > 0
+                  ? t('demo.summaryPaid')
+                  : t('demo.summaryQuoted')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div ref={settingsRef} id="pro-settings-panel">
+        <ProAvailabilityEditor />
+        <MidragLinkPanel />
+      </div>
 
       <div className="grid grid-cols-3 gap-3 mb-6 lg:gap-4">
         <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3 lg:p-4 text-center">
@@ -430,6 +561,12 @@ export default function ProDashboardScreen() {
               <p className="text-xs text-muted-foreground mt-1">
                 {req.customerName} • {req.location}
               </p>
+              {req.quotedAmount != null && req.quotedAmount > 0 && (
+                <p className="text-xs font-bold text-primary mt-1">
+                  {formatPrice(locale, req.quotedAmount)}
+                  {req.paymentStatus === 'paid' ? ` · ${t('payment.paid')}` : ''}
+                </p>
+              )}
             </button>
           ))}
         </div>
@@ -478,6 +615,13 @@ export default function ProDashboardScreen() {
                   {selectedRequest.location}
                 </p>
               )}
+              {selectedRequest.quotedAmount != null &&
+                selectedRequest.quotedAmount > 0 && (
+                  <p>
+                    <span className="font-medium">{t('common.quoteLabel')}:</span>{' '}
+                    {formatPrice(locale, selectedRequest.quotedAmount)}
+                  </p>
+                )}
             </div>
 
             {selectedRequest.status === 'pending' && (

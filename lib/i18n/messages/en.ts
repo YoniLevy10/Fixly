@@ -144,6 +144,14 @@ export const en: MessageTree = {
     statsActive: 'Active requests',
     statsJobs: 'Jobs completed',
     statsRating: 'Avg. rating',
+    viewYossiDashboard: 'View Yossi Cohen demo',
+    backHome: 'Back home',
+    investorSummary: 'Investor summary',
+    summaryJobs: 'Jobs in inbox',
+    summaryPaid: 'Payments received',
+    summaryQuoted: 'Projected earnings',
+    billingMock: 'Demo mode — subscription management is live in production',
+    subscribeMock: 'Demo mode — Yossi already has an active Pro plan',
   },
   status: {
     pending: 'Pending approval',
@@ -386,6 +394,7 @@ export const en: MessageTree = {
     empty: 'No messages yet',
     placeholder: 'Type a message...',
     send: 'Send',
+    demoUnavailable: 'Live chat is available in production — friendly empty state in demo',
   },
   payment: {
     payNow: 'Pay {amount}',

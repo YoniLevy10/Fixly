@@ -8,6 +8,7 @@ import { monetizationConfig, agorotToIls } from '@/lib/monetization/config'
 import { getProPriceDisplayIls } from '@/lib/tranzila/checkout'
 import { routes } from '@/lib/routes'
 import Link from 'next/link'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 export default function ProPricingPlans() {
   const { t } = useLocale()
@@ -20,6 +21,10 @@ export default function ProPricingPlans() {
   const canceled = searchParams.get('canceled')
 
   const handleSubscribe = async () => {
+    if (isDemoDataMode()) {
+      setMessage(t('demo.subscribeMock'))
+      return
+    }
     setLoading(true)
     setMessage(null)
     try {

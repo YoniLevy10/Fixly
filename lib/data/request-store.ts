@@ -112,6 +112,16 @@ export function updateRequestStatus(
   return updated
 }
 
+/** Demo / mock: mark a job as paid without Stripe/Tranzila. */
+export function markRequestPaid(id: string): MockRequest | undefined {
+  ensureDemoStore()
+  const index = store.findIndex((r) => r.id === id)
+  if (index === -1) return undefined
+  const updated = { ...store[index], paymentStatus: 'paid' }
+  store = [...store.slice(0, index), updated, ...store.slice(index + 1)]
+  return updated
+}
+
 /**
  * Insert-or-replace a full request row.
  * Used by the investor demo tour so any serverless isolate can accept

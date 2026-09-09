@@ -2,6 +2,7 @@ import type { Professional } from '@/types/professional'
 import type { MockRequest } from '@/mock/requests'
 import type { Review } from '@/types/review'
 import type { RequestStatus } from '@/shared/constants/request-status'
+import { DEMO_PROFESSIONAL_ID } from '@/lib/auth/constants'
 import { coordsFromLocationText } from '@/lib/tracking/geo'
 import {
   DEMO_AVATARS,
@@ -90,7 +91,47 @@ export function buildDemoProfessionals(): Professional[] {
     }
   }
 
-  return pros
+  return canonicalizeDemoPro(pros)
+}
+
+/** Investor-demo face: id "1" is always יוסי כהן (matches claim / DEMO_PRO_USER). */
+function canonicalizeDemoPro(pros: Professional[]): Professional[] {
+  const plumbing = DEMO_CATEGORY_DEFS.find((d) => d.category === 'אינסטלציה')
+  const idx = pros.findIndex((p) => p.id === DEMO_PROFESSIONAL_ID)
+  if (idx < 0 || !plumbing) return pros
+
+  const next = [...pros]
+  next[idx] = {
+    ...next[idx]!,
+    name: 'יוסי כהן',
+    title: 'אינסטלטור מוסמך · יוסי כהן',
+    category: 'אינסטלציה',
+    categories: ['אינסטלציה'],
+    description:
+      'אינסטלטור מוסמך עם 12 שנות ניסיון בתל אביב והמרכז — תיקונים דחופים, התקנות ושיפוצים. פרופיל הדגמה למשקיעים.',
+    avatarUrl: pick(DEMO_AVATARS, 1),
+    location: 'תל אביב',
+    serviceAreas: ['תל אביב', 'רמת גן', 'גבעתיים', 'הרצליה'],
+    phone: '050-1234567',
+    rating: 4.9,
+    reviewCount: 186,
+    startingPrice: plumbing.basePrice,
+    experienceYears: 12,
+    completedJobs: 1240,
+    isAvailable: true,
+    isApproved: true,
+    isFeatured: true,
+    isVerified: true,
+    midragVerified: true,
+    midragRating: 9.4,
+    midragReviewsCount: 214,
+    midragProfileUrl: 'https://www.midrag.co.il/SpCard/Sp/10001',
+    subscriptionTier: 'pro',
+    availableHours: 'א׳-ה׳ 08:00-20:00 · שישי עד 14:00',
+    gallery: [pick(DEMO_GALLERY, 2), pick(DEMO_GALLERY, 5)],
+    services: plumbing.services.map((s) => ({ ...s })),
+  }
+  return next
 }
 
 const STATUS_POOL: RequestStatus[] = [
@@ -164,12 +205,87 @@ export function buildDemoRequests(pros: Professional[]): MockRequest[] {
       )
     }
 
+    if (status === 'completed' || status === 'in_progress') {
+      req.quotedAmount = 280 + (i % 8) * 45
+      if (status === 'completed' && i % 3 !== 0) {
+        req.paymentStatus = 'paid'
+      }
+    }
+
     requests.push(req)
   }
+
+  // Dedicated rich inbox for יוסי כהן so the pro dashboard never looks empty.
+  requests.push(...buildYossiInvestorJobs(pros))
 
   return requests.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
+}
+
+const YOSSI_JOBS: Array<{
+  status: RequestStatus
+  title: string
+  hoursAgo: number
+  amount?: number
+  paid?: boolean
+}> = [
+  { status: 'pending', title: 'סתימה בכיור מטבח', hoursAgo: 0.4 },
+  { status: 'pending', title: 'ברז דולף בחדר רחצה', hoursAgo: 1.2 },
+  { status: 'pending', title: 'החלפת אסלה תקועה', hoursAgo: 2.5 },
+  { status: 'pending', title: 'דליפה מתחת לכיור', hoursAgo: 4 },
+  { status: 'accepted', title: 'התקנת דוד שמש', hoursAgo: 3, amount: 890 },
+  { status: 'accepted', title: 'תיקון לחץ מים נמוך', hoursAgo: 5, amount: 320 },
+  { status: 'on_the_way', title: 'פיצוץ צינור בחניה', hoursAgo: 0.8, amount: 650 },
+  { status: 'in_progress', title: 'החלפת סוללה במטבח', hoursAgo: 1.5, amount: 480 },
+  { status: 'completed', title: 'תיקון ביוב סתום', hoursAgo: 28, amount: 720, paid: true },
+  { status: 'completed', title: 'התקנת ברז גינה', hoursAgo: 52, amount: 350, paid: true },
+  { status: 'completed', title: 'איטום מקלחון', hoursAgo: 76, amount: 1100, paid: true },
+  { status: 'completed', title: 'החלפת משאבת מים', hoursAgo: 100, amount: 1450, paid: true },
+  { status: 'completed', title: 'תיקון נזילה בתקרה', hoursAgo: 140, amount: 980, paid: true },
+  { status: 'completed', title: 'פתיחת סתימה ראשית', hoursAgo: 180, amount: 560, paid: true },
+  { status: 'completed', title: 'התקנת מסנן מים', hoursAgo: 220, amount: 420, paid: false },
+]
+
+function buildYossiInvestorJobs(pros: Professional[]): MockRequest[] {
+  const yossi = pros.find((p) => p.id === DEMO_PROFESSIONAL_ID)
+  if (!yossi) return []
+
+  return YOSSI_JOBS.map((job, i) => {
+    const street = pick(DEMO_STREETS, i + 40)
+    const location = `תל אביב, ${street} ${12 + i * 3}`
+    const coords = coordsFromLocationText(location)
+    const liveActive =
+      job.status === 'on_the_way' || job.status === 'in_progress'
+
+    const req: MockRequest = {
+      id: `req-yossi-${i + 1}`,
+      customerId: `cust-yossi-${i + 1}`,
+      customerName: customerName(i + 90),
+      customerPhone: `050-${String(1000000 + i * 11111).slice(0, 7)}`,
+      professionalId: DEMO_PROFESSIONAL_ID,
+      professionalName: yossi.name,
+      category: 'אינסטלציה',
+      title: job.title,
+      description: `${job.title} — הזמנת דמו למשקיעים אצל יוסי כהן`,
+      status: job.status,
+      createdAt: new Date(Date.now() - job.hoursAgo * 3600000).toISOString(),
+      location,
+      destinationLat: coords.lat,
+      destinationLng: coords.lng,
+      liveTrackingActive: liveActive,
+      quotedAmount: job.amount,
+      paymentStatus: job.paid ? 'paid' : job.amount ? 'pending' : undefined,
+    }
+
+    if (liveActive) {
+      req.proLat = coords.lat + 0.018
+      req.proLng = coords.lng + 0.012
+      req.proLocationUpdatedAt = new Date().toISOString()
+    }
+
+    return req
+  })
 }
 
 export function buildDemoReviews(pros: Professional[]): Review[] {

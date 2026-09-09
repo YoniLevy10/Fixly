@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Send } from 'lucide-react'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
+import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 type ChatMessage = {
   id: string
@@ -66,7 +67,9 @@ export default function RequestChat({ requestId, enabled = true }: RequestChatPr
       <h3 className="font-bold mb-3">{t('chat.title')}</h3>
       <div className="max-h-48 overflow-y-auto space-y-2 mb-3">
         {messages.length === 0 && (
-          <p className="text-sm text-muted-foreground">{t('chat.empty')}</p>
+          <p className="text-sm text-muted-foreground">
+            {isDemoDataMode() ? t('chat.demoUnavailable') : t('chat.empty')}
+          </p>
         )}
         {messages.map((m) => {
           const mine = m.senderRole === myRole
