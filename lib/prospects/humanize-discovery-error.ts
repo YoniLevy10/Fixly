@@ -40,6 +40,13 @@ export function humanizeDiscoveryError(raw: string | null | undefined): string |
     return 'אין מקורות גילוי זמינים'
   }
   if (
+    msg.includes('could not embed') ||
+    msg.includes('more than one relationship') ||
+    (msg.includes('professional_prospects') && msg.includes('service_categories'))
+  ) {
+    return 'שגיאת שמירה במסד (קישור לקטגוריה) — הריצה מצאה לידים אבל לא שמרה אותם; יש לפרוס תיקון ה-embed'
+  }
+  if (
     msg.includes('overpass') ||
     msg.includes('osm') ||
     msg.includes('too many requests') ||

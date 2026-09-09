@@ -303,9 +303,9 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
           }
 
           pageToken = nextPageToken
-          // Stop paging when no new unique places (low utility)
+          // Stop paging THIS query when the page added no new place ids.
+          // Do not set run-level stopReason — discovery continues other jobs.
           if (pageToken && newOnLastPage === 0) {
-            stats.stopReason = stats.stopReason ?? 'low_page_utility'
             break
           }
           // Soft max 3 pages per query

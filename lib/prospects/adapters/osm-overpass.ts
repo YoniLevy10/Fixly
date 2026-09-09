@@ -36,6 +36,13 @@ export type OsmAdapterOptions = {
 
 const DEFAULT_OVERPASS = 'https://overpass-api.de/api/interpreter'
 
+/** Public Overpass mirrors — try next on timeout / 5xx / rate limit. */
+const OVERPASS_ENDPOINTS = [
+  DEFAULT_OVERPASS,
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+] as const
+
 /**
  * Legal discovery via OpenStreetMap Overpass API (ODbL).
  * Bbox follows recruit city geo profile (not hardcoded Jerusalem when city changes).
@@ -46,14 +53,16 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
   private readonly mappings: DiscoveryCategoryMapping[]
   private readonly city: string
   private readonly perCategoryLimit: number
-  private readonly endpoint: string
+  private readonly endpoints: string[]
   private readonly fetchImpl: typeof fetch
   lastCategoryErrors: string[] = []
 
   constructor(options: OsmAdapterOptions = {}) {
     this.city = options.city ?? getDiscoveryCity()
     this.perCategoryLimit = Math.min(options.perCategoryLimit ?? 40, 80)
-    this.endpoint = options.endpoint ?? DEFAULT_OVERPASS
+    this.endpoints = options.endpoint
+      ? [options.endpoint, ...OVERPASS_ENDPOINTS.filter((e) => e !== options.endpoint)]
+      : [...OVERPASS_ENDPOINTS]
     this.fetchImpl = options.fetchImpl ?? fetch
     this.mappings = getDiscoveryMappingsForSlugs(
       options.categorySlugs ?? getRecruitCategorySlugs(),
@@ -187,21 +196,41 @@ out center tags;
     mapping: DiscoveryCategoryMapping,
   ): Promise<OsmElement[]> {
     const query = this.buildOverpassQuery(mapping)
-    const res = await this.fetchImpl(this.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(30_000),
-    })
+    const body = `data=${encodeURIComponent(query)}`
+    const errors: string[] = []
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      throw new Error(
-        `Overpass query failed (${res.status}): ${body.slice(0, 300)}`,
-      )
+    for (const endpoint of this.endpoints) {
+      try {
+        const res = await this.fetchImpl(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+          signal: AbortSignal.timeout(35_000),
+        })
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => '')
+          const err = `Overpass query failed (${res.status}): ${text.slice(0, 200)}`
+          // Retry other mirrors on rate limit / gateway errors
+          if ([429, 502, 503, 504, 509].includes(res.status)) {
+            errors.push(`${endpoint}: ${err}`)
+            continue
+          }
+          throw new Error(err)
+        }
+
+        const json = (await res.json()) as OverpassResponse
+        return json.elements ?? []
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Overpass failed'
+        errors.push(`${endpoint}: ${message}`)
+        // Network / timeout → try next mirror
+        continue
+      }
     }
 
-    const json = (await res.json()) as OverpassResponse
-    return json.elements ?? []
+    throw new Error(
+      `Overpass query failed for all mirrors: ${errors[0] ?? 'unknown'}`,
+    )
   }
 }

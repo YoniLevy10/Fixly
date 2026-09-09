@@ -87,6 +87,15 @@ describe('humanizeDiscoveryError', () => {
     ])
     assert.equal(list.length, 1)
   })
+
+  it('explains PostgREST category embed ambiguity (0 created bug)', () => {
+    const msg = humanizeDiscoveryError(
+      "google_places: Could not embed because more than one relationship was found for 'professional_prospects' and 'service_categories'",
+    )
+    assert.ok(msg)
+    assert.match(msg!, /שמירה|קטגוריה/)
+    assert.ok(!msg!.startsWith('תקלה חלקית:'))
+  })
 })
 
 describe('OsmOverpassProspectAdapter', () => {
@@ -138,9 +147,10 @@ describe('OsmOverpassProspectAdapter', () => {
     let calls = 0
     const adapter = new OsmOverpassProspectAdapter({
       categorySlugs: ['plumbing', 'electricity'],
+      // Fail first category across all Overpass mirrors, then succeed
       fetchImpl: async () => {
         calls += 1
-        if (calls === 1) {
+        if (calls <= 3) {
           return new Response('Gateway Timeout', { status: 504 })
         }
         return new Response(
@@ -164,6 +174,48 @@ describe('OsmOverpassProspectAdapter', () => {
     const records = await adapter.fetchRecords()
     assert.equal(records.length, 1)
     assert.ok(adapter.lastCategoryErrors.length >= 1)
+  })
+
+  it('retries the next Overpass mirror after a 504', async () => {
+    const hits: string[] = []
+    const adapter = new OsmOverpassProspectAdapter({
+      categorySlugs: ['plumbing'],
+      fetchImpl: async (url) => {
+        hits.push(String(url))
+        if (hits.length === 1) {
+          return new Response('Gateway Timeout', { status: 504 })
+        }
+        return new Response(
+          JSON.stringify({
+            elements: [
+              {
+                type: 'node',
+                id: 3,
+                tags: {
+                  name: 'דוד אינסטלטור',
+                  phone: '0501112233',
+                  craft: 'plumber',
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        )
+      },
+    })
+    const records = await adapter.fetchRecords()
+    assert.ok(records.length >= 1)
+    assert.ok(hits.length >= 2)
+  })
+})
+
+describe('prospect category embed', () => {
+  it('disambiguates service_categories FK for PostgREST', async () => {
+    const { PROSPECT_CATEGORY_EMBED } = await import('@/lib/prospects/service')
+    assert.match(
+      PROSPECT_CATEGORY_EMBED,
+      /service_categories!professional_prospects_category_id_fkey/,
+    )
   })
 })
 
