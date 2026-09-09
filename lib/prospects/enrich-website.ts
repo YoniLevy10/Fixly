@@ -155,7 +155,7 @@ export async function enrichFromWebsite(
 const IL_PHONE_RE =
   /(?:\+972[\s-]?)?(?:0(?:5\d|7\d|2|3|4|8|9))[\s-]?\d{3}[\s-]?\d{4}/g
 
-/** Lightweight contact signals for Brave → site discovery. */
+/** Lightweight contact signals from HTML (phones / title). */
 export function extractContactSignalsFromHtml(html: string): {
   title: string | null
   phones: string[]
@@ -171,7 +171,7 @@ export function extractContactSignalsFromHtml(html: string): {
   return { title, phones, textSample: text.slice(0, 8_000) }
 }
 
-/** Fetch HTML with the same SSRF guards as enrichment (for Brave adapter). */
+/** Fetch HTML with the same SSRF guards as enrichment. */
 export async function fetchWebsiteHtmlSafe(
   websiteUrl: string,
   fetchImpl: typeof fetch = fetch,

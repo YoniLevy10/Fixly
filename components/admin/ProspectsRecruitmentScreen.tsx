@@ -740,17 +740,6 @@ export default function ProspectsRecruitmentScreen() {
                         0}
                     </p>
                   ) : null}
-                  {details?.bySource?.brave_web ? (
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Brave אתרים{' '}
-                      {details.bySource.brave_web.stats?.sitesFetched ?? '—'}
-                      {' · '}
-                      חדשים{' '}
-                      {details.bySource.brave_web.uniqueToSource ??
-                        details.bySource.brave_web.created ??
-                        0}
-                    </p>
-                  ) : null}
                   {details?.bySource?.gov_pest_control ? (
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       מאגר מדבירים נשמרו{' '}

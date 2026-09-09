@@ -702,7 +702,6 @@ export async function clearReplaceableAutoProspects(
   const autoSources = [
     'google_places',
     'osm',
-    'brave_web',
     'gov_pest_control',
   ]
 

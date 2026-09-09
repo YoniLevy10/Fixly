@@ -1,4 +1,4 @@
--- Multi-source identity + website + license for Brave/registry discovery.
+-- Multi-source identity + website + license for registry discovery.
 -- Apply on Fixly Supabase before relying on new Superadmin/source fields.
 -- See docs/PRO_OUTREACH.md
 

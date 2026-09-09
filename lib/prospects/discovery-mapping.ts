@@ -437,7 +437,6 @@ export function placesSearchJobsFor(
 export const ALLOWED_DISCOVERY_SOURCES = [
   'google_places',
   'osm',
-  'brave_web',
   'gov_pest_control',
   'manual',
   'csv',

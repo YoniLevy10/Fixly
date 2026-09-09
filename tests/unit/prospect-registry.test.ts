@@ -5,11 +5,6 @@ import {
   candidateFromSourceRecord,
 } from '@/lib/prospects/dedupe'
 import {
-  filterBraveResultUrls,
-  braveQueriesFor,
-  BraveWebProspectAdapter,
-} from '@/lib/prospects/adapters/brave-web'
-import {
   govPestRowToRecord,
   settlementMatchesCity,
   GovPestControlProspectAdapter,
@@ -21,7 +16,6 @@ import {
   pickWebsiteUrl,
   preferLicense,
 } from '@/lib/prospects/source-refs'
-import { DISCOVERY_CATEGORY_MAP } from '@/lib/prospects/discovery-mapping'
 import { isAllowedDiscoverySource } from '@/lib/prospects/discovery-mapping'
 
 describe('source refs + website helpers', () => {
@@ -44,14 +38,13 @@ describe('source refs + website helpers', () => {
       seenAt: '2026-01-01T00:00:00Z',
     })
     const b = mergeSourceRefs(a, {
-      source: 'brave_web',
-      externalId: 'brave:example.co.il',
-      url: 'https://example.co.il',
+      source: 'gov_pest_control',
+      externalId: 'gov:pest:9',
       seenAt: '2026-01-02T00:00:00Z',
     })
     const c = mergeSourceRefs(b, {
-      source: 'brave_web',
-      externalId: 'brave:example.co.il',
+      source: 'gov_pest_control',
+      externalId: 'gov:pest:9',
       seenAt: '2026-01-03T00:00:00Z',
     })
     assert.equal(c.length, 2)
@@ -86,9 +79,9 @@ describe('dedupe website_domain', () => {
         {
           name: 'דני אינסטלטור',
           city: 'ירושלים',
-          sourceName: 'brave_web',
+          sourceName: 'osm',
           websiteUrl: 'https://www.dani-plumb.co.il/contact',
-          externalId: 'brave:dani-plumb.co.il',
+          externalId: 'node/1',
         },
         'cat',
       ),
@@ -100,66 +93,12 @@ describe('dedupe website_domain', () => {
   })
 })
 
-describe('brave web adapter helpers', () => {
-  it('allowlists brave_web and builds Hebrew city queries', () => {
-    assert.equal(isAllowedDiscoverySource('brave_web'), true)
-    assert.equal(isAllowedDiscoverySource('gov_pest_control'), true)
-    const plumbing = DISCOVERY_CATEGORY_MAP.find((m) => m.slug === 'plumbing')!
-    const qs = braveQueriesFor(plumbing, 'ירושלים')
-    assert.ok(qs.length >= 1)
-    assert.ok(qs.every((q) => q.includes('ירושלים')))
-  })
-
-  it('filters directory and social URLs', () => {
-    const urls = filterBraveResultUrls([
-      'https://b144.co.il/foo',
-      'https://facebook.com/x',
-      'https://maps.google.com/?cid=1',
-      'https://my-plumber.co.il/',
-      'https://www.my-plumber.co.il/about',
-    ])
-    assert.deepEqual(urls, ['https://my-plumber.co.il/'])
-  })
-
-  it('discovers a prospect from mocked Brave + site HTML', async () => {
-    const adapter = new BraveWebProspectAdapter({
-      apiKey: 'test',
-      categorySlugs: ['plumbing'],
-      city: 'ירושלים',
-      callBudget: 2,
-      sitesPerQuery: 1,
-      fetchImpl: async (input) => {
-        const url = String(input)
-        if (url.includes('api.search.brave.com')) {
-          return new Response(
-            JSON.stringify({
-              web: {
-                results: [
-                  {
-                    title: 'יוסי אינסטלטור ירושלים',
-                    url: 'https://yossi-plumb.example/',
-                  },
-                ],
-              },
-            }),
-            { status: 200 },
-          )
-        }
-        return new Response(
-          `<html><title>יוסי אינסטלטור</title><body>אינסטלציה עד הבית 050-1234567</body></html>`,
-          { status: 200, headers: { 'Content-Type': 'text/html' } },
-        )
-      },
-    })
-    const records = await adapter.fetchRecords()
-    assert.ok(records.length >= 1)
-    assert.equal(records[0].sourceName, 'brave_web')
-    assert.ok(records[0].externalId?.startsWith('brave:'))
-    assert.ok(records[0].phone?.includes('050'))
-  })
-})
-
 describe('gov pest control adapter', () => {
+  it('allowlists free registry source only', () => {
+    assert.equal(isAllowedDiscoverySource('gov_pest_control'), true)
+    assert.equal(isAllowedDiscoverySource('brave_web'), false)
+  })
+
   it('keeps the documented resource id', () => {
     assert.equal(GOV_PEST_RESOURCE_ID, '4941fd97-9f9f-4e45-b117-9f71735e9845')
   })

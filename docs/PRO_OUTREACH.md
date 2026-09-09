@@ -5,7 +5,8 @@
 
 אין הסכם עם מידרג — **אין סקרייפינג ממידרג**.  
 אין איסוף מקבוצות פייסבוק / Messenger.  
-אין סקרייפינג מ־B144 / דפי זהב / איזי — רק API רשמי, open data, או הסכם נתונים.
+אין סקרייפינג מ־B144 / דפי זהב / איזי.  
+**אין מקורות בתשלום** (Brave / D&B / מדריכים מסחריים) — רק API שכבר בשימוש, OSM, ו־open data ממשלתי.
 
 ## ממשק
 
@@ -17,56 +18,44 @@
 | שדה | משמעות |
 |-----|--------|
 | `fit_class` | `suitable` / `needs_review` / `unsuitable` / `unknown` |
-| `fit_confidence` | 0–100 (כיול, לא מדע מדויק) |
+| `fit_confidence` | 0–100 |
 | `fit_reasons` | סיבות קריאות |
-| `contactability` | `mobile` / `landline` / `unknown` / `none` — **לא** קובע התאמה מקצועית |
+| `contactability` | `mobile` / `landline` / `unknown` / `none` |
 | `website_url` | אתר עסקי (לא Maps) |
 | `source_refs` | מקורות מרובים שמוזגו לרשומה אחת |
 | `license` | ראיית רישוי (פיילוט מדבירים) |
 
-משקלים ב־[`lib/prospects/config.ts`](../lib/prospects/config.ts) (`FIT_WEIGHTS`).
+משקלים ב־[`lib/prospects/config.ts`](../lib/prospects/config.ts).
 
-## מקורות גילוי
+## מקורות גילוי (חינם / קיים)
 
 | מקור | Env / הערה |
 |------|------------|
-| Google Places API (New) | `GOOGLE_PLACES_API_KEY` |
-| OpenStreetMap Overpass | — (מדוד `uniqueToSource` בכרטיס ריצה) |
-| Brave Search → אתר עסקי | `BRAVE_SEARCH_API_KEY` — מנוע כיסוי, לא רשימת טלפונים |
-| מאגר מדבירים מורשים | data.gov.il CKAN (`gov_pest_control`) כש־`pest_control` בגיוס |
+| Google Places API (New) | `GOOGLE_PLACES_API_KEY` — אם כבר מופעל אצלכם |
+| OpenStreetMap Overpass | חינם — מדוד `uniqueToSource` בכרטיס ריצה |
+| מאגר מדבירים מורשים | data.gov.il CKAN (`gov_pest_control`) — open data |
 | ידני / CSV | — |
-
-### Brave
-
-- שאילתות עברית לפי קטגוריה + עיר → תוצאות ווב → סינון מדריכים/סושיאל → fetch אתר (SSRF-safe) → טלפון/שירותים.
-- תקציב: `FIXLY_DISCOVERY_BRAVE_CALL_BUDGET` (ברירת מחדל 40).
 
 ### מאגר מדבירים (פיילוט רישוי)
 
 - Resource id: `4941fd97-9f9f-4e45-b117-9f71735e9845` (חבילת `madbirim`).
 - שדות: LicenseNumber, FirstName, LastName, settlement, Telephone, LicenseType, Status, PermitExpirationDate.
-- סינון ירושלים + יישובי מטרופולין; `license` נשמר על הרשומה; רענון — בכל ריצת גילוי (datastore חי).
+- סינון ירושלים + יישובי מטרופולין; `license` נשמר על הרשומה.
 
 ### מיזוג בין מקורות
 
 סדר dedupe: טלפון → דומיין אתר → source+externalId → שם+קטגוריה+עיר.  
 מיזוג ממלא `source_refs`, `website_url`, `license` חזק יותר, בלי לדרוס סטטוסים מוגנים.
 
-### Places — מה מופעל
-
-- `includePureServiceAreaBusinesses: true`
-- Pagination + תקציב קריאות / תוצאות
-- תור שאילתות עם רוטציה לפי `prospect_query_stats`
-
 ### גילוי מצטבר
 
 - ברירת מחדל: **ללא מחיקה** (`replacePrevious=false`).
 - נעילה אם יש ריצה ב־`status=running`.
 
-## מקורות בתשלום (לא מיושמים)
+## מקורות בתשלום — לא מיושמים
 
-לפני רכישת B144 / דפי זהב / איזי / D&B — לבקש **מדגם 50** בירושלים בתחומי הגיוס ולבדוק: חדשים אצלנו, פעילים, שירות בבית הלקוח, פרטי קשר שימושיים.  
-פנקס קבלנים / רישוי חשמלאים — לבדוק הורדה/API מורשה בנפרד (אימות, לא ייצוא המוני).
+לא קונים Brave / B144 / דפי זהב / איזי / D&B.  
+אם בעתיד ייבחן מקור מסחרי — רק אחרי מדגם 50 בירושלים (חדשים, פעילים, שירות בבית, קשר שימושי).
 
 ## WhatsApp
 
@@ -86,9 +75,7 @@
 
 | מפתח | תיאור |
 |------|--------|
-| `GOOGLE_PLACES_API_KEY` | גילוי Places |
-| `BRAVE_SEARCH_API_KEY` | גילוי אתרים ב־Brave |
-| `FIXLY_DISCOVERY_BRAVE_CALL_BUDGET` | קריאות Brave לריצה |
+| `GOOGLE_PLACES_API_KEY` | גילוי Places (אופציונלי אם כבר יש) |
 | `ADMIN_EMAILS` | גישת Superadmin |
 | `FIXLY_RECRUIT_CITY` | ברירת מחדל ירושלים |
 | `FIXLY_DISCOVERY_TOTAL_BUDGET` | תוצאות גולמיות |
@@ -97,5 +84,5 @@
 ## מדידת לפני/אחרי
 
 1. ייצוא CSV + הריצו גילוי אחרי מיגרציה.
-2. השוו `uniqueToSource` ל־OSM / Brave / Places.
-3. מדגם 100 לדיוק fit + כמה לידים ממאגר המדבירים חדשים מול כפילויות.
+2. השוו `uniqueToSource` ל־OSM / Places / מאגר מדבירים.
+3. מדגם 100 לדיוק fit.

@@ -15,11 +15,9 @@ export const maxDuration = 300
 
 const discoverSchema = z.object({
   sources: z
-    .array(
-      z.enum(['google_places', 'osm', 'brave_web', 'gov_pest_control']),
-    )
+    .array(z.enum(['google_places', 'osm', 'gov_pest_control']))
     .min(1)
-    .max(4)
+    .max(3)
     .optional(),
   city: z.string().trim().min(1).max(100).optional(),
   /** Opt-in only — default is cumulative merge */

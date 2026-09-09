@@ -44,12 +44,6 @@ export const DISCOVERY_PER_CATEGORY_CAP = 120
 /** Hard cap on Places HTTP calls per discovery run. */
 export const DISCOVERY_API_CALL_BUDGET = 80
 
-/** Hard cap on Brave Search API calls per discovery run. */
-export const DISCOVERY_BRAVE_CALL_BUDGET = 40
-
-/** Max business sites fetched per Brave query. */
-export const DISCOVERY_BRAVE_SITES_PER_QUERY = 3
-
 /** Share of query budget reserved for experimental / low-stats queries. */
 export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
 
@@ -105,10 +99,4 @@ export function getDiscoveryApiCallBudget(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_API_CALL_BUDGET)
   if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 400)
   return DISCOVERY_API_CALL_BUDGET
-}
-
-export function getDiscoveryBraveCallBudget(): number {
-  const n = Number(process.env.FIXLY_DISCOVERY_BRAVE_CALL_BUDGET)
-  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 120)
-  return DISCOVERY_BRAVE_CALL_BUDGET
 }

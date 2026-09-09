@@ -2,7 +2,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ProspectSourceAdapter } from '@/lib/prospects/adapters/types'
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
 import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpass'
-import { BraveWebProspectAdapter } from '@/lib/prospects/adapters/brave-web'
 import { GovPestControlProspectAdapter } from '@/lib/prospects/adapters/gov-pest-control'
 import {
   clearReplaceableAutoProspects,
@@ -12,7 +11,6 @@ import {
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
 import {
   getDiscoveryApiCallBudget,
-  getDiscoveryBraveCallBudget,
   getDiscoveryPerCategoryCap,
   getDiscoveryTotalBudget,
   getRecruitCategorySlugs,
@@ -29,7 +27,6 @@ export type DiscoveryTrigger = 'cron' | 'manual'
 export type DiscoveryAutoSource =
   | 'google_places'
   | 'osm'
-  | 'brave_web'
   | 'gov_pest_control'
 
 export type DiscoveryRunResult = {
@@ -67,7 +64,6 @@ export type DiscoveryProgress = {
     | 'starting'
     | 'places'
     | 'osm'
-    | 'brave'
     | 'gov'
     | 'ingest'
     | 'done'
@@ -92,7 +88,7 @@ function buildAdapters(input?: {
 }): ProspectSourceAdapter[] {
   const wanted = new Set(
     input?.sources ??
-      (['google_places', 'osm', 'brave_web', 'gov_pest_control'] as DiscoveryAutoSource[]),
+      (['google_places', 'osm', 'gov_pest_control'] as DiscoveryAutoSource[]),
   )
   const adapters: ProspectSourceAdapter[] = []
   const budget = input?.totalBudget ?? getDiscoveryTotalBudget()
@@ -122,19 +118,7 @@ function buildAdapters(input?: {
   if (wanted.has('osm')) {
     adapters.push(new OsmOverpassProspectAdapter(common))
   }
-  if (wanted.has('brave_web')) {
-    if (process.env.BRAVE_SEARCH_API_KEY?.trim()) {
-      adapters.push(
-        new BraveWebProspectAdapter({
-          categorySlugs,
-          city: common.city,
-          callBudget: getDiscoveryBraveCallBudget(),
-        }),
-      )
-    }
-  }
   if (wanted.has('gov_pest_control')) {
-    // Only when pest_control is in recruit categories (or explicitly requested alone)
     if (
       categorySlugs.includes('pest_control') ||
       input?.sources?.includes('gov_pest_control')
@@ -297,7 +281,7 @@ export async function runProspectDiscovery(
 
   if (adapters.length === 0) {
     const msg =
-      'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY / BRAVE_SEARCH_API_KEY או הפעל OSM / מאגר מדבירים'
+      'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY או הפעל OSM / מאגר מדבירים'
     if (runId) {
       await admin
         .from('prospect_discovery_runs')
@@ -359,14 +343,6 @@ export async function runProspectDiscovery(
             percent: 62,
             phase: 'osm',
             labelHe: 'סורק OpenStreetMap…',
-            apiCallBudget,
-            apiCalls: totalApiCalls,
-          })
-        } else if (adapter.name === 'brave_web') {
-          await reportProgress({
-            percent: 72,
-            phase: 'brave',
-            labelHe: 'מחפש אתרים ב־Brave…',
             apiCallBudget,
             apiCalls: totalApiCalls,
           })
@@ -439,24 +415,6 @@ export async function runProspectDiscovery(
             )
           }
         }
-        if (adapter instanceof BraveWebProspectAdapter) {
-          const s = adapter.lastStats
-          bySource[adapter.name].stats = {
-            searchCalls: s.searchCalls,
-            callBudget: s.callBudget,
-            urlsConsidered: s.urlsConsidered,
-            sitesFetched: s.sitesFetched,
-            kept: s.kept,
-            stopReason: s.stopReason,
-          }
-          if (s.searchErrors.length > 0) {
-            bySource[adapter.name].errors.push(...s.searchErrors.slice(0, 5))
-            errors += s.searchErrors.length
-            topErrors.push(
-              ...s.searchErrors.slice(0, 3).map((e) => `brave_web: ${e}`),
-            )
-          }
-        }
         if (adapter instanceof GovPestControlProspectAdapter) {
           bySource[adapter.name].stats = {
             fetched: adapter.lastFetched,
@@ -475,11 +433,9 @@ export async function runProspectDiscovery(
           percent:
             adapter.name === 'gov_pest_control'
               ? 90
-              : adapter.name === 'brave_web'
-                ? 85
-                : adapter.name === 'osm'
-                  ? 70
-                  : 55,
+              : adapter.name === 'osm'
+                ? 70
+                : 55,
           phase: 'ingest',
           labelHe: `שומר לידים מ־${adapter.name}…`,
           apiCallBudget,
