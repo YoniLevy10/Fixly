@@ -10,7 +10,7 @@ import {
 import { getRecruitCategorySlugs } from '@/lib/prospects/config'
 import {
   scorePersonFit,
-  shouldKeepAsSoloProspect,
+  shouldKeepDiscoveredProspect,
 } from '@/lib/prospects/person-score'
 
 type PlacesTextSearchResult = {
@@ -90,13 +90,21 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
             place.internationalPhoneNumber?.trim() ||
             null
           if (!phone) continue
-          if (!shouldKeepAsSoloProspect(name, name)) continue
+          if (
+            !shouldKeepDiscoveredProspect({
+              name,
+              businessName: name,
+              phone,
+            })
+          ) {
+            continue
+          }
 
           const fit = scorePersonFit(name, name)
           const addressNote = place.formattedAddress
             ? `כתובת: ${place.formattedAddress}`
             : null
-          const fitNote = `התאמת פרטי: ${fit.kind} (${fit.score})`
+          const fitNote = `התאמת מידרג-סטייל: ${fit.kind} (${fit.score}) · נייד`
 
           out.push({
             name,

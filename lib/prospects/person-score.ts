@@ -1,7 +1,9 @@
 /**
  * Heuristics to prefer independent / individual tradespeople over companies.
- * Used after legal discovery (Places/OSM) before saving prospects.
+ * Target profile ≈ Midrag private pros: person name + craft + mobile.
  */
+
+import { isIsraeliMobilePhone } from '@/lib/prospects/phone'
 
 const COMPANY_MARKERS = [
   /בע"?מ/i,
@@ -275,14 +277,25 @@ export function scorePersonFit(name: string, businessName?: string | null): Pers
 }
 
 /**
- * Keep only individuals / likely individuals.
- * Ambiguous commercial listings (typical Places results) are dropped —
- * Fixly recruits solo tradespeople, not companies.
+ * Midrag-style bar: keep only clear individuals (score ≥ 70 ≈ kind person).
  */
 export function shouldKeepAsSoloProspect(
   name: string,
   businessName?: string | null,
 ): boolean {
   const fit = scorePersonFit(name, businessName)
-  return fit.score >= 55
+  return fit.score >= 70
+}
+
+/**
+ * Discovery gate: Midrag-like private pro = strong person name + Israeli mobile (05x).
+ * Landlines / 1-700 / shop numbers are rejected even if the name looks personal.
+ */
+export function shouldKeepDiscoveredProspect(input: {
+  name: string
+  businessName?: string | null
+  phone?: string | null
+}): boolean {
+  if (!shouldKeepAsSoloProspect(input.name, input.businessName)) return false
+  return isIsraeliMobilePhone(input.phone)
 }

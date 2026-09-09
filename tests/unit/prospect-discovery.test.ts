@@ -106,7 +106,7 @@ describe('GooglePlacesProspectAdapter', () => {
               {
                 id: 'places/abc',
                 displayName: { text: 'דני אינסטלטור' },
-                nationalPhoneNumber: '02-555-1111',
+                nationalPhoneNumber: '050-555-1111',
                 googleMapsUri: 'https://maps.google.com/?cid=1',
                 formattedAddress: 'ירושלים',
               },
@@ -114,6 +114,11 @@ describe('GooglePlacesProspectAdapter', () => {
                 id: 'places/company',
                 displayName: { text: 'שירותי אינסטלציה בע״מ' },
                 nationalPhoneNumber: '02-555-2222',
+              },
+              {
+                id: 'places/landline-person',
+                displayName: { text: 'יוסי כהן אינסטלטור' },
+                nationalPhoneNumber: '02-555-3333',
               },
               {
                 id: 'places/no-phone',
@@ -135,10 +140,9 @@ describe('GooglePlacesProspectAdapter', () => {
 })
 
 describe('person-score solo filter', () => {
-  it('keeps person-shaped names and drops companies', async () => {
-    const { shouldKeepAsSoloProspect, scorePersonFit } = await import(
-      '@/lib/prospects/person-score'
-    )
+  it('keeps Midrag-style people and drops companies/shops', async () => {
+    const { shouldKeepAsSoloProspect, shouldKeepDiscoveredProspect, scorePersonFit } =
+      await import('@/lib/prospects/person-score')
     assert.equal(shouldKeepAsSoloProspect('יוסי כהן'), true)
     assert.equal(shouldKeepAsSoloProspect('דני אינסטלטור'), true)
     assert.equal(shouldKeepAsSoloProspect('אבי לוי חשמלאי'), true)
@@ -151,7 +155,22 @@ describe('person-score solo filter', () => {
     assert.equal(shouldKeepAsSoloProspect('בן יעקב קרמיקה'), false)
     assert.equal(shouldKeepAsSoloProspect('חנות טובול חומרי בניין'), false)
     assert.equal(shouldKeepAsSoloProspect('oz ceramica- OUTLET'), false)
-    assert.ok(scorePersonFit('יוסי כהן').score >= 55)
-    assert.ok(scorePersonFit('אינסטלציה ירושלים').score < 55)
+    assert.ok(scorePersonFit('יוסי כהן').score >= 70)
+    assert.ok(scorePersonFit('אינסטלציה ירושלים').score < 70)
+
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'דני אינסטלטור',
+        phone: '050-123-4567',
+      }),
+      true,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'דני אינסטלטור',
+        phone: '02-555-1111',
+      }),
+      false,
+    )
   })
 })

@@ -22,6 +22,17 @@ export function normalizePhone(raw: string | null | undefined): string | null {
   return digits
 }
 
+/**
+ * Midrag-style private pros almost always use Israeli mobile (05x),
+ * not shop landlines (02/03/…) or 1-700 / 072 marketing numbers.
+ */
+export function isIsraeliMobilePhone(raw: string | null | undefined): boolean {
+  const n = normalizePhone(raw)
+  if (!n) return false
+  // 9725xxxxxxxx (9 digits after 972, starting with 5)
+  return /^9725\d{8}$/.test(n)
+}
+
 export function phonesMatch(
   a: string | null | undefined,
   b: string | null | undefined,

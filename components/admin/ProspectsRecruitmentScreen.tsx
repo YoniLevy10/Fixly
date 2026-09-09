@@ -397,7 +397,7 @@ export default function ProspectsRecruitmentScreen() {
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
           <h1 className="text-3xl font-bold mt-1">גיוס אנשי מקצוע</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            גילוי פרטיים (לא חברות) · WhatsApp עם הודעה מוכנה על כל ליד · יעד{' '}
+            גילוי בסגנון מידרג: פרטי + נייד · WhatsApp ידני · יעד{' '}
             {targetTotal} בירושלים
           </p>
           {!authLoading && (
