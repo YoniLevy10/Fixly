@@ -12,6 +12,8 @@ export type AppUser = {
   role: UserRole
   /** When role is professional, linked Supabase professional row id */
   professionalId?: string
+  /** True for Supabase anonymous sessions */
+  isAnonymous?: boolean
 }
 
 export const GUEST_USER: AppUser = {
@@ -21,6 +23,7 @@ export const GUEST_USER: AppUser = {
   phone: '',
   location: 'תל אביב-יפו',
   role: 'customer',
+  isAnonymous: true,
 }
 
 export const DEMO_PRO_USER: AppUser = {
@@ -31,4 +34,5 @@ export const DEMO_PRO_USER: AppUser = {
   location: 'תל אביב',
   role: 'professional',
   professionalId: DEMO_PROFESSIONAL_ID,
+  isAnonymous: false,
 }

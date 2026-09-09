@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { User } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
-import { isAdminUser } from '@/lib/admin/is-admin'
+import { isAdminUser, getAdminEmails } from '@/lib/admin/is-admin'
 
 export async function requireAdminApi(): Promise<
   | { ok: true; user: User; admin: NonNullable<ReturnType<typeof getAdminSupabaseClient>> }
@@ -20,10 +20,34 @@ export async function requireAdminApi(): Promise<
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!isAdminUser(user)) {
+  if (!user || user.is_anonymous) {
     return {
       ok: false,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 403 }),
+      response: NextResponse.json(
+        {
+          error: 'לא מחובר — התחבר עם Google ואז חזור ל־Superadmin',
+          code: 'not_authenticated',
+        },
+        { status: 401 },
+      ),
+    }
+  }
+
+  if (!isAdminUser(user)) {
+    const email = user.email?.trim().toLowerCase() ?? null
+    const configured = getAdminEmails().length > 0
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error: configured
+            ? `אין הרשאת מנהל ל־${email ?? 'המשתמש הזה'}. הוסף את המייל ל־ADMIN_EMAILS ב־Vercel ו־Redeploy.`
+            : 'ADMIN_EMAILS לא מוגדר ב־Vercel.',
+          code: 'not_admin',
+          email,
+        },
+        { status: 403 },
+      ),
     }
   }
 
@@ -35,5 +59,5 @@ export async function requireAdminApi(): Promise<
     }
   }
 
-  return { ok: true, user: user!, admin }
+  return { ok: true, user, admin }
 }
