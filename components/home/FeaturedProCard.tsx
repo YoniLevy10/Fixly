@@ -28,6 +28,12 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
           <div className="flex flex-col items-center gap-1">
             <p className="font-bold text-sm leading-tight">{pro.name}</p>
             <AvailableTodayBadge isAvailable={pro.isAvailable} />
+            {pro.midragVerified ? (
+              <span className="text-[10px] font-bold text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded-full ring-1 ring-sky-200">
+                {t('trust.midragVerified')}
+                {pro.midragRating != null ? ` · ${pro.midragRating.toFixed(1)}` : ''}
+              </span>
+            ) : null}
           </div>
           <p className="text-xs text-gray-500 mt-0.5">{pro.title ?? pro.category}</p>
           <div className="flex items-center justify-center gap-0.5 mt-1.5">
