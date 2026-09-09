@@ -2,9 +2,17 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { ProspectSourceAdapter } from '@/lib/prospects/adapters/types'
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
 import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpass'
-import { ingestFromAdapter, type IngestResult } from '@/lib/prospects/service'
+import {
+  clearReplaceableAutoProspects,
+  ingestFromAdapter,
+  type IngestResult,
+} from '@/lib/prospects/service'
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
-import { getRecruitCategorySlugs } from '@/lib/prospects/config'
+import {
+  getDiscoveryTotalBudget,
+  getRecruitCategorySlugs,
+} from '@/lib/prospects/config'
+import { scorePersonFit } from '@/lib/prospects/person-score'
 
 export type DiscoveryTrigger = 'cron' | 'manual'
 
@@ -17,6 +25,8 @@ export type DiscoveryRunResult = {
   created: number
   skipped: number
   errors: number
+  deletedPrevious: number
+  budget: number
   errorMessage?: string
   bySource: Record<
     string,
@@ -28,12 +38,18 @@ function buildAdapters(input?: {
   sources?: Array<'google_places' | 'osm'>
   categorySlugs?: string[]
   city?: string
+  totalBudget?: number
 }): ProspectSourceAdapter[] {
   const wanted = new Set(input?.sources ?? ['google_places', 'osm'])
   const adapters: ProspectSourceAdapter[] = []
+  const budget = input?.totalBudget ?? getDiscoveryTotalBudget()
   const common = {
     categorySlugs: input?.categorySlugs ?? getRecruitCategorySlugs(),
     city: input?.city ?? getDiscoveryCity(),
+    totalBudget: budget,
+    perCategoryLimit: Math.ceil(
+      budget / Math.max(1, (input?.categorySlugs ?? getRecruitCategorySlugs()).length),
+    ),
   }
 
   if (wanted.has('google_places')) {
@@ -56,17 +72,23 @@ export async function runProspectDiscovery(
     sources?: Array<'google_places' | 'osm'>
     categorySlugs?: string[]
     city?: string
+    /** Default true: wipe prior Places/OSM leads that were not contacted yet */
+    replacePrevious?: boolean
   },
 ): Promise<DiscoveryRunResult> {
   const city = options.city ?? getDiscoveryCity()
+  const budget = getDiscoveryTotalBudget()
+  const replacePrevious = options.replacePrevious !== false
   const adapters = buildAdapters({
     sources: options.sources,
     categorySlugs: options.categorySlugs,
     city,
+    totalBudget: budget,
   })
 
   const sourceNames = adapters.map((a) => a.name)
   let runId: string | null = null
+  let deletedPrevious = 0
 
   const { data: runRow } = await admin
     .from('prospect_discovery_runs')
@@ -111,12 +133,19 @@ export async function runProspectDiscovery(
       created: 0,
       skipped: 0,
       errors: 1,
+      deletedPrevious: 0,
+      budget,
       errorMessage: msg,
       bySource,
     }
   }
 
   try {
+    if (replacePrevious) {
+      const cleared = await clearReplaceableAutoProspects(admin)
+      deletedPrevious = cleared.deleted
+    }
+
     for (const adapter of adapters) {
       bySource[adapter.name] = {
         found: 0,
@@ -126,10 +155,14 @@ export async function runProspectDiscovery(
       }
       try {
         const records = await adapter.fetchRecords()
+        records.sort((a, b) => {
+          const sa = a.fitScore ?? scorePersonFit(a.name, a.businessName).score
+          const sb = b.fitScore ?? scorePersonFit(b.name, b.businessName).score
+          return sb - sa
+        })
         bySource[adapter.name].found = records.length
         found += records.length
 
-        // Ingest via a one-shot adapter wrapping already-fetched records
         const wrap: ProspectSourceAdapter = {
           name: adapter.name,
           fetchRecords: async () => records,
@@ -164,7 +197,7 @@ export async function runProspectDiscovery(
           skipped_count: skipped,
           error_count: errors,
           error_message: topErrors[0] ?? null,
-          details: { bySource },
+          details: { bySource, deletedPrevious, budget },
           finished_at: new Date().toISOString(),
         })
         .eq('id', runId)
@@ -179,6 +212,8 @@ export async function runProspectDiscovery(
       created,
       skipped,
       errors,
+      deletedPrevious,
+      budget,
       errorMessage: topErrors[0],
       bySource,
     }
@@ -194,7 +229,7 @@ export async function runProspectDiscovery(
           skipped_count: skipped,
           error_count: errors + 1,
           error_message: message,
-          details: { bySource },
+          details: { bySource, deletedPrevious, budget },
           finished_at: new Date().toISOString(),
         })
         .eq('id', runId)
@@ -208,6 +243,8 @@ export async function runProspectDiscovery(
       created,
       skipped,
       errors: errors + 1,
+      deletedPrevious,
+      budget,
       errorMessage: message,
       bySource,
     }

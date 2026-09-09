@@ -8,7 +8,7 @@ import { APP_STORE_CONFIG } from './lib/mobile/app-store-config'
 const serverUrl = process.env.CAPACITOR_SERVER_URL?.trim()
 const isDevServer = Boolean(serverUrl)
 const productionUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://fixly.vercel.app'
+  process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://fixly.tech'
 
 const config: CapacitorConfig = {
   appId: APP_STORE_CONFIG.appId,

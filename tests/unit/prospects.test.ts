@@ -23,6 +23,13 @@ describe('normalizePhone', () => {
   it('matches equivalent formats', () => {
     assert.equal(phonesMatch('0501234567', '+972501234567'), true)
   })
+
+  it('detects Israeli mobiles only', async () => {
+    const { isIsraeliMobilePhone } = await import('@/lib/prospects/phone')
+    assert.equal(isIsraeliMobilePhone('050-123-4567'), true)
+    assert.equal(isIsraeliMobilePhone('02-555-1111'), false)
+    assert.equal(isIsraeliMobilePhone('1-700-559-907'), false)
+  })
 })
 
 describe('dedupe', () => {

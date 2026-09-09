@@ -50,7 +50,7 @@ function applyListOptions(
       gardening: ['גינון'],
       locksmith: ['מנעול'],
       carpentry: ['נגר'],
-      tiling: ['ריצוף'],
+      tiling: ['ריצוף', 'קרמיקה', 'ריצוף וקרמיקה'],
       moving: ['הובל'],
       elevators: ['מעלית', 'מעליות'],
       pest_control: ['הדברה', 'מדביר'],

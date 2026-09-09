@@ -1,6 +1,10 @@
 export const DEFAULT_RECRUIT_CITY = 'ירושלים'
 
-/** Ten core home-service categories for the Jerusalem soft-launch target. */
+/**
+ * Home-service categories for Jerusalem soft-launch recruitment.
+ * Expanded beyond the first 10 after Places returned ceramic shops / renovators
+ * that map better to dedicated trades (tiling+ceramics, renovations, solar, …).
+ */
 export const CORE_RECRUIT_CATEGORY_SLUGS = [
   'plumbing',
   'electricity',
@@ -12,12 +16,27 @@ export const CORE_RECRUIT_CATEGORY_SLUGS = [
   'gardening',
   'moving',
   'tiling',
+  'renovations',
+  'waterproofing',
+  'aluminum',
+  'drywall',
+  'solar',
+  'appliance_repair',
+  'pest_control',
+  'glazing',
+  'furniture',
 ] as const
 
 export const RECRUIT_PER_CATEGORY_TARGET = 10
 
 export const RECRUIT_TOTAL_TARGET =
   CORE_RECRUIT_CATEGORY_SLUGS.length * RECRUIT_PER_CATEGORY_TARGET
+
+/**
+ * Total Places/OSM candidate slots to fetch per discovery run
+ * (before Midrag-style person+mobile filter). Was ~300; raised to 500.
+ */
+export const DISCOVERY_TOTAL_BUDGET = 500
 
 export const JOIN_URL = 'https://fixly.tech/pro/join'
 
@@ -38,4 +57,10 @@ export function getRecruitPerCategoryTarget(): number {
   const n = Number(process.env.FIXLY_RECRUIT_PER_CATEGORY_TARGET)
   if (Number.isFinite(n) && n > 0) return Math.floor(n)
   return RECRUIT_PER_CATEGORY_TARGET
+}
+
+export function getDiscoveryTotalBudget(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_TOTAL_BUDGET)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 1000)
+  return DISCOVERY_TOTAL_BUDGET
 }

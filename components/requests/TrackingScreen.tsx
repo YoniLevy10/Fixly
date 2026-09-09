@@ -198,7 +198,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   const appBase =
     typeof window !== 'undefined'
       ? window.location.origin
-      : publicEnv.appUrl || 'https://fixly.vercel.app'
+      : publicEnv.appUrl || 'https://fixly.tech'
   const whatsAppMessage =
     professional?.phone && request
       ? buildRequestWhatsAppMessage({

@@ -1,4 +1,4 @@
-/** Canonical public marketing URL — fixly.tech for SEO / GSC */
+/** Canonical public app URL — always fixly.tech in production */
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://fixly.tech'
 ).replace(/\/$/, '')
@@ -7,12 +7,12 @@ export const SITE_NAME = 'Fixly'
 export const SITE_DOMAIN = 'fixly.tech'
 
 /**
- * Optional public URL of the product app (usually *.vercel.app).
- * When unset, callers should use the current host or vercel production alias.
+ * Public product URL. Defaults to SITE_URL (fixly.tech).
+ * Prefer not pointing users at *.vercel.app aliases.
  */
 export const PRODUCT_URL = (
-  process.env.NEXT_PUBLIC_PRODUCT_URL?.trim() || ''
-).replace(/\/$/, '') || null
+  process.env.NEXT_PUBLIC_PRODUCT_URL?.trim() || SITE_URL
+).replace(/\/$/, '')
 
 export const DEFAULT_DESCRIPTION_HE =
   'יש תקלה בבית? שולחים פעם אחת ב-Fixly — התאמה לבעל מקצוע לפי תחום ואזור ומעקב עד סיום. הרשמה מוקדמת בחינם ללקוחות ולבעלי מקצוע בישראל.'
