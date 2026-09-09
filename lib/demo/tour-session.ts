@@ -29,4 +29,8 @@ export function writeTourRequest(request: MockRequest): void {
 export function clearTourRequest(): void {
   if (typeof sessionStorage === 'undefined') return
   sessionStorage.removeItem(DEMO_TOUR_REQUEST_KEY)
+  // Notify listeners (e.g. pro dashboard) so they release the forced tour job
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(DEMO_TOUR_EVENT, { detail: null }))
+  }
 }
