@@ -1,20 +1,40 @@
-# גיוס אנשי מקצוע (Prospects)
+# גיוס אנשי מקצוע (Prospects + Superadmin)
 
 אין הסכם עם מידרג — **אין סקרייפינג או ייבוא אוטומטי ממידרג**.
 אין איסוף מקבוצות פייסבוק פרטיות ואין עקיפת תנאי שימוש.
 
-## מה קיים במערכת
+## ממשק
 
-1. **הצטרפות עצמית** — [`/pro/join`](../app/pro/join/page.tsx) שומרת ב־`pro_waitlist` דרך `/api/pro/waitlist`.
-2. **מנוע לידים** — טבלת `professional_prospects` (נפרדת מ־`professionals`).
-3. **ממשק ניהול** — [`/admin/prospects`](../app/admin/prospects/page.tsx):
-   - מונים לפי סטטוס / קטגוריה / עיר
-   - חיפוש וסינון
-   - אישור / דחייה / אין ליצור קשר
-   - קישור WhatsApp ידני (`wa.me`) רק אחרי אישור
-   - ייבוא / ייצוא CSV
-   - עדכון סטטוס מרובה (ללא שליחת הודעות)
-4. **Audit** — `professional_prospect_events` לכל יצירה, שינוי סטטוס ויצירת קשר.
+- **[`/superadmin`](../app/superadmin/page.tsx)** — מסך הגיוס הוויזואלי (מונים, טבלה, אישור, WhatsApp, גילוי).
+- `/admin/prospects` מפנה ל־`/superadmin`.
+- כניסה: התחברות עם אימייל שמופיע ב־`ADMIN_EMAILS` או `app_metadata.role=admin`.
+
+## מקורות גילוי מותרים
+
+| מקור | סוג | Env |
+|------|-----|-----|
+| Google Places API | API רשמי | `GOOGLE_PLACES_API_KEY` |
+| OpenStreetMap Overpass | נתונים פתוחים (ODbL) | לא נדרש |
+| הזנה ידנית / CSV | מנהל | — |
+
+### איך משיגים Google Places key
+
+1. Google Cloud Console → יצירת פרויקט / בחירת פרויקט
+2. Enable **Places API** (New)
+3. Credentials → API key → הגבלה ל־Places בלבד
+4. Billing חייב להיות פעיל
+5. להוסיף ב־Vercel: `GOOGLE_PLACES_API_KEY=...`
+
+## סוכן אוטומטי
+
+- Cron יומי: `GET /api/cron/discover-prospects` (Bearer `CRON_SECRET`) — רשום ב־`vercel.json` ב־07:00 UTC
+- הרצה ידנית: כפתור **הרץ גילוי עכשיו** ב־`/superadmin` → `POST /api/admin/prospects/discover`
+- לוג ריצות: טבלת `prospect_discovery_runs`
+
+## WhatsApp
+
+אין שליחה אוטומטית. אחרי אישור (`approved`) המנהל פותח `wa.me` מהטלפון שלו.
+מספר בקשות מתווסף להודעה **רק** אם יש ספירה אמיתית של בקשות פעילות מתאימות.
 
 ## משפך סטטוסים
 
@@ -22,37 +42,23 @@
 
 בנוסף: `rejected`, `do_not_contact`.
 
-## מקורות (v1)
-
-- הזנה ידנית בממשק הניהול
-- ייבוא CSV ממקורות מורשים בלבד
-- Adapter אחיד ב־`lib/prospects/adapters` לחיבור APIs עתידיים
-
-## WhatsApp
-
-אין שליחה אוטומטית. המנהל פותח `wa.me` עם הודעת גיוס אמינה.
-מספר בקשות מתווסף להודעה **רק** אם יש ספירה אמיתית של בקשות פעילות מתאימות בקטגוריה ובעיר.
-
 ## קישור להצטרפות
 
-כאשר איש מקצוע נרשם ב־`/pro/join` עם אותו מספר טלפון כמו ליד קיים:
-- הליד מתעדכן ל־`joined`
-- נשמר `waitlist_id` / `consent_at`
-- **לא** נוצרת רשומת `professionals` כפולה
+`/pro/join` עם אותו טלפון → ליד עובר ל־`joined` (בלי ליצור `professionals` כפול).
+Claim פרופיל עם טלפון תואם → `active`.
 
-כשפרופיל נתבע (`/api/pro/claim`) עם טלפון תואם — הליד יכול לעבור ל־`active`.
+## Migrations (להחיל על Production)
 
-## אבטחה
+1. `supabase/migrations/20260909010000_professional_prospects.sql`
+2. `supabase/migrations/20260909120000_prospect_discovery_runs.sql`
 
-- RLS על טבלאות הלידים
-- הרשאת admin דרך `app_metadata.role` או `ADMIN_EMAILS` (לא `user_metadata`)
-- Service-role רק בצד שרת
-- Rate limiting על יצירה / ייבוא / bulk / contact
+## Env נדרש
 
-## יעד תפעולי
-
-ירושלים + ~10 אנשי מקצוע מאומתים לכל אחת מ־10 הקטגוריות המרכזיות (דינמי דרך env / `service_categories`).
-
-## Migration
-
-`supabase/migrations/20260909010000_professional_prospects.sql` — **לא להחיל על Production בלי אישור מפורש**.
+```bash
+ADMIN_EMAILS=you@example.com
+CRON_SECRET=long-random
+GOOGLE_PLACES_API_KEY=your-places-key
+# optional:
+# FIXLY_RECRUIT_CITY=ירושלים
+# FIXLY_RECRUIT_CATEGORY_SLUGS=plumbing,electricity,...
+```

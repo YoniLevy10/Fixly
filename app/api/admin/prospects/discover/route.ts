@@ -1,0 +1,57 @@
+import { NextResponse } from 'next/server'
+import { requireAdminApi } from '@/lib/admin/require-admin-api'
+import { enforceRateLimit } from '@/lib/api/rate-limit'
+import { parseJsonBody } from '@/lib/api/parse-body'
+import { z } from 'zod'
+import {
+  listDiscoveryRuns,
+  runProspectDiscovery,
+} from '@/lib/prospects/discover'
+import { trackError } from '@/lib/monitoring/track-error'
+
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
+const discoverSchema = z.object({
+  sources: z.array(z.enum(['google_places', 'osm'])).min(1).max(2).optional(),
+  city: z.string().trim().min(1).max(100).optional(),
+})
+
+export async function GET() {
+  const auth = await requireAdminApi()
+  if (!auth.ok) return auth.response
+
+  try {
+    const runs = await listDiscoveryRuns(auth.admin, 15)
+    return NextResponse.json({ runs })
+  } catch (error) {
+    trackError(error, { route: 'GET /api/admin/prospects/discover' })
+    return NextResponse.json({ error: 'Failed to list runs' }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  const limited = await enforceRateLimit(request, 'admin-prospects-discover', 3, 60_000)
+  if (limited) return limited
+
+  const auth = await requireAdminApi()
+  if (!auth.ok) return auth.response
+
+  const parsed = await parseJsonBody(request, discoverSchema)
+  if (!parsed.success) return parsed.response
+
+  try {
+    const result = await runProspectDiscovery(auth.admin, {
+      trigger: 'manual',
+      actorUserId: auth.user.id,
+      sources: parsed.data.sources,
+      city: parsed.data.city,
+    })
+    return NextResponse.json(result, {
+      status: result.status === 'failed' && result.created === 0 ? 400 : 200,
+    })
+  } catch (error) {
+    trackError(error, { route: 'POST /api/admin/prospects/discover' })
+    return NextResponse.json({ error: 'Discovery failed' }, { status: 500 })
+  }
+}

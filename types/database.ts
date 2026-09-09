@@ -897,6 +897,57 @@ export type Database = {
           },
         ]
       }
+      prospect_discovery_runs: {
+        Row: {
+          id: string
+          trigger: string
+          sources: string[]
+          city: string
+          status: string
+          found_count: number
+          created_count: number
+          skipped_count: number
+          error_count: number
+          error_message: string | null
+          details: Json
+          started_at: string
+          finished_at: string | null
+          actor_user_id: string | null
+        }
+        Insert: {
+          id?: string
+          trigger?: string
+          sources?: string[]
+          city?: string
+          status?: string
+          found_count?: number
+          created_count?: number
+          skipped_count?: number
+          error_count?: number
+          error_message?: string | null
+          details?: Json
+          started_at?: string
+          finished_at?: string | null
+          actor_user_id?: string | null
+        }
+        Update: {
+          id?: string
+          trigger?: string
+          sources?: string[]
+          city?: string
+          status?: string
+          found_count?: number
+          created_count?: number
+          skipped_count?: number
+          error_count?: number
+          error_message?: string | null
+          details?: Json
+          started_at?: string
+          finished_at?: string | null
+          actor_user_id?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           id: string

@@ -78,10 +78,10 @@ export default function AdminPage() {
           <h1 className="text-3xl font-bold">Operations Center</h1>
         </div>
         <a
-          href="/admin/prospects"
+          href="/superadmin"
           className="rounded-xl bg-primary text-white px-4 py-2 text-sm font-bold"
         >
-          גיוס אנשי מקצוע
+          Superadmin — גיוס
         </a>
       </div>
 

@@ -19,3 +19,9 @@ export {
   writeProspectEvent,
   mapProspectRow,
 } from '@/lib/prospects/service'
+export { runProspectDiscovery, listDiscoveryRuns } from '@/lib/prospects/discover'
+export {
+  DISCOVERY_CATEGORY_MAP,
+  isAllowedDiscoverySource,
+  ALLOWED_DISCOVERY_SOURCES,
+} from '@/lib/prospects/discovery-mapping'
