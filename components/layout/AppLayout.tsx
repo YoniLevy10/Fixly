@@ -63,7 +63,7 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
       <div className={shouldHideChrome ? '' : 'lg:mr-64 native-shell-column'}>
         {!shouldHideChrome && <DesktopHeader />}
 
-        <NativeAwareMain hideNav={shouldHideBottomNav}>
+        <NativeAwareMain hideNav={shouldHideBottomNav && !showProDemoExit}>
           {children}
         </NativeAwareMain>
       </div>

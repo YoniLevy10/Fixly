@@ -36,10 +36,27 @@ export default function ProfessionalProfileView({ pro }: ProfessionalProfileView
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-black">{pro.name}</h1>
               {pro.isVerified && <VerifiedBadge />}
-              {pro.midragVerified && <MidragVerifiedBadge />}
+              {pro.midragVerified && (
+                <MidragVerifiedBadge
+                  rating={pro.midragRating}
+                  reviewsCount={pro.midragReviewsCount}
+                />
+              )}
             </div>
             <p className="text-gray-500 text-sm mt-0.5">{pro.title ?? pro.category}</p>
-            {pro.midragVerified && (pro.midragRating || pro.midragReviewsCount) ? (
+            {pro.midragVerified && pro.midragProfileUrl ? (
+              <a
+                href={pro.midragProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-sky-800 mt-1 inline-flex underline-offset-2 hover:underline"
+              >
+                {t('trust.midragScore', {
+                  rating: String(pro.midragRating ?? '—'),
+                  count: String(pro.midragReviewsCount ?? 0),
+                })}
+              </a>
+            ) : pro.midragVerified && (pro.midragRating || pro.midragReviewsCount) ? (
               <p className="text-xs text-sky-800 mt-1">
                 {t('trust.midragScore', {
                   rating: String(pro.midragRating ?? '—'),
