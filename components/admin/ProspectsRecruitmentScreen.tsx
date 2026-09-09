@@ -7,6 +7,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
 import { useAuth } from '@/lib/auth/auth-provider'
+import { shouldKeepAsSoloProspect } from '@/lib/prospects/person-score'
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/prospects/types'
 
 type ProspectItem = {
@@ -261,6 +262,42 @@ export default function ProspectsRecruitmentScreen() {
     await loadList()
   }
 
+  const companyLikeOnPage = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.status !== 'rejected' &&
+          item.status !== 'do_not_contact' &&
+          item.status !== 'joined' &&
+          item.status !== 'active' &&
+          !shouldKeepAsSoloProspect(item.name, item.businessName),
+      ),
+    [items],
+  )
+
+  const rejectCompanyLike = async () => {
+    if (companyLikeOnPage.length === 0) {
+      setActionMsg('אין ברשימה לידים שנראים כמו חברה')
+      return
+    }
+    setActionMsg(null)
+    const res = await fetch('/api/admin/prospects/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: companyLikeOnPage.map((p) => p.id),
+        status: 'rejected',
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setActionMsg(data.error ?? 'דחיית חברות נכשלה')
+      return
+    }
+    setActionMsg(`נדחו ${data.updated ?? 0} לידים שנראים כמו חברה`)
+    await loadList()
+  }
+
   const createManual = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
@@ -386,6 +423,15 @@ export default function ProspectsRecruitmentScreen() {
             className="rounded-xl border px-4 py-2 text-sm font-semibold"
           >
             ייצוא CSV
+          </button>
+          <button
+            type="button"
+            onClick={rejectCompanyLike}
+            disabled={companyLikeOnPage.length === 0}
+            className="rounded-xl border border-amber-600 text-amber-900 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            title="דוחה לידים בעמוד הנוכחי שנראים כמו חברה ולא אדם פרטי"
+          >
+            דחה חברות ({companyLikeOnPage.length})
           </button>
         </div>
       </div>
