@@ -128,6 +128,16 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
   }
 }
 
+/**
+ * Disambiguate the direct category FK vs many-to-many junction
+ * (`professional_prospect_categories` → `service_categories`).
+ * Without the hint PostgREST returns:
+ * "Could not embed because more than one relationship was found…"
+ * and INSERT…RETURNING / UPDATE…RETURNING fail — so discovery finds leads but creates 0.
+ */
+export const PROSPECT_CATEGORY_EMBED =
+  'service_categories!professional_prospects_category_id_fkey ( id, slug, name, name_he )'
+
 const PROSPECT_SELECT = `
   id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
   search_city, business_address,
@@ -137,7 +147,7 @@ const PROSPECT_SELECT = `
   service_areas, services, enrichment, last_seen_at,
   waitlist_id, professional_id,
   created_by, updated_by, created_at, updated_at,
-  service_categories ( id, slug, name, name_he )
+  ${PROSPECT_CATEGORY_EMBED}
 `
 
 async function loadCategoryMap(
@@ -319,11 +329,19 @@ export async function ingestFromAdapter(
     )
 
     if (dup) {
-      const { data: existingRow } = await admin
+      const { data: existingRow, error: existingErr } = await admin
         .from('professional_prospects')
         .select(PROSPECT_SELECT)
         .eq('id', dup.existingId)
         .maybeSingle()
+
+      if (existingErr) {
+        errors.push({
+          name: record.name,
+          error: existingErr.message,
+        })
+        continue
+      }
 
       if (!existingRow) {
         skipped.push({
@@ -707,7 +725,7 @@ export async function getProspectCounters(
   const { data, error } = await admin
     .from('professional_prospects')
     .select(
-      'status, city, category_id, fit_class, verification_status, service_categories(name, name_he, slug)',
+      `status, city, category_id, fit_class, verification_status, ${PROSPECT_CATEGORY_EMBED}`,
     )
 
   if (error) throw error

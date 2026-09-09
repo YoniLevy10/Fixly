@@ -658,7 +658,14 @@ export default function ProspectsRecruitmentScreen() {
                     קריאות API{' '}
                     {typeof details?.apiCalls === 'number' ? details.apiCalls : '—'}
                     {' · '}
-                    עצירה: {details?.stopReason ?? 'הושלם'}
+                    עצירה:{' '}
+                    {details?.stopReason === 'api_call_budget'
+                      ? 'תקציב קריאות API'
+                      : details?.stopReason === 'raw_result_budget'
+                        ? 'תקציב תוצאות'
+                        : details?.stopReason === 'low_page_utility'
+                          ? 'דף בלי תוצאות חדשות (שאילתה בודדת)'
+                          : details?.stopReason ?? 'הושלם'}
                     {details?.budget != null ? ` · תקציב תוצאות ${details.budget}` : ''}
                   </p>
                   {funnel && funnel.rawFetched > 0 ? (
