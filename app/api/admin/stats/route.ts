@@ -1,79 +1,140 @@
 import { NextResponse } from 'next/server'
-import { getAdminSupabaseClient } from '@/lib/supabase/admin'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { isAdminUser } from '@/lib/admin/is-admin'
+import { requireAdminAccess } from '@/lib/admin/require-admin-api'
+import { listProWaitlistEntries } from '@/lib/data/pro-waitlist-store'
+import { isSupabaseEnabled } from '@/lib/data/config'
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
 
+function mapMemoryWaitlist() {
+  return listProWaitlistEntries()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 50)
+    .map((e) => ({
+      id: e.id,
+      full_name: e.fullName,
+      phone: e.phone,
+      email: e.email ?? null,
+      city: e.city ?? null,
+      category: e.category ?? null,
+      audience: e.audience,
+      source: e.source ?? null,
+      referral_code: e.referralCode ?? null,
+      attribution: e.attribution ?? null,
+      created_at: e.createdAt,
+    }))
+}
+
 export async function GET() {
   try {
-    const supabase = await createServerSupabaseClient()
-    if (!supabase) {
-      return NextResponse.json({ error: 'Auth unavailable' }, { status: 503 })
-    }
+    const access = await requireAdminAccess()
+    if (!access.ok) return access.response
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!isAdminUser(user)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
-
-    const admin = getAdminSupabaseClient()
-    if (!admin) {
-      return NextResponse.json({ error: 'Admin client unavailable' }, { status: 503 })
-    }
+    const { admin } = access
 
     const [
-      { count: professionals },
-      { count: requests },
-      { count: pendingRequests },
-      { count: completedRequests },
-      { count: waitlist },
-      { count: reviews },
-      { count: bamakorRequests },
-      { count: escalatedRequests },
-      { data: recentWaitlist },
-      { data: recentBilling },
+      professionals,
+      requests,
+      pendingRequests,
+      completedRequests,
+      waitlist,
+      reviews,
+      bamakorRequests,
+      escalatedRequests,
+      recentWaitlist,
+      recentBilling,
+      prospects,
+      prospectNew,
+      prospectContacted,
+      customerWaitlist,
+      professionalWaitlist,
     ] = await Promise.all([
       admin.from('professionals').select('*', { count: 'exact', head: true }),
       admin.from('requests').select('*', { count: 'exact', head: true }),
-      admin.from('requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-      admin.from('requests').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+      admin
+        .from('requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending'),
+      admin
+        .from('requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed'),
       admin.from('pro_waitlist').select('*', { count: 'exact', head: true }),
       admin.from('reviews').select('*', { count: 'exact', head: true }),
-      admin.from('requests').select('*', { count: 'exact', head: true }).eq('source', 'bamakor'),
+      admin
+        .from('requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'bamakor'),
       admin
         .from('requests')
         .select('*', { count: 'exact', head: true })
         .not('escalation_source', 'is', null),
       admin
         .from('pro_waitlist')
-        .select('id, full_name, phone, city, category, audience, source, created_at')
+        .select(
+          'id, full_name, phone, email, city, category, audience, source, referral_code, attribution, created_at'
+        )
         .order('created_at', { ascending: false })
-        .limit(10),
+        .limit(50),
       admin
         .from('billing_events')
         .select('id, event_type, amount_agorot, created_at, professional_id')
         .order('created_at', { ascending: false })
-        .limit(10),
+        .limit(20),
+      admin
+        .from('professional_prospects')
+        .select('*', { count: 'exact', head: true }),
+      admin
+        .from('professional_prospects')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new'),
+      admin
+        .from('professional_prospects')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'contacted'),
+      admin
+        .from('pro_waitlist')
+        .select('*', { count: 'exact', head: true })
+        .eq('audience', 'customer'),
+      admin
+        .from('pro_waitlist')
+        .select('*', { count: 'exact', head: true })
+        .eq('audience', 'professional'),
     ])
 
+    let waitlistRows = recentWaitlist.data ?? []
+    let waitlistCount = waitlist.count ?? 0
+    let storage: 'supabase' | 'memory' | 'mixed' = 'supabase'
+
+    const memory = mapMemoryWaitlist()
+    // Only surface memory when Supabase is intentionally off (local/demo).
+    // Never mask a real empty Supabase table with process-local leftovers.
+    if (!isSupabaseEnabled() && memory.length > 0) {
+      waitlistRows = memory
+      waitlistCount = memory.length
+      storage = 'memory'
+    }
+
     return NextResponse.json({
+      via: access.via,
+      storage,
       stats: {
-        professionals: professionals ?? 0,
-        requests: requests ?? 0,
-        pendingRequests: pendingRequests ?? 0,
-        completedRequests: completedRequests ?? 0,
-        waitlist: waitlist ?? 0,
-        reviews: reviews ?? 0,
-        bamakorRequests: bamakorRequests ?? 0,
-        escalatedRequests: escalatedRequests ?? 0,
+        professionals: professionals.count ?? 0,
+        requests: requests.count ?? 0,
+        pendingRequests: pendingRequests.count ?? 0,
+        completedRequests: completedRequests.count ?? 0,
+        waitlist: waitlistCount,
+        waitlistCustomers: customerWaitlist.count ?? 0,
+        waitlistProfessionals: professionalWaitlist.count ?? 0,
+        reviews: reviews.count ?? 0,
+        bamakorRequests: bamakorRequests.count ?? 0,
+        escalatedRequests: escalatedRequests.count ?? 0,
+        prospects: prospects.count ?? 0,
+        prospectsNew: prospectNew.count ?? 0,
+        prospectsContacted: prospectContacted.count ?? 0,
       },
-      recentWaitlist: recentWaitlist ?? [],
-      recentBilling: recentBilling ?? [],
+      recentWaitlist: waitlistRows,
+      recentBilling: recentBilling.data ?? [],
     })
   } catch (error) {
     trackError(error, { route: 'GET /api/admin/stats' })
