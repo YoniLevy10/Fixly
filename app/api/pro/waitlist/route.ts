@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
-import { addProWaitlistEntry } from '@/lib/data/pro-waitlist-store'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { isSupabaseEnabled } from '@/lib/data/config'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { proWaitlistSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
-import { tryLinkProspectAfterWaitlist } from '@/lib/prospects/waitlist-bridge'
+import { saveWaitlistEntry } from '@/lib/waitlist/save-waitlist-entry'
+import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 
 export async function POST(request: Request) {
   const limited = await enforceRateLimit(request, 'pro-waitlist', 10, 60_000)
@@ -16,72 +14,27 @@ export async function POST(request: Request) {
     const parsed = await parseJsonBody(request, proWaitlistSchema)
     if (!parsed.success) return parsed.response
     const body = parsed.data
-    const audience = body.audience ?? 'professional'
+    const audience = (body.audience ?? 'professional') as WaitlistAudience
 
-    if (isSupabaseEnabled()) {
-      const supabase = await createServerSupabaseClient()
-      if (supabase) {
-        const { data, error } = await supabase
-          .from('pro_waitlist')
-          .insert({
-            full_name: body.fullName,
-            phone: body.phone,
-            email: body.email || null,
-            category: body.category ?? null,
-            city: body.city ?? null,
-            referral_code: body.referralCode ?? null,
-            audience,
-            source: body.source ?? 'pro_join',
-          })
-          .select('id')
-          .maybeSingle()
+    const saved = await saveWaitlistEntry(
+      {
+        fullName: body.fullName,
+        phone: body.phone,
+        email: body.email,
+        category: body.category,
+        city: body.city,
+        referralCode: body.referralCode ?? undefined,
+        audience,
+        source: body.source ?? 'pro_join',
+      },
+      'POST /api/pro/waitlist'
+    )
 
-        if (!error) {
-          await tryLinkProspectAfterWaitlist({
-            phone: body.phone,
-            audience,
-            waitlistId: data?.id ?? null,
-          })
-          return NextResponse.json({ ok: true }, { status: 201 })
-        }
-
-        const legacy = await supabase
-          .from('pro_waitlist')
-          .insert({
-            full_name: body.fullName,
-            phone: body.phone,
-            email: body.email || null,
-            category: body.category ?? null,
-            city: body.city ?? null,
-            referral_code: body.referralCode ?? null,
-          })
-          .select('id')
-          .maybeSingle()
-
-        if (!legacy.error) {
-          await tryLinkProspectAfterWaitlist({
-            phone: body.phone,
-            audience,
-            waitlistId: legacy.data?.id ?? null,
-          })
-          return NextResponse.json({ ok: true }, { status: 201 })
-        }
-        trackError(error, { route: 'POST /api/pro/waitlist' })
-      }
+    if (!saved.ok) {
+      return NextResponse.json({ error: saved.error }, { status: 503 })
     }
 
-    addProWaitlistEntry({
-      fullName: body.fullName,
-      phone: body.phone,
-      email: body.email,
-      category: body.category,
-      city: body.city,
-      referralCode: body.referralCode ?? undefined,
-      audience,
-      source: body.source ?? 'pro_join',
-    })
-
-    return NextResponse.json({ ok: true }, { status: 201 })
+    return NextResponse.json({ ok: true, id: saved.id }, { status: 201 })
   } catch (error) {
     trackError(error, { route: 'POST /api/pro/waitlist' })
     return NextResponse.json({ error: 'שגיאה בשליחת הטופס' }, { status: 500 })
