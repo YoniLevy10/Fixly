@@ -4,7 +4,7 @@ import { runProspectDiscovery } from '@/lib/prospects/discover'
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300
 
 /** Daily legal discovery: Google Places + OSM → professional_prospects */
 export async function GET(request: Request) {

@@ -7,6 +7,7 @@ import EmptyState from '@/components/ui/EmptyState'
 import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
 import { useAuth } from '@/lib/auth/auth-provider'
+import { shouldKeepAsSoloProspect } from '@/lib/prospects/person-score'
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/prospects/types'
 
 type ProspectItem = {
@@ -25,6 +26,7 @@ type ProspectItem = {
   status: ProspectStatus
   verificationStatus: string
   notes: string | null
+  fitScore?: number | null
   contactedAt: string | null
   createdAt: string
 }
@@ -261,6 +263,42 @@ export default function ProspectsRecruitmentScreen() {
     await loadList()
   }
 
+  const companyLikeOnPage = useMemo(
+    () =>
+      items.filter(
+        (item) =>
+          item.status !== 'rejected' &&
+          item.status !== 'do_not_contact' &&
+          item.status !== 'joined' &&
+          item.status !== 'active' &&
+          !shouldKeepAsSoloProspect(item.name, item.businessName),
+      ),
+    [items],
+  )
+
+  const rejectCompanyLike = async () => {
+    if (companyLikeOnPage.length === 0) {
+      setActionMsg('אין ברשימה לידים שנראים כמו חברה')
+      return
+    }
+    setActionMsg(null)
+    const res = await fetch('/api/admin/prospects/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ids: companyLikeOnPage.map((p) => p.id),
+        status: 'rejected',
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setActionMsg(data.error ?? 'דחיית חברות נכשלה')
+      return
+    }
+    setActionMsg(`נדחו ${data.updated ?? 0} לידים שנראים כמו חברה`)
+    await loadList()
+  }
+
   const createManual = async (e: React.FormEvent) => {
     e.preventDefault()
     setCreating(true)
@@ -333,12 +371,12 @@ export default function ProspectsRecruitmentScreen() {
         body: JSON.stringify({}),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
+      if (!res.ok && data.status !== 'completed') {
         setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
         return
       }
       setActionMsg(
-        `גילוי הסתיים: נמצאו ${data.found ?? 0} · נשמרו ${data.created ?? 0} · דולגו ${data.skipped ?? 0} · שגיאות ${data.errors ?? 0}`,
+        `גילוי: נמחקו ${data.deletedPrevious ?? 0} קודמים · תקציב ${data.budget ?? 500} · נמצאו ${data.found ?? 0} · נשמרו ${data.created ?? 0} (ממוינים לפי דירוג)`,
       )
       await Promise.all([loadList(), loadRuns()])
     } finally {
@@ -360,7 +398,7 @@ export default function ProspectsRecruitmentScreen() {
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
           <h1 className="text-3xl font-bold mt-1">גיוס אנשי מקצוע</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            סוכן גילוי חוקי (Places + OSM) · WhatsApp ידני מהטלפון שלך · יעד{' '}
+            גילוי מידרג-סטייל · מוחק קודמים · מדרג התאמה · תקציב 500 · WhatsApp ידני · יעד{' '}
             {targetTotal} בירושלים
           </p>
           {!authLoading && (
@@ -386,6 +424,15 @@ export default function ProspectsRecruitmentScreen() {
             className="rounded-xl border px-4 py-2 text-sm font-semibold"
           >
             ייצוא CSV
+          </button>
+          <button
+            type="button"
+            onClick={rejectCompanyLike}
+            disabled={companyLikeOnPage.length === 0}
+            className="rounded-xl border border-amber-600 text-amber-900 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            title="דוחה לידים בעמוד הנוכחי שנראים כמו חברה ולא אדם פרטי"
+          >
+            דחה חברות ({companyLikeOnPage.length})
           </button>
         </div>
       </div>
@@ -573,7 +620,14 @@ export default function ProspectsRecruitmentScreen() {
                   className="flex-1 text-right"
                   onClick={() => setDetailId(item.id)}
                 >
-                  <div className="font-bold">{item.name}</div>
+                  <div className="font-bold flex flex-wrap items-center gap-2">
+                    <span>{item.name}</span>
+                    {typeof item.fitScore === 'number' && (
+                      <span className="text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 px-2 py-0.5">
+                        דירוג {item.fitScore}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {item.businessName ? `${item.businessName} · ` : ''}
                     {item.categoryNameHe || item.categoryName || '—'} · {item.city}
@@ -583,7 +637,19 @@ export default function ProspectsRecruitmentScreen() {
                   </div>
                 </button>
                 <div className="text-sm font-semibold">{STATUS_LABELS[item.status]}</div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1 items-center">
+                  {(item.phone || item.whatsappPhone) &&
+                    item.status !== 'rejected' &&
+                    item.status !== 'do_not_contact' && (
+                      <button
+                        type="button"
+                        className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
+                        onClick={() => openWhatsApp(item.id)}
+                        title="פותח WhatsApp עם הודעת גיוס מוכנה"
+                      >
+                        WhatsApp
+                      </button>
+                    )}
                   {item.status === 'discovered' && (
                     <button
                       type="button"
@@ -600,21 +666,6 @@ export default function ProspectsRecruitmentScreen() {
                       onClick={() => patchStatus(item.id, 'approved')}
                     >
                       אשר
-                    </button>
-                  )}
-                  {[
-                    'approved',
-                    'contacted',
-                    'interested',
-                    'joined',
-                    'active',
-                  ].includes(item.status) && (
-                    <button
-                      type="button"
-                      className="text-xs rounded-lg bg-green-600 text-white px-2 py-1"
-                      onClick={() => openWhatsApp(item.id)}
-                    >
-                      WhatsApp
                     </button>
                   )}
                   <button
@@ -661,6 +712,17 @@ export default function ProspectsRecruitmentScreen() {
                 {detail.prospect.city} · {STATUS_LABELS[detail.prospect.status]}
               </p>
               <p dir="ltr">{detail.prospect.phone || detail.prospect.whatsappPhone}</p>
+              {(detail.prospect.phone || detail.prospect.whatsappPhone) &&
+                detail.prospect.status !== 'rejected' &&
+                detail.prospect.status !== 'do_not_contact' && (
+                  <button
+                    type="button"
+                    className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold"
+                    onClick={() => openWhatsApp(detail.prospect.id)}
+                  >
+                    פתח WhatsApp עם הודעת גיוס
+                  </button>
+                )}
               {detail.prospect.sourceUrl && (
                 <p>
                   מקור:{' '}

@@ -7,6 +7,7 @@ import {
   type ExistingProspectLite,
 } from '@/lib/prospects/dedupe'
 import { normalizePhone } from '@/lib/prospects/phone'
+import { scorePersonFit } from '@/lib/prospects/person-score'
 import { assertTransition, isContactAllowed } from '@/lib/prospects/status'
 import { buildRecruitWhatsAppMessage } from '@/lib/prospects/message'
 import { countMatchingOpenRequests } from '@/lib/prospects/demand'
@@ -52,6 +53,7 @@ type ProspectRow = {
   contacted_at: string | null
   consent_at: string | null
   notes: string | null
+  fit_score?: number | null
   waitlist_id: string | null
   professional_id: string | null
   created_by: string | null
@@ -87,6 +89,7 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
     contactedAt: row.contacted_at,
     consentAt: row.consent_at,
     notes: row.notes,
+    fitScore: row.fit_score ?? null,
     waitlistId: row.waitlist_id,
     professionalId: row.professional_id,
     createdBy: row.created_by,
@@ -102,7 +105,7 @@ export function mapProspectRow(row: ProspectRow): ProfessionalProspect {
 const PROSPECT_SELECT = `
   id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
   category_id, source_name, source_url, external_id, status, verification_status,
-  last_verified_at, contacted_at, consent_at, notes, waitlist_id, professional_id,
+  last_verified_at, contacted_at, consent_at, notes, fit_score, waitlist_id, professional_id,
   created_by, updated_by, created_at, updated_at,
   service_categories ( id, slug, name, name_he )
 `
@@ -184,13 +187,24 @@ export async function ingestFromAdapter(
   actorUserId?: string | null,
 ): Promise<IngestResult> {
   const records = await adapter.fetchRecords()
+  // Best Midrag-style fits first
+  const ranked = [...records].sort((a, b) => {
+    const sa =
+      a.fitScore ??
+      scorePersonFit(a.name, a.businessName).score
+    const sb =
+      b.fitScore ??
+      scorePersonFit(b.name, b.businessName).score
+    return sb - sa
+  })
+
   const categories = await loadCategoryMap(admin)
   const existing = await loadExistingForDedupe(admin)
   const created: ProfessionalProspect[] = []
   const skipped: IngestResult['skipped'] = []
   const errors: IngestResult['errors'] = []
 
-  for (const record of records) {
+  for (const record of ranked) {
     const valid = assertSourceRecord(record)
     if (!valid.ok) {
       errors.push({ name: record.name || '?', error: valid.error })
@@ -213,6 +227,9 @@ export async function ingestFromAdapter(
     }
 
     const verificationStatus = record.verificationStatus ?? 'unverified'
+    const fitScore =
+      record.fitScore ??
+      scorePersonFit(record.name, record.businessName).score
     const insertPayload = {
       name: record.name.trim(),
       business_name: record.businessName?.trim() || null,
@@ -229,6 +246,7 @@ export async function ingestFromAdapter(
       last_verified_at:
         verificationStatus === 'verified' ? new Date().toISOString() : null,
       notes: record.notes?.trim() || null,
+      fit_score: fitScore,
       created_by: actorUserId ?? null,
       updated_by: actorUserId ?? null,
     }
@@ -240,6 +258,45 @@ export async function ingestFromAdapter(
       .single()
 
     if (error || !data) {
+      // Fallback if fit_score column not migrated yet
+      if (error?.message?.includes('fit_score')) {
+        const { fit_score: _omit, ...withoutFit } = insertPayload
+        const retry = await admin
+          .from('professional_prospects')
+          .insert(withoutFit)
+          .select(PROSPECT_SELECT.replace(', fit_score', ''))
+          .single()
+        if (retry.error || !retry.data) {
+          errors.push({
+            name: record.name,
+            error: retry.error?.message ?? error.message ?? 'insert failed',
+          })
+          continue
+        }
+        const mapped = mapProspectRow({
+          ...(retry.data as unknown as ProspectRow),
+          fit_score: fitScore,
+        })
+        existing.push({
+          id: mapped.id,
+          phoneNormalized: mapped.phoneNormalized,
+          sourceName: mapped.sourceName,
+          externalId: mapped.externalId,
+          businessName: mapped.businessName,
+          categoryId: mapped.categoryId,
+          city: mapped.city,
+        })
+        await writeProspectEvent(admin, {
+          prospectId: mapped.id,
+          actorUserId,
+          action: 'created',
+          fromStatus: null,
+          toStatus: 'discovered',
+          payload: { source: adapter.name, fitScore },
+        })
+        created.push(mapped)
+        continue
+      }
       errors.push({ name: record.name, error: error?.message ?? 'insert failed' })
       continue
     }
@@ -261,13 +318,39 @@ export async function ingestFromAdapter(
       action: 'created',
       fromStatus: null,
       toStatus: 'discovered',
-      payload: { source: adapter.name },
+      payload: { source: adapter.name, fitScore },
     })
 
     created.push(mapped)
   }
 
   return { created, skipped, errors }
+}
+
+/**
+ * Remove prior auto-discovery leads so a fresh run can replace them.
+ * Keeps anyone already contacted / joined / DNC (and manual CSV entries).
+ */
+export async function clearReplaceableAutoProspects(
+  admin: SupabaseClient,
+): Promise<{ deleted: number }> {
+  const replaceableStatuses: ProspectStatus[] = [
+    'discovered',
+    'verified',
+    'approved',
+    'rejected',
+  ]
+  const autoSources = ['google_places', 'osm']
+
+  const { data, error } = await admin
+    .from('professional_prospects')
+    .delete()
+    .in('status', replaceableStatuses)
+    .in('source_name', autoSources)
+    .select('id')
+
+  if (error) throw error
+  return { deleted: data?.length ?? 0 }
 }
 
 export async function listProspects(
@@ -280,6 +363,7 @@ export async function listProspects(
   let query = admin
     .from('professional_prospects')
     .select(PROSPECT_SELECT, { count: 'exact' })
+    .order('fit_score', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
 
@@ -306,7 +390,36 @@ export async function listProspects(
   }
 
   const { data, error, count } = await query
-  if (error) throw error
+  if (error) {
+    // fit_score column may be missing until migration is applied
+    if (error.message?.includes('fit_score')) {
+      let fallback = admin
+        .from('professional_prospects')
+        .select(PROSPECT_SELECT.replace(', fit_score', ''), { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+      if (filters.status) {
+        const statuses = Array.isArray(filters.status)
+          ? filters.status
+          : [filters.status]
+        fallback = fallback.in('status', statuses)
+      }
+      if (filters.categoryId) fallback = fallback.eq('category_id', filters.categoryId)
+      if (filters.sourceName) fallback = fallback.eq('source_name', filters.sourceName)
+      if (filters.city) fallback = fallback.ilike('city', filters.city)
+      const retry = await fallback
+      if (retry.error) throw retry.error
+      const items = (retry.data ?? [])
+        .map((r) => mapProspectRow(r as unknown as ProspectRow))
+        .map((p) => ({
+          ...p,
+          fitScore: scorePersonFit(p.name, p.businessName).score,
+        }))
+        .sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0))
+      return { items, total: retry.count ?? 0 }
+    }
+    throw error
+  }
 
   return {
     items: (data ?? []).map((r) => mapProspectRow(r as ProspectRow)),
@@ -550,12 +663,23 @@ export async function prepareContactLink(
   const current = await getProspectById(admin, id)
   if (!current) throw new Error('Prospect not found')
 
-  const { prospect } = current
-  if (!isContactAllowed(prospect.status)) {
-    throw new Error('ניתן ליצור קשר רק אחרי אישור (approved) ומעלה')
-  }
+  let { prospect } = current
   if (prospect.status === 'do_not_contact' || prospect.status === 'rejected') {
     throw new Error('אין ליצור קשר עם ליד זה')
+  }
+
+  // One-click outreach: approving is implicit when admin opens WhatsApp
+  if (prospect.status === 'discovered' || prospect.status === 'verified') {
+    prospect = await updateProspect(
+      admin,
+      id,
+      { status: 'approved' },
+      actorUserId,
+    )
+  }
+
+  if (!isContactAllowed(prospect.status) && prospect.status !== 'approved') {
+    throw new Error('ניתן ליצור קשר רק אחרי אישור (approved) ומעלה')
   }
 
   const phone = prospect.whatsappPhone || prospect.phone

@@ -34,6 +34,8 @@ export type ProspectSourceRecord = {
   sourceUrl?: string | null
   externalId?: string | null
   notes?: string | null
+  /** Midrag-style fit 0–100; higher = better recruit candidate */
+  fitScore?: number | null
   verificationStatus?: VerificationStatus
 }
 
@@ -55,6 +57,7 @@ export type ProfessionalProspect = {
   contactedAt: string | null
   consentAt: string | null
   notes: string | null
+  fitScore?: number | null
   waitlistId: string | null
   professionalId: string | null
   createdBy: string | null

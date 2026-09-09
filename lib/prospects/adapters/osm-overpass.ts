@@ -7,6 +7,10 @@ import {
   type DiscoveryCategoryMapping,
 } from '@/lib/prospects/discovery-mapping'
 import { getRecruitCategorySlugs } from '@/lib/prospects/config'
+import {
+  scorePersonFit,
+  shouldKeepDiscoveredProspect,
+} from '@/lib/prospects/person-score'
 
 type OsmElement = {
   type: 'node' | 'way' | 'relation'
@@ -25,6 +29,7 @@ export type OsmAdapterOptions = {
   categorySlugs?: string[]
   city?: string
   perCategoryLimit?: number
+  totalBudget?: number
   endpoint?: string
   fetchImpl?: typeof fetch
 }
@@ -46,7 +51,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
 
   constructor(options: OsmAdapterOptions = {}) {
     this.city = options.city ?? getDiscoveryCity()
-    this.perCategoryLimit = Math.min(options.perCategoryLimit ?? 25, 50)
+    this.perCategoryLimit = Math.min(options.perCategoryLimit ?? 40, 80)
     this.endpoint = options.endpoint ?? DEFAULT_OVERPASS
     this.fetchImpl = options.fetchImpl ?? fetch
     this.mappings = getDiscoveryMappingsForSlugs(
@@ -59,6 +64,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
     const seen = new Set<string>()
 
     for (const mapping of this.mappings) {
+      if (mapping.osmFilters.length === 0) continue
       const elements = await this.queryCategory(mapping)
       for (const el of elements.slice(0, this.perCategoryLimit)) {
         const externalId = `${el.type}/${el.id}`
@@ -75,6 +81,17 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
           tags.operator?.trim() ||
           mapping.placesQueryHe
 
+        if (
+          !shouldKeepDiscoveredProspect({
+            name,
+            businessName: name,
+            phone,
+          })
+        ) {
+          continue
+        }
+
+        const fit = scorePersonFit(name, name)
         const sourceUrl = tags.website || tags['contact:website'] || null
 
         out.push({
@@ -90,14 +107,17 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
           notes: [
             tags['addr:street'] ? `רחוב: ${tags['addr:street']}` : null,
             'מקור: OpenStreetMap (ODbL)',
+            `דירוג התאמה: ${fit.score} (${fit.kind}) · נייד`,
           ]
             .filter(Boolean)
             .join(' · '),
+          fitScore: fit.score,
           verificationStatus: 'unverified',
         })
       }
     }
 
+    out.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0))
     return out
   }
 

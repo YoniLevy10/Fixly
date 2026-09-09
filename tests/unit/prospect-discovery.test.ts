@@ -11,9 +11,22 @@ import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpas
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
 
 describe('discovery mapping', () => {
-  it('covers ten core categories', () => {
-    assert.equal(DISCOVERY_CATEGORY_MAP.length, 10)
-    assert.ok(DISCOVERY_CATEGORY_MAP.every((m) => m.placesQueryHe && m.osmFilters.length))
+  it('covers expanded recruit categories including ceramics/tiling trades', () => {
+    assert.ok(DISCOVERY_CATEGORY_MAP.length >= 19)
+    assert.ok(DISCOVERY_CATEGORY_MAP.every((m) => m.placesQueryHe))
+    const tiling = DISCOVERY_CATEGORY_MAP.find((m) => m.slug === 'tiling')
+    assert.ok(tiling)
+    assert.ok(tiling!.placesQueriesHeExtra?.some((q) => q.includes('קרמיקה')))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'renovations'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
+  })
+
+  it('defaults discovery budget to 500', async () => {
+    const { DISCOVERY_TOTAL_BUDGET, getDiscoveryTotalBudget } = await import(
+      '@/lib/prospects/config'
+    )
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 500)
+    assert.equal(getDiscoveryTotalBudget(), 500)
   })
 
   it('filters by slug list', () => {
@@ -101,9 +114,19 @@ describe('GooglePlacesProspectAdapter', () => {
               {
                 id: 'places/abc',
                 displayName: { text: 'דני אינסטלטור' },
-                nationalPhoneNumber: '02-555-1111',
+                nationalPhoneNumber: '050-555-1111',
                 googleMapsUri: 'https://maps.google.com/?cid=1',
                 formattedAddress: 'ירושלים',
+              },
+              {
+                id: 'places/company',
+                displayName: { text: 'שירותי אינסטלציה בע״מ' },
+                nationalPhoneNumber: '02-555-2222',
+              },
+              {
+                id: 'places/landline-person',
+                displayName: { text: 'יוסי כהן אינסטלטור' },
+                nationalPhoneNumber: '02-555-3333',
               },
               {
                 id: 'places/no-phone',
@@ -121,5 +144,41 @@ describe('GooglePlacesProspectAdapter', () => {
     assert.equal(records[0].externalId, 'places/abc')
     assert.equal(records[0].categorySlug, 'plumbing')
     assert.ok(records[0].phone)
+  })
+})
+
+describe('person-score solo filter', () => {
+  it('keeps Midrag-style people and drops companies/shops', async () => {
+    const { shouldKeepAsSoloProspect, shouldKeepDiscoveredProspect, scorePersonFit } =
+      await import('@/lib/prospects/person-score')
+    assert.equal(shouldKeepAsSoloProspect('יוסי כהן'), true)
+    assert.equal(shouldKeepAsSoloProspect('דני אינסטלטור'), true)
+    assert.equal(shouldKeepAsSoloProspect('אבי לוי חשמלאי'), true)
+    assert.equal(shouldKeepAsSoloProspect('דני מתקין קרמיקה'), true)
+    assert.equal(shouldKeepAsSoloProspect('שירותי אינסטלציה בע״מ'), false)
+    assert.equal(shouldKeepAsSoloProspect('חברת הובלות ארציות'), false)
+    assert.equal(shouldKeepAsSoloProspect('אינסטלציה ירושלים'), false)
+    assert.equal(shouldKeepAsSoloProspect('חשמלאי מוסמך'), false)
+    assert.equal(shouldKeepAsSoloProspect('מרכז שירות מזגנים'), false)
+    assert.equal(shouldKeepAsSoloProspect('בן יעקב קרמיקה'), false)
+    assert.equal(shouldKeepAsSoloProspect('חנות טובול חומרי בניין'), false)
+    assert.equal(shouldKeepAsSoloProspect('oz ceramica- OUTLET'), false)
+    assert.ok(scorePersonFit('יוסי כהן').score >= 70)
+    assert.ok(scorePersonFit('אינסטלציה ירושלים').score < 70)
+
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'דני אינסטלטור',
+        phone: '050-123-4567',
+      }),
+      true,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'דני אינסטלטור',
+        phone: '02-555-1111',
+      }),
+      false,
+    )
   })
 })

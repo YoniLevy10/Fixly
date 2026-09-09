@@ -18,6 +18,7 @@ export {
   linkProspectToProfessional,
   writeProspectEvent,
   mapProspectRow,
+  clearReplaceableAutoProspects,
 } from '@/lib/prospects/service'
 export { runProspectDiscovery, listDiscoveryRuns } from '@/lib/prospects/discover'
 export {
