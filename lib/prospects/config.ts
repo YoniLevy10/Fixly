@@ -33,10 +33,14 @@ export const RECRUIT_TOTAL_TARGET =
   CORE_RECRUIT_CATEGORY_SLUGS.length * RECRUIT_PER_CATEGORY_TARGET
 
 /**
- * Total Places/OSM candidate slots to fetch per discovery run
- * (before Midrag-style person+mobile filter). Was ~300; raised to 500.
+ * Total Places candidate slots to fetch per discovery run
+ * (before Midrag-style person+mobile filter).
+ * Raised again for Jerusalem neighborhood coverage (was 500).
  */
-export const DISCOVERY_TOTAL_BUDGET = 500
+export const DISCOVERY_TOTAL_BUDGET = 1200
+
+/** Soft cap per category after person+mobile filter. */
+export const DISCOVERY_PER_CATEGORY_CAP = 120
 
 export const JOIN_URL = 'https://fixly.tech/pro/join'
 
@@ -61,6 +65,12 @@ export function getRecruitPerCategoryTarget(): number {
 
 export function getDiscoveryTotalBudget(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_TOTAL_BUDGET)
-  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 1000)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 3000)
   return DISCOVERY_TOTAL_BUDGET
+}
+
+export function getDiscoveryPerCategoryCap(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_PER_CATEGORY_CAP)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 250)
+  return DISCOVERY_PER_CATEGORY_CAP
 }

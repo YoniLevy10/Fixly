@@ -9,6 +9,7 @@ import {
 } from '@/lib/prospects/service'
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
 import {
+  getDiscoveryPerCategoryCap,
   getDiscoveryTotalBudget,
   getRecruitCategorySlugs,
 } from '@/lib/prospects/config'
@@ -30,7 +31,13 @@ export type DiscoveryRunResult = {
   errorMessage?: string
   bySource: Record<
     string,
-    { found: number; created: number; skipped: number; errors: string[] }
+    {
+      found: number
+      created: number
+      skipped: number
+      errors: string[]
+      stats?: Record<string, number | string[] | undefined>
+    }
   >
 }
 
@@ -43,12 +50,14 @@ function buildAdapters(input?: {
   const wanted = new Set(input?.sources ?? ['google_places', 'osm'])
   const adapters: ProspectSourceAdapter[] = []
   const budget = input?.totalBudget ?? getDiscoveryTotalBudget()
+  const categorySlugs = input?.categorySlugs ?? getRecruitCategorySlugs()
   const common = {
-    categorySlugs: input?.categorySlugs ?? getRecruitCategorySlugs(),
+    categorySlugs,
     city: input?.city ?? getDiscoveryCity(),
     totalBudget: budget,
-    perCategoryLimit: Math.ceil(
-      budget / Math.max(1, (input?.categorySlugs ?? getRecruitCategorySlugs()).length),
+    perCategoryLimit: Math.min(
+      Math.ceil(budget / Math.max(1, categorySlugs.length)),
+      getDiscoveryPerCategoryCap(),
     ),
   }
 
@@ -163,6 +172,38 @@ export async function runProspectDiscovery(
         bySource[adapter.name].found = records.length
         found += records.length
 
+        if (adapter instanceof GooglePlacesProspectAdapter) {
+          const s = adapter.lastStats
+          bySource[adapter.name].stats = {
+            rawFetched: s.rawFetched,
+            uniquePlaces: s.uniquePlaces,
+            rejectedNoPhone: s.rejectedNoPhone,
+            rejectedFilter: s.rejectedFilter,
+            kept: s.kept,
+            searchCalls: s.searchCalls,
+          }
+          if (s.searchErrors.length > 0) {
+            bySource[adapter.name].errors.push(...s.searchErrors.slice(0, 5))
+            errors += s.searchErrors.length
+            topErrors.push(
+              ...s.searchErrors.slice(0, 3).map((e) => `google_places: ${e}`),
+            )
+          }
+        }
+        if (adapter instanceof OsmOverpassProspectAdapter) {
+          if (adapter.lastCategoryErrors.length > 0) {
+            bySource[adapter.name].errors.push(
+              ...adapter.lastCategoryErrors.slice(0, 5),
+            )
+            errors += adapter.lastCategoryErrors.length
+            topErrors.push(
+              ...adapter.lastCategoryErrors
+                .slice(0, 3)
+                .map((e) => `osm: ${e}`),
+            )
+          }
+        }
+
         const wrap: ProspectSourceAdapter = {
           name: adapter.name,
           fetchRecords: async () => records,
@@ -174,11 +215,15 @@ export async function runProspectDiscovery(
         )
         bySource[adapter.name].created = result.created.length
         bySource[adapter.name].skipped = result.skipped.length
-        bySource[adapter.name].errors = result.errors.map((e) => e.error)
+        bySource[adapter.name].errors.push(
+          ...result.errors.map((e) => e.error),
+        )
         created += result.created.length
         skipped += result.skipped.length
         errors += result.errors.length
-        topErrors.push(...result.errors.map((e) => `${adapter.name}: ${e.error}`))
+        topErrors.push(
+          ...result.errors.map((e) => `${adapter.name}: ${e.error}`),
+        )
       } catch (e) {
         const message = e instanceof Error ? e.message : 'source failed'
         bySource[adapter.name].errors.push(message)
@@ -197,7 +242,12 @@ export async function runProspectDiscovery(
           skipped_count: skipped,
           error_count: errors,
           error_message: topErrors[0] ?? null,
-          details: { bySource, deletedPrevious, budget },
+          details: {
+            bySource,
+            deletedPrevious,
+            budget,
+            allErrors: topErrors.slice(0, 12),
+          },
           finished_at: new Date().toISOString(),
         })
         .eq('id', runId)
@@ -229,7 +279,12 @@ export async function runProspectDiscovery(
           skipped_count: skipped,
           error_count: errors + 1,
           error_message: message,
-          details: { bySource, deletedPrevious, budget },
+          details: {
+            bySource,
+            deletedPrevious,
+            budget,
+            allErrors: [...topErrors, message].slice(0, 12),
+          },
           finished_at: new Date().toISOString(),
         })
         .eq('id', runId)

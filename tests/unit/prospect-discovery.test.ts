@@ -5,10 +5,17 @@ import {
   ALLOWED_DISCOVERY_SOURCES,
   isAllowedDiscoverySource,
   getDiscoveryMappingsForSlugs,
+  placesQueriesFor,
+  placesSearchJobsFor,
   JERUSALEM_BBOX,
+  JERUSALEM_SEARCH_AREAS,
 } from '@/lib/prospects/discovery-mapping'
 import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpass'
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
+import {
+  humanizeDiscoveryError,
+  humanizeDiscoveryErrors,
+} from '@/lib/prospects/humanize-discovery-error'
 
 describe('discovery mapping', () => {
   it('covers expanded recruit categories including ceramics/tiling trades', () => {
@@ -21,12 +28,27 @@ describe('discovery mapping', () => {
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
   })
 
-  it('defaults discovery budget to 500', async () => {
+  it('defaults discovery budget to 1200 for neighborhood coverage', async () => {
     const { DISCOVERY_TOTAL_BUDGET, getDiscoveryTotalBudget } = await import(
       '@/lib/prospects/config'
     )
-    assert.equal(DISCOVERY_TOTAL_BUDGET, 500)
-    assert.equal(getDiscoveryTotalBudget(), 500)
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 1200)
+    assert.equal(getDiscoveryTotalBudget(), 1200)
+  })
+
+  it('includes English Places queries and Jerusalem neighborhood jobs', () => {
+    assert.ok(JERUSALEM_SEARCH_AREAS.length >= 8)
+    const plumbing = DISCOVERY_CATEGORY_MAP.find((m) => m.slug === 'plumbing')!
+    const queries = placesQueriesFor(plumbing)
+    assert.ok(queries.some((q) => /plumber/i.test(q)))
+    const jobs = placesSearchJobsFor(plumbing, 'ירושלים')
+    assert.ok(jobs.some((j) => j.textQuery.includes('פסגת זאב')))
+    assert.ok(jobs.some((j) => j.area.labelHe === 'גילה'))
+    // Neighborhoods: primary query only; city-wide: HE + EN extras
+    const cityJobs = jobs.filter((j) => j.area.labelHe === 'ירושלים')
+    const neighborhoodJobs = jobs.filter((j) => j.area.labelHe === 'פסגת זאב')
+    assert.ok(cityJobs.length > neighborhoodJobs.length)
+    assert.equal(neighborhoodJobs.length, 1)
   })
 
   it('filters by slug list', () => {
@@ -45,6 +67,26 @@ describe('discovery mapping', () => {
   it('defines Jerusalem bbox', () => {
     assert.ok(JERUSALEM_BBOX.north > JERUSALEM_BBOX.south)
     assert.ok(JERUSALEM_BBOX.east > JERUSALEM_BBOX.west)
+  })
+})
+
+describe('humanizeDiscoveryError', () => {
+  it('explains Overpass/OSM failures instead of vague partial', () => {
+    const msg = humanizeDiscoveryError(
+      'osm: plumbing: Overpass query failed (504): Gateway Timeout',
+    )
+    assert.ok(msg)
+    assert.match(msg!, /OpenStreetMap|Overpass/)
+    assert.ok(!msg!.includes('הייתה תקלה חלקית בזמן הגילוי'))
+  })
+
+  it('dedupes humanized errors', () => {
+    const list = humanizeDiscoveryErrors([
+      'Overpass query failed (502)',
+      'osm: tiling: Overpass query failed (504)',
+      null,
+    ])
+    assert.equal(list.length, 1)
   })
 })
 
@@ -93,6 +135,38 @@ describe('OsmOverpassProspectAdapter', () => {
     assert.equal(records[0].sourceName, 'osm')
     assert.equal(records[0].phone, '0501234567')
   })
+
+  it('continues other categories when one Overpass call fails', async () => {
+    let calls = 0
+    const adapter = new OsmOverpassProspectAdapter({
+      categorySlugs: ['plumbing', 'electricity'],
+      fetchImpl: async () => {
+        calls += 1
+        if (calls === 1) {
+          return new Response('Gateway Timeout', { status: 504 })
+        }
+        return new Response(
+          JSON.stringify({
+            elements: [
+              {
+                type: 'node',
+                id: 9,
+                tags: {
+                  name: 'אבי חשמלאי',
+                  phone: '0509998877',
+                  craft: 'electrician',
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        )
+      },
+    })
+    const records = await adapter.fetchRecords()
+    assert.equal(records.length, 1)
+    assert.ok(adapter.lastCategoryErrors.length >= 1)
+  })
 })
 
 describe('GooglePlacesProspectAdapter', () => {
@@ -107,6 +181,14 @@ describe('GooglePlacesProspectAdapter', () => {
     const adapter = new GooglePlacesProspectAdapter({
       apiKey: 'test-key',
       categorySlugs: ['plumbing'],
+      searchAreas: [
+        {
+          labelHe: 'ירושלים',
+          lat: 31.7683,
+          lng: 35.2137,
+          radiusMeters: 12000,
+        },
+      ],
       fetchImpl: async () =>
         new Response(
           JSON.stringify({
@@ -144,6 +226,9 @@ describe('GooglePlacesProspectAdapter', () => {
     assert.equal(records[0].externalId, 'places/abc')
     assert.equal(records[0].categorySlug, 'plumbing')
     assert.ok(records[0].phone)
+    assert.ok(adapter.lastStats.rawFetched > 0)
+    assert.ok(adapter.lastStats.rejectedFilter >= 1)
+    assert.ok(adapter.lastStats.rejectedNoPhone >= 1)
   })
 })
 

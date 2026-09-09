@@ -277,7 +277,7 @@ export function scorePersonFit(name: string, businessName?: string | null): Pers
 }
 
 /**
- * Midrag-style bar: keep only clear individuals (score ≥ 70 ≈ kind person).
+ * Strict solo bar for admin "reject companies" (score ≥ 70 ≈ kind person).
  */
 export function shouldKeepAsSoloProspect(
   name: string,
@@ -288,14 +288,17 @@ export function shouldKeepAsSoloProspect(
 }
 
 /**
- * Discovery gate: Midrag-like private pro = strong person name + Israeli mobile (05x).
- * Landlines / 1-700 / shop numbers are rejected even if the name looks personal.
+ * Discovery gate: Midrag-like private pro =
+ * person / likely_person (score ≥ 55) + Israeli mobile (05x).
+ * Landlines / 1-700 / shops / companies still rejected.
+ * Slightly softer than admin solo reject so we don't miss "דני אינסטלציה נייד".
  */
 export function shouldKeepDiscoveredProspect(input: {
   name: string
   businessName?: string | null
   phone?: string | null
 }): boolean {
-  if (!shouldKeepAsSoloProspect(input.name, input.businessName)) return false
+  const fit = scorePersonFit(input.name, input.businessName)
+  if (fit.score < 55) return false
   return isIsraeliMobilePhone(input.phone)
 }
