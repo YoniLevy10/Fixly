@@ -62,10 +62,18 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
   async fetchRecords(): Promise<ProspectSourceRecord[]> {
     const out: ProspectSourceRecord[] = []
     const seen = new Set<string>()
+    const categoryErrors: string[] = []
 
     for (const mapping of this.mappings) {
       if (mapping.osmFilters.length === 0) continue
-      const elements = await this.queryCategory(mapping)
+      let elements: OsmElement[] = []
+      try {
+        elements = await this.queryCategory(mapping)
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Overpass failed'
+        categoryErrors.push(`${mapping.slug}: ${message}`)
+        continue
+      }
       for (const el of elements.slice(0, this.perCategoryLimit)) {
         const externalId = `${el.type}/${el.id}`
         if (seen.has(externalId)) continue
@@ -117,9 +125,19 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
       }
     }
 
+    this.lastCategoryErrors = categoryErrors
+    if (categoryErrors.length > 0 && out.length === 0) {
+      throw new Error(
+        `Overpass query failed for all categories: ${categoryErrors[0]}`,
+      )
+    }
+
     out.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0))
     return out
   }
+
+  /** Partial Overpass failures (per category) from the last fetch. */
+  lastCategoryErrors: string[] = []
 
   buildOverpassQuery(mapping: DiscoveryCategoryMapping): string {
     const { south, west, north, east } = JERUSALEM_BBOX

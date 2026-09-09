@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { shouldKeepAsSoloProspect } from '@/lib/prospects/person-score'
+import { humanizeDiscoveryErrors } from '@/lib/prospects/humanize-discovery-error'
 import { PROSPECT_STATUSES, type ProspectStatus } from '@/lib/prospects/types'
 
 type ProspectItem = {
@@ -78,39 +79,27 @@ const RUN_STATUS_LABELS: Record<string, string> = {
   failed: 'נכשל',
 }
 
-/** Short Hebrew summary for discovery run errors (no raw API/SQL dumps). */
-function humanizeDiscoveryError(raw: string | null | undefined): string | null {
-  if (!raw?.trim()) return null
-  const msg = raw.toLowerCase()
-  if (
-    msg.includes('duplicate key') ||
-    msg.includes('idx_prospects_phone') ||
-    msg.includes('unique constraint')
-  ) {
-    return 'חלק מהמספרים כבר היו במערכת — נשמרו רק לידים חדשים'
-  }
-  if (
-    msg.includes('places api') &&
-    (msg.includes('disabled') || msg.includes('has not been used') || msg.includes('403'))
-  ) {
-    return 'Google Places לא פעיל בפרויקט — יש להפעיל Places API (New) ב-Google Cloud'
-  }
-  if (msg.includes('403')) {
-    return 'אין הרשאה ל-Google Places (403) — בדקו מפתח API והפעלת השירות'
-  }
-  if (msg.includes('429') || msg.includes('quota') || msg.includes('resource exhausted')) {
-    return 'חרגתם ממכסת Google Places — נסו שוב מאוחר יותר'
-  }
-  if (msg.includes('google_places_api_key') || msg.includes('api key')) {
-    return 'חסר או לא תקין מפתח Google Places'
-  }
-  if (msg.includes('אין מקורות')) {
-    return 'אין מקורות גילוי זמינים'
-  }
-  if (msg.includes('timeout') || msg.includes('aborted')) {
-    return 'החיפוש ארך יותר מדי ונקטע — נסו שוב'
-  }
-  return 'הייתה תקלה חלקית בזמן הגילוי'
+type DiscoveryRunDetails = {
+  bySource?: Record<
+    string,
+    {
+      found?: number
+      created?: number
+      skipped?: number
+      errors?: string[]
+      stats?: {
+        rawFetched?: number
+        uniquePlaces?: number
+        rejectedNoPhone?: number
+        rejectedFilter?: number
+        kept?: number
+        searchCalls?: number
+      }
+    }
+  >
+  deletedPrevious?: number
+  budget?: number
+  allErrors?: string[]
 }
 
 type DiscoveryRun = {
@@ -124,8 +113,40 @@ type DiscoveryRun = {
   skipped_count: number
   error_count: number
   error_message: string | null
+  details?: DiscoveryRunDetails | null
   started_at: string
   finished_at: string | null
+}
+
+function problemsForRun(run: DiscoveryRun): string[] {
+  const raw: string[] = []
+  if (Array.isArray(run.details?.allErrors)) {
+    raw.push(...run.details!.allErrors!)
+  }
+  const bySource = run.details?.bySource
+  if (bySource) {
+    for (const src of Object.values(bySource)) {
+      if (Array.isArray(src?.errors)) raw.push(...src.errors)
+    }
+  }
+  if (run.error_message) raw.push(run.error_message)
+  return humanizeDiscoveryErrors(raw)
+}
+
+function placesFunnelForRun(run: DiscoveryRun): {
+  rawFetched: number
+  rejectedNoPhone: number
+  rejectedFilter: number
+  kept: number
+} | null {
+  const stats = run.details?.bySource?.google_places?.stats
+  if (!stats) return null
+  return {
+    rawFetched: stats.rawFetched ?? 0,
+    rejectedNoPhone: stats.rejectedNoPhone ?? 0,
+    rejectedFilter: stats.rejectedFilter ?? 0,
+    kept: stats.kept ?? 0,
+  }
 }
 
 export default function ProspectsRecruitmentScreen() {
@@ -490,10 +511,15 @@ export default function ProspectsRecruitmentScreen() {
 
       {runs.length > 0 && (
         <Card>
-          <h2 className="font-bold mb-3">ריצות גילוי אחרונות</h2>
+          <h2 className="font-bold mb-1">ריצות גילוי אחרונות</h2>
+          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+            לא כל תושבי ירושלים — רק אנשי מקצוע עצמאיים עם נייד (05x) שמופיעים
+            ב־Google Places / OSM. חברות, חנויות וטלפונים קוויים מסוננים החוצה.
+          </p>
           <ul className="space-y-3">
             {runs.slice(0, 2).map((run) => {
-              const problem = humanizeDiscoveryError(run.error_message)
+              const problems = problemsForRun(run)
+              const funnel = placesFunnelForRun(run)
               const statusLabel = RUN_STATUS_LABELS[run.status] ?? run.status
               return (
                 <li
@@ -536,10 +562,24 @@ export default function ProspectsRecruitmentScreen() {
                       </p>
                     </div>
                   </div>
-                  {problem ? (
-                    <p className="text-sm text-amber-950 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 break-words">
-                      {problem}
+                  {funnel && funnel.rawFetched > 0 ? (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Places סרק {funnel.rawFetched} · בלי טלפון{' '}
+                      {funnel.rejectedNoPhone} · חברה/לא נייד{' '}
+                      {funnel.rejectedFilter} · נשמרו לסינון {funnel.kept}
                     </p>
+                  ) : null}
+                  {problems.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {problems.map((problem) => (
+                        <p
+                          key={problem}
+                          className="text-sm text-amber-950 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 break-words"
+                        >
+                          {problem}
+                        </p>
+                      ))}
+                    </div>
                   ) : run.status === 'completed' ? (
                     <p className="text-sm text-emerald-800">הריצה הסתיימה בהצלחה</p>
                   ) : null}
@@ -558,13 +598,16 @@ export default function ProspectsRecruitmentScreen() {
           </Card>
           <Card>
             <p className="text-sm text-muted-foreground">
-              יעד {target?.city} (מאומת+)
+              עברו אימות ב{target?.city}
             </p>
             <p className="text-2xl font-extrabold">
               {target?.verifiedCount ?? 0}
               <span className="text-base font-medium text-muted-foreground">
                 /{(target?.categorySlugs.length ?? 10) * (target?.perCategory ?? 10)}
               </span>
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
+              יעד גיוס אחרי אימות ידני — לא מספר כל הלידים שנמצאו
             </p>
           </Card>
           {PROSPECT_STATUSES.slice(0, 4).map((s) => (

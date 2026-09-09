@@ -15,9 +15,121 @@ export type DiscoveryCategoryMapping = {
   osmFilters: string[]
 }
 
-/** All Places queries for a mapping (primary + extras). */
+/** All Places queries for a mapping (Hebrew primary + extras + English). */
 export function placesQueriesFor(mapping: DiscoveryCategoryMapping): string[] {
-  return [mapping.placesQueryHe, ...(mapping.placesQueriesHeExtra ?? [])]
+  const he = [mapping.placesQueryHe, ...(mapping.placesQueriesHeExtra ?? [])]
+  const en = mapping.placesQueryEn?.trim()
+  return en ? [...he, en] : he
+}
+
+export type DiscoverySearchArea = {
+  /** Hebrew area / neighborhood label appended to text queries */
+  labelHe: string
+  lat: number
+  lng: number
+  /** Location bias radius in meters */
+  radiusMeters: number
+}
+
+/**
+ * Jerusalem coverage grid — city-wide + neighborhoods so Places doesn't
+ * collapse to the same ~20 results around the Old City / center.
+ */
+export const JERUSALEM_SEARCH_AREAS: DiscoverySearchArea[] = [
+  {
+    labelHe: 'ירושלים',
+    lat: 31.7683,
+    lng: 35.2137,
+    radiusMeters: 14000,
+  },
+  {
+    labelHe: 'פסגת זאב',
+    lat: 31.8255,
+    lng: 35.2385,
+    radiusMeters: 4500,
+  },
+  {
+    labelHe: 'רמות',
+    lat: 31.812,
+    lng: 35.194,
+    radiusMeters: 4500,
+  },
+  {
+    labelHe: 'גילה',
+    lat: 31.7315,
+    lng: 35.1885,
+    radiusMeters: 4000,
+  },
+  {
+    labelHe: 'תלפיות',
+    lat: 31.75,
+    lng: 35.22,
+    radiusMeters: 4000,
+  },
+  {
+    labelHe: 'בית הכרם',
+    lat: 31.78,
+    lng: 35.19,
+    radiusMeters: 4000,
+  },
+  {
+    labelHe: 'קטמון',
+    lat: 31.76,
+    lng: 35.205,
+    radiusMeters: 4000,
+  },
+  {
+    labelHe: 'מלחה',
+    lat: 31.751,
+    lng: 35.188,
+    radiusMeters: 4000,
+  },
+  {
+    labelHe: 'ארמון הנציב',
+    lat: 31.754,
+    lng: 35.236,
+    radiusMeters: 4000,
+  },
+  {
+    labelHe: 'נווה יעקב',
+    lat: 31.84,
+    lng: 35.24,
+    radiusMeters: 4000,
+  },
+]
+
+export type PlacesSearchJob = {
+  textQuery: string
+  area: DiscoverySearchArea
+}
+
+/**
+ * Build Places text-search jobs with Jerusalem neighborhood coverage.
+ * City-wide area gets every Hebrew + English query.
+ * Neighborhoods get the primary Hebrew query only (avoids exploding API cost).
+ */
+export function placesSearchJobsFor(
+  mapping: DiscoveryCategoryMapping,
+  city: string,
+  areas: DiscoverySearchArea[] = JERUSALEM_SEARCH_AREAS,
+): PlacesSearchJob[] {
+  const allQueries = placesQueriesFor(mapping)
+  const primaryOnly = [mapping.placesQueryHe]
+  const jobs: PlacesSearchJob[] = []
+
+  for (const area of areas) {
+    const isCityWide =
+      area.labelHe === city || area.labelHe === 'ירושלים'
+    const queries = isCityWide ? allQueries : primaryOnly
+    const placeLabel = isCityWide ? city : area.labelHe
+    for (const queryBase of queries) {
+      jobs.push({
+        textQuery: `${queryBase} ${placeLabel}`,
+        area,
+      })
+    }
+  }
+  return jobs
 }
 
 /**
