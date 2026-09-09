@@ -10,7 +10,7 @@ import {
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300
 
 const discoverSchema = z.object({
   sources: z.array(z.enum(['google_places', 'osm'])).min(1).max(2).optional(),

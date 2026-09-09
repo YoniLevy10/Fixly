@@ -21,6 +21,14 @@ describe('discovery mapping', () => {
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
   })
 
+  it('defaults discovery budget to 500', async () => {
+    const { DISCOVERY_TOTAL_BUDGET, getDiscoveryTotalBudget } = await import(
+      '@/lib/prospects/config'
+    )
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 500)
+    assert.equal(getDiscoveryTotalBudget(), 500)
+  })
+
   it('filters by slug list', () => {
     const subset = getDiscoveryMappingsForSlugs(['plumbing', 'locksmith'])
     assert.equal(subset.length, 2)

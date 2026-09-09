@@ -20,6 +20,9 @@
 | הזנה ידנית / CSV | מנהל | — |
 
 **סינון חובה אחרי גילוי:** שם בסגנון אדם (score ≥ 70) **וגם** טלפון נייד ישראלי `05x`. קווי 02 / 1-700 / חנויות נזרקים.
+לידים ממוינים לפי `fit_score` (גבוה = מתאים יותר לפלטפורמה).
+בהרצת גילוי נמחקים אוטומטית לידים קודמים מ־Places/OSM בסטטוסים `discovered`/`verified`/`approved`/`rejected` (לא נוגעים ב־contacted / joined / DNC / ידני).
+תקציב חיפוש ברירת מחדל: **500** תוצאות גולמיות (`FIXLY_DISCOVERY_TOTAL_BUDGET`).
 
 ### איך משיגים Google Places key
 
@@ -76,6 +79,7 @@ Claim פרופיל עם טלפון תואם → `active`.
 1. `supabase/migrations/20260909010000_professional_prospects.sql`
 2. `supabase/migrations/20260909120000_prospect_discovery_runs.sql`
 3. `supabase/migrations/20260909140000_expand_recruit_categories.sql`
+4. `supabase/migrations/20260909150000_prospect_fit_score.sql`
 
 ## Env נדרש
 

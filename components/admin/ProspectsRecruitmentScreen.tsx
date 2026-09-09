@@ -26,6 +26,7 @@ type ProspectItem = {
   status: ProspectStatus
   verificationStatus: string
   notes: string | null
+  fitScore?: number | null
   contactedAt: string | null
   createdAt: string
 }
@@ -370,12 +371,12 @@ export default function ProspectsRecruitmentScreen() {
         body: JSON.stringify({}),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
+      if (!res.ok && data.status !== 'completed') {
         setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
         return
       }
       setActionMsg(
-        `גילוי הסתיים: נמצאו ${data.found ?? 0} · נשמרו ${data.created ?? 0} · דולגו ${data.skipped ?? 0} · שגיאות ${data.errors ?? 0}`,
+        `גילוי: נמחקו ${data.deletedPrevious ?? 0} קודמים · תקציב ${data.budget ?? 500} · נמצאו ${data.found ?? 0} · נשמרו ${data.created ?? 0} (ממוינים לפי דירוג)`,
       )
       await Promise.all([loadList(), loadRuns()])
     } finally {
@@ -397,7 +398,7 @@ export default function ProspectsRecruitmentScreen() {
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
           <h1 className="text-3xl font-bold mt-1">גיוס אנשי מקצוע</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            גילוי בסגנון מידרג: פרטי + נייד · WhatsApp ידני · יעד{' '}
+            גילוי מידרג-סטייל · מוחק קודמים · מדרג התאמה · תקציב 500 · WhatsApp ידני · יעד{' '}
             {targetTotal} בירושלים
           </p>
           {!authLoading && (
@@ -619,7 +620,14 @@ export default function ProspectsRecruitmentScreen() {
                   className="flex-1 text-right"
                   onClick={() => setDetailId(item.id)}
                 >
-                  <div className="font-bold">{item.name}</div>
+                  <div className="font-bold flex flex-wrap items-center gap-2">
+                    <span>{item.name}</span>
+                    {typeof item.fitScore === 'number' && (
+                      <span className="text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 px-2 py-0.5">
+                        דירוג {item.fitScore}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {item.businessName ? `${item.businessName} · ` : ''}
                     {item.categoryNameHe || item.categoryName || '—'} · {item.city}

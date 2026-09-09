@@ -7,7 +7,10 @@ import {
   placesQueriesFor,
   type DiscoveryCategoryMapping,
 } from '@/lib/prospects/discovery-mapping'
-import { getRecruitCategorySlugs } from '@/lib/prospects/config'
+import {
+  getDiscoveryTotalBudget,
+  getRecruitCategorySlugs,
+} from '@/lib/prospects/config'
 import {
   scorePersonFit,
   shouldKeepDiscoveredProspect,
@@ -26,11 +29,16 @@ type PlacesTextSearchResult = {
   }>
 }
 
+/** Places API (New) searchText hard cap per request. */
+const PLACES_PAGE_MAX = 20
+
 export type GooglePlacesAdapterOptions = {
   apiKey?: string
   categorySlugs?: string[]
   city?: string
-  /** Max places to fetch per category (keeps cost bounded). */
+  /** Max raw places to fetch across all categories (default 500). */
+  totalBudget?: number
+  /** Override per-category raw place cap. */
   perCategoryLimit?: number
   fetchImpl?: typeof fetch
 }
@@ -45,6 +53,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
   private readonly apiKey: string
   private readonly mappings: DiscoveryCategoryMapping[]
   private readonly city: string
+  private readonly totalBudget: number
   private readonly perCategoryLimit: number
   private readonly fetchImpl: typeof fetch
 
@@ -55,27 +64,46 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     }
     this.apiKey = key
     this.city = options.city ?? getDiscoveryCity()
-    this.perCategoryLimit = Math.min(options.perCategoryLimit ?? 20, 40)
     this.fetchImpl = options.fetchImpl ?? fetch
     this.mappings = getDiscoveryMappingsForSlugs(
       options.categorySlugs ?? getRecruitCategorySlugs(),
+    )
+    this.totalBudget = Math.max(
+      1,
+      options.totalBudget ?? getDiscoveryTotalBudget(),
+    )
+    const defaultPerCat = Math.ceil(
+      this.totalBudget / Math.max(1, this.mappings.length),
+    )
+    this.perCategoryLimit = Math.min(
+      options.perCategoryLimit ?? defaultPerCat,
+      80,
     )
   }
 
   async fetchRecords(): Promise<ProspectSourceRecord[]> {
     const out: ProspectSourceRecord[] = []
     const seen = new Set<string>()
+    let rawFetched = 0
 
     for (const mapping of this.mappings) {
+      if (rawFetched >= this.totalBudget) break
+
       const queries = placesQueriesFor(mapping)
-      const perQueryLimit = Math.max(
-        5,
-        Math.ceil(this.perCategoryLimit / queries.length),
+      const perQueryLimit = Math.min(
+        PLACES_PAGE_MAX,
+        Math.max(5, Math.ceil(this.perCategoryLimit / queries.length)),
       )
+      let keptForCategory = 0
 
       for (const queryBase of queries) {
+        if (rawFetched >= this.totalBudget) break
+        if (keptForCategory >= this.perCategoryLimit) break
+
         const query = `${queryBase} ${this.city}`
         const places = await this.textSearch(query, perQueryLimit)
+        rawFetched += places.length
+
         for (const place of places) {
           const placeId = place.id?.trim()
           if (!placeId || seen.has(placeId)) continue
@@ -104,7 +132,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
           const addressNote = place.formattedAddress
             ? `כתובת: ${place.formattedAddress}`
             : null
-          const fitNote = `התאמת מידרג-סטייל: ${fit.kind} (${fit.score}) · נייד`
+          const fitNote = `דירוג התאמה: ${fit.score} (${fit.kind}) · נייד`
 
           out.push({
             name,
@@ -117,31 +145,17 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
             sourceUrl: place.googleMapsUri || place.websiteUri || null,
             externalId: placeId,
             notes: [addressNote, fitNote].filter(Boolean).join(' · '),
+            fitScore: fit.score,
             verificationStatus: 'unverified',
           })
+          keptForCategory += 1
 
-          if (
-            out.filter((r) => r.categorySlug === mapping.slug).length >=
-            this.perCategoryLimit
-          ) {
-            break
-          }
-        }
-        if (
-          out.filter((r) => r.categorySlug === mapping.slug).length >=
-          this.perCategoryLimit
-        ) {
-          break
+          if (keptForCategory >= this.perCategoryLimit) break
         }
       }
     }
 
-    out.sort((a, b) => {
-      const sa = scorePersonFit(a.name, a.businessName).score
-      const sb = scorePersonFit(b.name, b.businessName).score
-      return sb - sa
-    })
-
+    out.sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0))
     return out
   }
 
@@ -163,7 +177,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
           textQuery,
           languageCode: 'he',
           regionCode: 'IL',
-          maxResultCount: Math.min(maxResultCount, this.perCategoryLimit),
+          maxResultCount: Math.min(maxResultCount, PLACES_PAGE_MAX),
           locationBias: {
             circle: {
               center: {
