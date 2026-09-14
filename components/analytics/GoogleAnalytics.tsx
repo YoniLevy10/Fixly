@@ -3,18 +3,24 @@
 import Script from 'next/script'
 import { featureFlags } from '@/lib/feature-flags'
 
+/** Production GA4 property — public client ID (safe to ship in the browser). */
+export const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || 'G-EK4R8FW52G'
+
 /**
- * Loads Google Analytics 4 when analytics flag is on and measurement ID is set.
+ * Loads Google Analytics 4 when analytics flag is on.
  * Events are sent via lib/analytics/track.ts → window.gtag.
+ *
+ * Snippet equivalent:
+ *   gtag/js?id=G-EK4R8FW52G + gtag('config', 'G-EK4R8FW52G')
  */
 export default function GoogleAnalytics() {
-  const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim()
-  if (!featureFlags.analytics || !measurementId) return null
+  if (!featureFlags.analytics || !GA_MEASUREMENT_ID) return null
 
   return (
     <>
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         strategy="afterInteractive"
       />
       <Script id="ga4-init" strategy="afterInteractive">
@@ -22,7 +28,7 @@ export default function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${measurementId}', { send_page_view: true });
+          gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: true });
         `}
       </Script>
     </>
