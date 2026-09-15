@@ -32,9 +32,9 @@ test.describe('public pages', () => {
 
   test('pro join page is outreach destination', async ({ page }) => {
     await page.goto('/pro/join')
-    await expect(page.getByRole('heading', { name: /הצטרפו|בעל|מקצוע|רשימה/i }).first()).toBeVisible()
-    await expect(page.getByLabel(/שם מלא|Full name/i)).toBeVisible()
-    await expect(page.getByLabel(/טלפון|Phone/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /הצטרפות ל-Fixly|Join Fixly/i })).toBeVisible()
+    await expect(page.getByText(/לבעלי מקצוע/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /הירשם|Sign up/i })).toBeVisible()
     await expect(
       page.getByRole('link', { name: /הרשמה מוקדמת ללקוחות/i })
     ).toBeVisible()
