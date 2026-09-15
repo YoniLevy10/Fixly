@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useAuth } from '@/lib/auth/auth-provider'
 import type { DemoTourStepId } from '@/lib/demo/investor-tour'
-import { DEMO_TOUR_STEPS } from '@/lib/demo/investor-tour'
 import { narrativeFor } from '@/lib/demo/tour-narrative'
 import { DemoTourContext } from '@/components/demo/demo-tour-context'
-import { translate } from '@/lib/i18n/translate'
-import { useLocale } from '@/lib/i18n/locale-provider'
 
 /**
  * Layout-level tour controller — survives route changes.
@@ -21,7 +18,6 @@ import { useLocale } from '@/lib/i18n/locale-provider'
 export function DemoTourProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { switchDemoRole } = useAuth()
-  const { locale } = useLocale()
   const [tourRunning, setTourRunning] = useState(false)
   const [tourStep, setTourStep] = useState<DemoTourStepId | null>(null)
   const [tourError, setTourError] = useState<string | null>(null)
@@ -30,10 +26,8 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const routerRef = useRef(router)
   const switchRef = useRef(switchDemoRole)
   const spotlightRef = useRef<{ destroy: () => void } | null>(null)
-  const localeRef = useRef(locale)
   routerRef.current = router
   switchRef.current = switchDemoRole
-  localeRef.current = locale
 
   const clearSpotlight = useCallback(() => {
     spotlightRef.current?.destroy()
@@ -68,23 +62,11 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
     )
     await waitForSelector(beat.spotlight, 4500)
 
-    const titleKey =
-      DEMO_TOUR_STEPS.find((s) => s.id === step)?.labelKey ?? 'demo.tourRunning'
-    const storyMap: Record<DemoTourStepId, string> = {
-      create: 'demo.tourStoryCreate',
-      pending: 'demo.tourStoryPending',
-      accepted: 'demo.tourStoryAccepted',
-      on_the_way: 'demo.tourStoryOnTheWay',
-      customer_map: 'demo.tourStoryMap',
-      in_progress: 'demo.tourStoryInProgress',
-      completed: 'demo.tourStoryCompleted',
-      done: 'demo.tourStoryDone',
-    }
-    const handle = await showTourSpotlight(
-      beat.spotlight,
-      translate(localeRef.current, titleKey),
-      translate(localeRef.current, storyMap[step])
-    )
+    // Softer overlay on pro sheet — it already has its own backdrop
+    const soft = beat.spotlight.includes('pro-job-sheet')
+    const handle = await showTourSpotlight(beat.spotlight, {
+      overlayOpacity: soft ? 0.12 : 0.28,
+    })
     spotlightRef.current = handle
   }, [clearSpotlight])
 
@@ -103,10 +85,16 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
     const ac = new AbortController()
     abortRef.current = ac
 
+    const navigateClean = (path: string) => {
+      // Tear down spotlight before route change so overlays don't stack
+      clearSpotlight()
+      routerRef.current.push(path)
+    }
+
     try {
       await runInvestorDemoTour({
         switchRole: (role) => switchRef.current(role),
-        navigate: (path) => routerRef.current.push(path),
+        navigate: navigateClean,
         onStep: setTourStep,
         onSpotlight: runSpotlight,
         signal: ac.signal,

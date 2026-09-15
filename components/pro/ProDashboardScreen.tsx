@@ -586,13 +586,13 @@ export default function ProDashboardScreen() {
 
       {selectedRequest && (
         <div
-          data-tour="pro-job-sheet"
-          className="fixed inset-0 z-[70] flex items-end lg:items-center justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+          className="fixed inset-0 z-[70] flex items-end lg:items-center justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,var(--fixly-tour-narrator-h,0px))]"
           onClick={() => setSelectedRequest(null)}
           role="presentation"
         >
           <div
-            className="bg-white rounded-2xl w-full max-w-md p-5 max-h-[min(85vh,calc(100dvh-6rem))] overflow-y-auto shadow-xl"
+            data-tour="pro-job-sheet"
+            className="bg-white rounded-2xl w-full max-w-md p-5 max-h-[min(85vh,calc(100dvh-6rem-var(--fixly-tour-narrator-h,0px)))] overflow-y-auto shadow-xl"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
