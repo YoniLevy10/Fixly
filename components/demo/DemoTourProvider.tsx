@@ -1,32 +1,11 @@
 'use client'
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useAuth } from '@/lib/auth/auth-provider'
-import {
-  finishInvestorDemoTour,
-  runInvestorDemoTour,
-  type DemoTourStepId,
-} from '@/lib/demo/investor-tour'
-
-type DemoTourContextValue = {
-  tourRunning: boolean
-  tourStep: DemoTourStepId | null
-  tourError: string | null
-  startTour: () => Promise<void>
-  stopTour: () => void
-}
-
-const DemoTourContext = createContext<DemoTourContextValue | null>(null)
+import type { DemoTourStepId } from '@/lib/demo/investor-tour'
+import { DemoTourContext } from '@/components/demo/demo-tour-context'
 
 /**
  * Layout-level tour controller — survives route changes.
@@ -35,6 +14,9 @@ const DemoTourContext = createContext<DemoTourContextValue | null>(null)
  *
  * Lifecycle: start → steps → done → hard exit (clear session, home, idle UI).
  * Stop / abort uses the same hard exit so the pro dashboard never stays stuck.
+ *
+ * investor-tour is dynamically imported so the home critical path does not
+ * pay for the full mock walkthrough graph.
  */
 export function DemoTourProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
@@ -49,7 +31,8 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   routerRef.current = router
   switchRef.current = switchDemoRole
 
-  const exitTourUi = useCallback(() => {
+  const exitTourUi = useCallback(async () => {
+    const { finishInvestorDemoTour } = await import('@/lib/demo/investor-tour')
     finishInvestorDemoTour({
       switchRole: (role) => switchRef.current(role),
       navigate: (path) => routerRef.current.push(path),
@@ -62,7 +45,7 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const stopTour = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
-    exitTourUi()
+    void exitTourUi()
   }, [exitTourUi])
 
   const startTour = useCallback(async () => {
@@ -70,6 +53,8 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
     // Do not restart mid-flight — restarting aborted the previous walkthrough
     // right after /demo navigated to /tracking (looked like "stuck on pending").
     if (runningRef.current) return
+
+    const { runInvestorDemoTour } = await import('@/lib/demo/investor-tour')
 
     setTourError(null)
     setTourRunning(true)
@@ -87,9 +72,6 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
       })
       // Successful finish already called finishInvestorDemoTour inside the runner
       if (abortRef.current === ac) abortRef.current = null
-      runningRef.current = false
-      setTourRunning(false)
-      setTourStep(null)
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
         // stopTour already ran exitTourUi
@@ -97,7 +79,7 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
       }
       console.error('[demo-tour]', err)
       setTourError(err instanceof Error ? err.message : 'הסיור נכשל — נסו שוב')
-      exitTourUi()
+      await exitTourUi()
     } finally {
       if (abortRef.current === ac) abortRef.current = null
       runningRef.current = false
@@ -115,10 +97,7 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useDemoTour(): DemoTourContextValue {
-  const ctx = useContext(DemoTourContext)
-  if (!ctx) {
-    throw new Error('useDemoTour must be used within DemoTourProvider')
-  }
-  return ctx
-}
+export {
+  DemoTourIdleProvider,
+  useDemoTour,
+} from '@/components/demo/demo-tour-context'

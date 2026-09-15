@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Heebo } from 'next/font/google'
 import AppLayout from '@/components/layout/AppLayout'
 import AppProviders from '@/components/providers/AppProviders'
 import SWRegister from '@/components/pwa/SWRegister'
@@ -12,7 +13,20 @@ import {
 } from '@/lib/site-config'
 import './globals.css'
 
+const heebo = Heebo({
+  subsets: ['hebrew', 'latin'],
+  // Fewer weights = less render-blocking font CSS on mobile PageSpeed.
+  weight: ['400', '600', '700'],
+  display: 'swap',
+  variable: '--font-heebo',
+  preload: true,
+})
+
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
+
+/** Reserve demo banner space from first paint when demo chrome is active (avoids CLS). */
+const demoBannerReserve =
+  process.env.NEXT_PUBLIC_FF_DEMO_KILL === 'true' ? '0px' : '40px'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -97,13 +111,25 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="he" dir="rtl" className="fixly-booting">
-      <body>
-        {/* First-paint navy only — do NOT mount a React DOM node then .remove() it
-            (that corrupts reconciliation and can duplicate the app tree). */}
+    <html
+      lang="he"
+      dir="rtl"
+      className={`fixly-booting ${heebo.variable}`}
+      style={{ ['--fixly-demo-banner-h' as string]: demoBannerReserve }}
+    >
+      <body className={heebo.className}>
+        {/* Critical first-paint CSS: navy boot, hide shell under splash, kill sidebar FOUC
+            before Tailwind utilities apply (mobile CLS ~0.5 from bare <aside>). */}
         <style
           dangerouslySetInnerHTML={{
-            __html: 'html.fixly-booting body{background-color:#123563;}',
+            __html: [
+              'html.fixly-booting body{background-color:#123563;}',
+              'html.fixly-booting .app-shell{visibility:hidden;}',
+              '.fixly-app-splash{position:fixed;inset:0;z-index:100;background:#123563;}',
+              '@media (max-width:1023px){',
+              'aside.fixly-desktop-sidebar,header.fixly-desktop-header{display:none!important;}',
+              '}',
+            ].join(''),
           }}
         />
         <script

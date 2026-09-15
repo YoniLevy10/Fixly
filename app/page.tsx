@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import HomeScreen from '@/components/home/HomeScreen'
 import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
 import {
-  isProductHost,
+  isIndexablePublicHost,
   requestHostFromHeaders,
   shouldShowPrelaunchLanding,
 } from '@/lib/site-hosts'
@@ -39,8 +39,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Fixly — תיקונים ואנשי מקצוע',
     description: DEFAULT_DESCRIPTION_HE,
-    // Keep organic SEO on fixly.tech during pre-launch; vercel.app is the product sandbox
-    robots: isProductHost(host) ? { index: false, follow: true } : undefined,
+    // fixly.tech stays indexable; preview/localhost sandboxes stay noindex
+    robots: isIndexablePublicHost(host)
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   }
 }
 

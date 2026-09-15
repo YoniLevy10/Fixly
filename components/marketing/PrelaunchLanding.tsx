@@ -259,11 +259,7 @@ export default function PrelaunchLanding() {
       <main id="top">
         {/* Awareness + Action: copy + form above the fold */}
         <section className="relative mx-auto grid max-w-6xl items-start gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_minmax(300px,400px)] lg:gap-10 lg:py-12">
-          <div
-            className={`transition-all duration-700 ease-out ${
-              mounted ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-            }`}
-          >
+          <div className="transition-all duration-700 ease-out translate-y-0 opacity-100">
             <div className="flex justify-start">
               <p
                 dir="ltr"
@@ -336,7 +332,7 @@ export default function PrelaunchLanding() {
                 <span className="text-sm font-black text-[#F59E0B]">{item.num}</span>
                 <div>
                   <p className="font-black">{item.title}</p>
-                  <p className="mt-1 text-sm font-medium leading-6 text-white/65">{item.text}</p>
+                  <p className="mt-1 text-sm font-medium leading-6 text-white/90">{item.text}</p>
                 </div>
               </div>
             ))}
@@ -433,7 +429,7 @@ export default function PrelaunchLanding() {
             <div className="bg-[#10233f] p-7 text-white sm:p-10">
               <p className="text-xs font-black text-[#ffd07a]">לבעלי מקצוע</p>
               <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">{copy.proTitle}</h2>
-              <p className="mt-3 text-base font-medium leading-7 text-white/70">{copy.proLead}</p>
+              <p className="mt-3 text-base font-medium leading-7 text-white/90">{copy.proLead}</p>
               <a
                 href="#waitlist"
                 onClick={() => {
@@ -822,7 +818,7 @@ function HeroFlowMock() {
                 <BadgeCheck className="h-5 w-5 text-[#ffd07a]" aria-hidden />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white/55">התאמה לדוגמה</p>
+                <p className="text-xs font-bold text-white/85">התאמה לדוגמה</p>
                 <p className="mt-0.5 truncate text-sm font-black">בעל מקצוע מאומת</p>
               </div>
             </div>

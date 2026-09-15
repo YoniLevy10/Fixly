@@ -1,10 +1,10 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, ChevronLeft, ChevronRight, ChevronDown, MapPin } from 'lucide-react'
-import FeaturedProCard from '@/components/home/FeaturedProCard'
 import { routes } from '@/lib/routes'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { getCategoryLabel } from '@/lib/i18n/category-label'
@@ -14,8 +14,25 @@ import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
-import DemoPlatformStats from '@/components/demo/DemoPlatformStats'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
+
+const DemoPlatformStats = dynamic(
+  () => import('@/components/demo/DemoPlatformStats'),
+  { ssr: false, loading: () => null }
+)
+
+const FeaturedProCard = dynamic(
+  () => import('@/components/home/FeaturedProCard'),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex-shrink-0 w-40 min-h-[14.5rem] bg-white rounded-2xl border border-gray-100 animate-pulse"
+        aria-hidden
+      />
+    ),
+  }
+)
 
 export default function HomeScreen() {
   const { user, switchDemoRole } = useAuth()
@@ -108,14 +125,14 @@ export default function HomeScreen() {
           <form onSubmit={handleSearch}>
             <div className="relative">
               <Search
-                className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-500"
                 size={15}
               />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('home.searchPlaceholder')}
-                className="w-full bg-white rounded-xl px-4 ps-9 py-2.5 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                className="w-full bg-white rounded-xl px-4 ps-9 py-2.5 text-sm text-gray-700 outline-none placeholder:text-gray-500"
               />
             </div>
           </form>
@@ -176,23 +193,37 @@ export default function HomeScreen() {
 
         <div className="mb-5 lg:mb-8">
           <h3 className="fixly-section-title mb-3">{t('home.pickCategory')}</h3>
-          <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-4 xl:grid-cols-5 lg:gap-3">
-            {displayCats.map((cat) => {
-              const accent = getCategoryAccent(cat.slug)
-              return (
-              <Link
-                key={cat.slug}
-                href={`${routes.professionals}?category=${cat.slug}`}
-                className={`bg-card rounded-2xl border-2 p-3 flex flex-col items-center gap-2 shadow-sm transition-all active:scale-95 ${accent.card}`}
-              >
-                <span className={`text-3xl w-12 h-12 flex items-center justify-center rounded-xl ${accent.iconBg}`}>
-                  {cat.icon}
-                </span>
-                <span className="text-xs font-bold text-foreground text-center leading-tight">
-                  {cat.name}
-                </span>
-              </Link>
-            )})}
+          <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-4 xl:grid-cols-5 lg:gap-3 min-h-[17.5rem]">
+            {categories.length === 0
+              ? Array.from({ length: 9 }).map((_, i) => (
+                  <div
+                    key={`cat-skel-${i}`}
+                    className="bg-card rounded-2xl border-2 border-border p-3 flex flex-col items-center gap-2 shadow-sm animate-pulse"
+                    aria-hidden
+                  >
+                    <span className="w-12 h-12 rounded-xl bg-muted" />
+                    <span className="h-3 w-14 rounded bg-muted" />
+                  </div>
+                ))
+              : displayCats.map((cat) => {
+                  const accent = getCategoryAccent(cat.slug)
+                  return (
+                    <Link
+                      key={cat.slug}
+                      href={`${routes.professionals}?category=${cat.slug}`}
+                      className={`bg-card rounded-2xl border-2 p-3 flex flex-col items-center gap-2 shadow-sm transition-all active:scale-95 ${accent.card}`}
+                    >
+                      <span
+                        className={`text-3xl w-12 h-12 flex items-center justify-center rounded-xl ${accent.iconBg}`}
+                      >
+                        {cat.icon}
+                      </span>
+                      <span className="text-xs font-bold text-foreground text-center leading-tight">
+                        {cat.name}
+                      </span>
+                    </Link>
+                  )
+                })}
           </div>
           <button
             type="button"
@@ -224,7 +255,7 @@ export default function HomeScreen() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex-shrink-0 w-40 h-52 bg-white rounded-2xl border border-gray-100 animate-pulse"
+                  className="flex-shrink-0 w-40 min-h-[14.5rem] bg-white rounded-2xl border border-gray-100 animate-pulse"
                 />
               ))}
             </div>

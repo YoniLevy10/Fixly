@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
@@ -14,16 +15,23 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
   const { t } = useLocale()
 
   return (
-    <div className="flex-shrink-0 w-40">
+    <div className="flex-shrink-0 w-40 min-h-[14.5rem]">
       <Link href={routes.professional(pro.id)}>
-        <div className="bg-white rounded-2xl border border-gray-100 p-3 text-center hover:shadow-md transition-all active:scale-95">
-          <div
-            className="w-16 h-16 rounded-full mx-auto mb-2 bg-primary text-white flex items-center justify-center font-bold text-xl bg-cover bg-center border-2 border-gray-50 shadow-sm"
-            style={{
-              backgroundImage: pro.avatarUrl ? `url(${pro.avatarUrl})` : undefined,
-            }}
-          >
-            {!pro.avatarUrl && pro.name.charAt(0)}
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 text-center hover:shadow-md transition-all active:scale-95 min-h-[14.5rem]">
+          <div className="relative w-16 h-16 rounded-full mx-auto mb-2 bg-primary text-white flex items-center justify-center font-bold text-xl border-2 border-gray-50 shadow-sm overflow-hidden">
+            {pro.avatarUrl ? (
+              <Image
+                src={pro.avatarUrl}
+                alt=""
+                width={64}
+                height={64}
+                sizes="64px"
+                className="object-cover"
+                loading="lazy"
+              />
+            ) : (
+              pro.name.charAt(0)
+            )}
           </div>
           <div className="flex flex-col items-center gap-1">
             <p className="font-bold text-sm leading-tight">{pro.name}</p>
@@ -46,14 +54,14 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
               </span>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-600 mt-0.5">
             {pro.rating.toFixed(1)} ({pro.reviewCount})
           </p>
           <div
-            className={`mt-2 text-xs font-semibold flex items-center justify-center gap-1 ${pro.isAvailable ? 'text-green-500' : 'text-gray-400'}`}
+            className={`mt-2 text-xs font-semibold flex items-center justify-center gap-1 ${pro.isAvailable ? 'text-green-700' : 'text-gray-600'}`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${pro.isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}
+              className={`w-1.5 h-1.5 rounded-full ${pro.isAvailable ? 'bg-green-600' : 'bg-gray-500'}`}
             />
             {pro.isAvailable ? t('common.availableNow') : t('common.unavailable')}
           </div>

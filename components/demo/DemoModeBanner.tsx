@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -38,11 +38,13 @@ export default function DemoModeBanner() {
   const visible =
     isDemoDataMode() && !isMarketingSurface && !isLoginSurface
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!visible) {
       clearBannerHeight()
       return
     }
+    // Seed reserved height before paint so sticky chrome does not jump (CLS)
+    document.documentElement.style.setProperty(BANNER_HEIGHT_VAR, '40px')
     const el = bannerRef.current
     if (!el) return
 

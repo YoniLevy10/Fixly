@@ -1,6 +1,7 @@
 import { describe, it, afterEach } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  isIndexablePublicHost,
   isLegacyVercelProductionHost,
   isMarketingHost,
   isProductHost,
@@ -30,6 +31,10 @@ describe('site-hosts', () => {
     assert.equal(isMarketingHost('fixly.tech'), true)
     assert.equal(isMarketingHost('www.fixly.tech'), true)
     assert.equal(isMarketingHost('fixly.vercel.app'), false)
+    assert.equal(isIndexablePublicHost('fixly.tech'), true)
+    assert.equal(isIndexablePublicHost('www.fixly.tech'), true)
+    assert.equal(isIndexablePublicHost('fixly.vercel.app'), false)
+    assert.equal(isIndexablePublicHost('localhost'), false)
     assert.equal(isProductHost('fixly.tech'), true)
     assert.equal(isProductHost('fixly.vercel.app'), true)
     assert.equal(isProductHost('fixly-git-main-yonilevy10s-projects.vercel.app'), true)

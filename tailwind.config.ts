@@ -11,7 +11,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        heebo: ['Heebo', 'sans-serif'],
+        heebo: ['var(--font-heebo)', 'Heebo', 'sans-serif'],
       },
       borderRadius: {
         lg: 'var(--radius)',

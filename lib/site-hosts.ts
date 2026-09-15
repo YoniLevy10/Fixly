@@ -27,6 +27,14 @@ export function isMarketingHost(host: string | null | undefined): boolean {
   return (MARKETING_HOSTS as readonly string[]).includes(h)
 }
 
+/**
+ * Public marketing hosts should stay indexable (fixly.tech).
+ * Preview / localhost sandboxes stay noindex.
+ */
+export function isIndexablePublicHost(host: string | null | undefined): boolean {
+  return isMarketingHost(host)
+}
+
 export function isLegacyVercelProductionHost(
   host: string | null | undefined,
 ): boolean {

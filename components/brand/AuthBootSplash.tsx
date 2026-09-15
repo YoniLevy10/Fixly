@@ -5,7 +5,8 @@ import { useAuth } from '@/lib/auth/auth-provider'
 import AppSplashScreen from '@/components/brand/AppSplashScreen'
 
 /** Keep the branded splash visible long enough to read logo + progress line. */
-const MIN_SPLASH_MS = 900
+/** Short boot beat — long splash hurt LCP/FCP on mobile PageSpeed. */
+const MIN_SPLASH_MS = 200
 
 /**
  * Shows the branded Fixly entry splash while the auth session boots.

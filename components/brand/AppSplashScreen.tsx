@@ -82,14 +82,14 @@ export default function AppSplashScreen({
             Fixly
             <span className="text-[#F59E0B]">.</span>
           </p>
-          <p className="mt-1 text-sm font-medium text-white/70" dir="rtl">
+          <p className="mt-1 text-sm font-medium text-white/90" dir="rtl">
             תחזוקה חכמה
           </p>
         </div>
 
         <div className="mt-2 flex w-44 flex-col items-center gap-3">
           <SplashProgressLine tone="on-dark" />
-          <p className="text-xs font-medium text-white/60">{label}</p>
+          <p className="text-xs font-medium text-white/85">{label}</p>
         </div>
       </div>
     </div>

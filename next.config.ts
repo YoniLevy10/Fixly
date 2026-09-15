@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_FF_DEMO_DATA: 'true',
   },
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+    ],
+  },
   async redirects() {
     return [
       { source: '/dashboard', destination: '/my-requests', permanent: false },
