@@ -9,7 +9,8 @@ export const featureFlags = {
   shareRequest: process.env.NEXT_PUBLIC_FF_SHARE_REQUEST !== 'false',
   proTemplates: process.env.NEXT_PUBLIC_FF_PRO_TEMPLATES !== 'false',
   seasonalCategories: process.env.NEXT_PUBLIC_FF_SEASONAL !== 'false',
-  analytics: process.env.NEXT_PUBLIC_FF_ANALYTICS === 'true',
+  /** GA4 on by default (G-EK4R8FW52G). Set NEXT_PUBLIC_FF_ANALYTICS=false to disable. */
+  analytics: process.env.NEXT_PUBLIC_FF_ANALYTICS !== 'false',
   pushNotifications: isDemoDataMode() || process.env.NEXT_PUBLIC_FF_PUSH === 'true',
   monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false',
   googleOAuth: process.env.NEXT_PUBLIC_FF_GOOGLE_OAUTH !== 'false',

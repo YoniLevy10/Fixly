@@ -58,8 +58,13 @@ export function validateProductionEnv(): EnvValidationResult {
     }
   }
 
-  if (process.env.NEXT_PUBLIC_FF_ANALYTICS === 'true' && !process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID) {
-    warnings.push('NEXT_PUBLIC_FF_ANALYTICS=true but NEXT_PUBLIC_GA_MEASUREMENT_ID missing')
+  if (
+    process.env.NEXT_PUBLIC_FF_ANALYTICS === 'false' &&
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  ) {
+    warnings.push(
+      'NEXT_PUBLIC_GA_MEASUREMENT_ID is set but NEXT_PUBLIC_FF_ANALYTICS=false — gtag will not load'
+    )
   }
 
   if (!process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()) {
