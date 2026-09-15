@@ -60,6 +60,9 @@ export function humanizeDiscoveryError(raw: string | null | undefined): string |
   if (msg.includes('timeout') || msg.includes('aborted') || msg.includes('abort')) {
     return 'החיפוש ארך יותר מדי ונקטע — נסו שוב'
   }
+  if (msg.includes('source failed') || msg.includes('ingest')) {
+    return 'הסריקה מצאה לידים אבל השמירה למסד נכשלה — בדקו מיגרציות / עמודות חדשות'
+  }
   // Keep a short technical hint so Superadmin isn't stuck with a blank "partial"
   const clipped = raw.trim().replace(/\s+/g, ' ').slice(0, 160)
   return `תקלה חלקית: ${clipped}`

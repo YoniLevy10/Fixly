@@ -724,24 +724,36 @@ export default function ProspectsRecruitmentScreen() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
-                      <p className="text-[11px] text-muted-foreground">גולמי/נמצאו</p>
+                      <p className="text-[11px] text-muted-foreground">נסרקו</p>
                       <p className="text-lg font-extrabold tabular-nums">
                         {run.found_count}
                       </p>
                     </div>
                     <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
-                      <p className="text-[11px] text-muted-foreground">חדשים</p>
+                      <p className="text-[11px] text-muted-foreground">נשמרו חדשים</p>
                       <p className="text-lg font-extrabold tabular-nums">
                         {run.created_count}
                       </p>
                     </div>
                     <div className="rounded-xl bg-white px-2 py-2 border border-border/60">
-                      <p className="text-[11px] text-muted-foreground">דולגו</p>
+                      <p className="text-[11px] text-muted-foreground">כבר היו / דולגו</p>
                       <p className="text-lg font-extrabold tabular-nums">
                         {run.skipped_count}
                       </p>
                     </div>
                   </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    «נסרקו» = כמה Places/OSM החזירו בריצה. הרשימה למטה מציגה רק לידים
+                    שנשמרו במסד (סה״כ מצטבר), לא את כל הסריקה.
+                  </p>
+                  {run.found_count > 0 &&
+                  run.created_count === 0 &&
+                  run.skipped_count === 0 ? (
+                    <p className="text-sm text-amber-950 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                      הסריקה מצאה לידים אבל אף אחד לא נשמר בריצה הזו — בדקו את השגיאות
+                      למטה והריצו שוב אחרי תיקון.
+                    </p>
+                  ) : null}
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     עודכנו {typeof details?.updated === 'number' ? details.updated : '—'}
                     {' · '}
@@ -753,6 +765,8 @@ export default function ProspectsRecruitmentScreen() {
                       ? 'תקציב קריאות API'
                       : details?.stopReason === 'raw_result_budget'
                         ? 'תקציב תוצאות'
+                        : details?.stopReason === 'wall_clock'
+                          ? 'מגבלת זמן שרת'
                         : details?.stopReason === 'low_page_utility'
                           ? 'דף בלי תוצאות חדשות (שאילתה בודדת)'
                           : details?.stopReason ?? 'הושלם'}
@@ -854,82 +868,74 @@ export default function ProspectsRecruitmentScreen() {
         </Card>
       )}
 
-      <Card>
-        <div className="grid md:grid-cols-6 gap-3">
-          <div className="md:col-span-2">
-            <Label>חיפוש</Label>
-            <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="שם / עסק / טלפון"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>סטטוס גיוס</Label>
-            <select
-              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="">הכל</option>
-              {PROSPECT_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label>התאמה</Label>
-            <select
-              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
-              value={fitClass}
-              onChange={(e) => setFitClass(e.target.value)}
-            >
-              <option value="">הכל</option>
-              {FIT_CLASSES.map((c) => (
-                <option key={c} value={c}>
-                  {fitClassLabelHe(c)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label>קטגוריה</Label>
-            <select
-              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">הכל</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nameHe || c.name_he || c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label>עיר</Label>
-            <Input
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="ירושלים"
-              className="mt-1"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Label>מקור</Label>
-            <Input
-              value={sourceName}
-              onChange={(e) => setSourceName(e.target.value)}
-              placeholder="google_places / osm / manual"
-              className="mt-1"
-            />
-          </div>
+      <div className="rounded-2xl border border-border/70 bg-white p-2.5 space-y-2">
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="חיפוש שם / טלפון"
+          className="h-9 text-sm"
+        />
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          <select
+            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            aria-label="סטטוס"
+          >
+            <option value="">סטטוס: הכל</option>
+            {PROSPECT_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <select
+            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            value={fitClass}
+            onChange={(e) => setFitClass(e.target.value)}
+            aria-label="התאמה"
+          >
+            <option value="">התאמה: הכל</option>
+            {FIT_CLASSES.map((c) => (
+              <option key={c} value={c}>
+                {fitClassLabelHe(c)}
+              </option>
+            ))}
+          </select>
+          <select
+            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            aria-label="קטגוריה"
+          >
+            <option value="">קטגוריה: הכל</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nameHe || c.name_he || c.name}
+              </option>
+            ))}
+          </select>
+          <Input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="עיר"
+            className="h-9 text-xs"
+          />
+          <select
+            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            value={sourceName}
+            onChange={(e) => setSourceName(e.target.value)}
+            aria-label="מקור"
+          >
+            <option value="">מקור: הכל</option>
+            <option value="google_places">google_places</option>
+            <option value="osm">osm</option>
+            <option value="gov_pest_control">gov_pest_control</option>
+            <option value="manual">manual</option>
+            <option value="csv_import">csv_import</option>
+          </select>
         </div>
-      </Card>
+      </div>
 
       {selected.size > 0 && (
         <Card>
@@ -962,16 +968,19 @@ export default function ProspectsRecruitmentScreen() {
         />
       ) : (
         <Card>
-          <p className="text-sm text-muted-foreground mb-3">
-            מציג {items.length} מתוך {total}
+          <p className="text-sm text-muted-foreground mb-1">
+            מציג {items.length} מתוך {total} לידים שמורים
+          </p>
+          <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+            זה מספר הלידים במסד — לא מספר התוצאות שנסרקו ב־Places בריצה האחרונה.
           </p>
           <ul className="divide-y">
             {items.map((item) => (
               <li
                 key={item.id}
-                className="py-3 flex flex-col sm:flex-row sm:flex-wrap gap-3 items-stretch sm:items-start min-w-0"
+                className="py-3 flex flex-col gap-2 min-w-0"
               >
-                <div className="flex gap-3 items-start min-w-0 flex-1">
+                <div className="flex gap-3 items-start min-w-0">
                   <input
                     type="checkbox"
                     checked={selected.has(item.id)}
@@ -986,101 +995,74 @@ export default function ProspectsRecruitmentScreen() {
                   >
                     <div className="font-bold flex flex-wrap items-center gap-2">
                       <span className="break-words">{item.name}</span>
-                      {item.fitClass && (
-                        <span className="text-xs font-semibold rounded-md bg-sky-100 text-sky-900 px-2 py-0.5 shrink-0">
-                          {fitClassLabelHe(item.fitClass)}
-                          {typeof item.fitConfidence === 'number'
-                            ? ` · ${item.fitConfidence}%`
-                            : ''}
-                        </span>
-                      )}
                       {typeof item.fitScore === 'number' && (
                         <span className="text-xs font-semibold rounded-md bg-emerald-100 text-emerald-900 px-2 py-0.5 shrink-0">
-                          ציון {item.fitScore}
+                          {item.fitScore}
                         </span>
                       )}
-                      {item.contactability && (
-                        <span className="text-xs font-semibold rounded-md bg-slate-100 text-slate-800 px-2 py-0.5 shrink-0">
-                          קשר: {contactabilityLabelHe(item.contactability)}
-                        </span>
-                      )}
+                      <span className="text-xs font-semibold text-muted-foreground shrink-0">
+                        {STATUS_LABELS[item.status]}
+                      </span>
                     </div>
                     <div className="text-sm text-muted-foreground break-words">
                       {item.businessName ? `${item.businessName} · ` : ''}
                       {item.categoryNameHe || item.categoryName || '—'} · {item.city}
                     </div>
-                    {item.fitReasons && item.fitReasons.length > 0 && (
-                      <div className="text-[11px] text-muted-foreground mt-0.5 break-words">
-                        {item.fitReasons.slice(0, 4).join(' · ')}
-                      </div>
-                    )}
                     <div className="text-sm break-all" dir="ltr">
                       {item.phone || item.whatsappPhone || 'ללא טלפון'}
                     </div>
-                    <div className="text-sm font-semibold mt-1 sm:hidden">
-                      {STATUS_LABELS[item.status]}
-                    </div>
                   </button>
-                  <div className="text-sm font-semibold hidden sm:block shrink-0">
-                    {STATUS_LABELS[item.status]}
-                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1 items-center ps-7 sm:ps-0">
+                <div className="flex gap-2 items-center ps-7">
                   {(item.phone || item.whatsappPhone) &&
                     item.status !== 'rejected' &&
                     item.status !== 'do_not_contact' && (
-                      <>
-                        <button
-                          type="button"
-                          className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
-                          onClick={() => openWhatsApp(item.id)}
-                          title="פותח קישור בלבד — לא מסמן נוצר קשר"
-                        >
-                          פתח WhatsApp
-                        </button>
-                        {item.status !== 'contacted' && (
-                          <button
-                            type="button"
-                            className="text-xs font-semibold rounded-lg border border-green-700 text-green-800 px-2 py-1.5"
-                            onClick={() => confirmWhatsAppSent(item.id)}
-                          >
-                            סימנתי שנשלח
-                          </button>
-                        )}
-                      </>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
+                        onClick={() => openWhatsApp(item.id)}
+                        title="פותח קישור בלבד — לא מסמן נוצר קשר"
+                      >
+                        WhatsApp
+                      </button>
                     )}
-                  {item.status === 'discovered' && (
-                    <button
-                      type="button"
-                      className="text-xs rounded-lg border px-2 py-1"
-                      onClick={() => patchStatus(item.id, 'verified')}
-                    >
-                      אמת
-                    </button>
-                  )}
-                  {(item.status === 'verified' || item.status === 'discovered') && (
-                    <button
-                      type="button"
-                      className="text-xs rounded-lg border px-2 py-1"
-                      onClick={() => patchStatus(item.id, 'approved')}
-                    >
-                      אשר
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="text-xs rounded-lg border px-2 py-1"
-                    onClick={() => rejectWithReason(item.id)}
+                  <select
+                    className="h-8 min-w-0 flex-1 rounded-lg border px-2 text-xs bg-white"
+                    defaultValue=""
+                    aria-label={`פעולה ל${item.name}`}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      e.target.value = ''
+                      if (!value) return
+                      if (value === 'confirm_sent') {
+                        void confirmWhatsAppSent(item.id)
+                        return
+                      }
+                      if (value === 'reject') {
+                        void rejectWithReason(item.id)
+                        return
+                      }
+                      void patchStatus(item.id, value as ProspectStatus)
+                    }}
                   >
-                    דחה
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs rounded-lg border px-2 py-1"
-                    onClick={() => patchStatus(item.id, 'do_not_contact')}
-                  >
-                    אל תיצור קשר
-                  </button>
+                    <option value="" disabled>
+                      פעולה…
+                    </option>
+                    {item.status === 'discovered' && (
+                      <option value="verified">אמת</option>
+                    )}
+                    {(item.status === 'verified' || item.status === 'discovered') && (
+                      <option value="approved">אשר</option>
+                    )}
+                    {item.status !== 'contacted' &&
+                      (item.phone || item.whatsappPhone) &&
+                      item.status !== 'rejected' &&
+                      item.status !== 'do_not_contact' && (
+                        <option value="confirm_sent">סימנתי שנשלח</option>
+                      )}
+                    <option value="reject">דחה</option>
+                    <option value="do_not_contact">אל תיצור קשר</option>
+                  </select>
                 </div>
               </li>
             ))}

@@ -78,6 +78,16 @@ export type DiscoveryProgress = {
   jobsTotal?: number
 }
 
+function unknownErrorMessage(e: unknown, fallback = 'source failed'): string {
+  if (e instanceof Error && e.message.trim()) return e.message
+  if (e && typeof e === 'object' && 'message' in e) {
+    const msg = (e as { message?: unknown }).message
+    if (typeof msg === 'string' && msg.trim()) return msg
+  }
+  if (typeof e === 'string' && e.trim()) return e
+  return fallback
+}
+
 function buildAdapters(input?: {
   sources?: DiscoveryAutoSource[]
   categorySlugs?: string[]
@@ -519,7 +529,7 @@ export async function runProspectDiscovery(
           }
         }
       } catch (e) {
-        const message = e instanceof Error ? e.message : 'source failed'
+        const message = unknownErrorMessage(e)
         bySource[adapter.name].errors.push(message)
         errors += 1
         topErrors.push(`${adapter.name}: ${message}`)
@@ -581,7 +591,7 @@ export async function runProspectDiscovery(
       bySource,
     }
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'discovery failed'
+    const message = unknownErrorMessage(e, 'discovery failed')
     if (runId) {
       await admin
         .from('prospect_discovery_runs')

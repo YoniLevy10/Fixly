@@ -98,6 +98,12 @@ describe('humanizeDiscoveryError', () => {
     assert.match(msg!, /שמירה|קטגוריה/)
     assert.ok(!msg!.startsWith('תקלה חלקית:'))
   })
+
+  it('explains generic source failed as save failure', () => {
+    const msg = humanizeDiscoveryError('google_places: source failed')
+    assert.ok(msg)
+    assert.match(msg!, /שמירה|מסד/)
+  })
 })
 
 describe('OsmOverpassProspectAdapter', () => {
