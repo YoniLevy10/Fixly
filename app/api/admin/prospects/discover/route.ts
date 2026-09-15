@@ -57,13 +57,28 @@ export async function POST(request: Request) {
   if (!parsed.success) return parsed.response
 
   try {
-    const result = await runProspectDiscovery(auth.admin, {
+    let result = await runProspectDiscovery(auth.admin, {
       trigger: 'manual',
       actorUserId: auth.user.id,
       sources: parsed.data.sources,
       city: parsed.data.city,
       replacePrevious: parsed.data.replacePrevious === true,
     })
+
+    // Auto-clear a dead lock and retry once (common after Vercel kill).
+    if (result.status === 'busy') {
+      const unlocked = await forceUnlockDiscoveryRuns(auth.admin)
+      if (unlocked > 0) {
+        result = await runProspectDiscovery(auth.admin, {
+          trigger: 'manual',
+          actorUserId: auth.user.id,
+          sources: parsed.data.sources,
+          city: parsed.data.city,
+          replacePrevious: parsed.data.replacePrevious === true,
+        })
+      }
+    }
+
     const statusCode =
       result.status === 'busy'
         ? 409

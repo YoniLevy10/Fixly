@@ -11,6 +11,7 @@ import {
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
 import {
   getDiscoveryApiCallBudget,
+  getDiscoveryFinalizeBufferMs,
   getDiscoveryPerCategoryCap,
   getDiscoveryTotalBudget,
   getDiscoveryWallClockMs,
@@ -156,6 +157,7 @@ async function writeRunProgress(
 ) {
   if (!runId) return
   const percent = Math.max(0, Math.min(100, Math.round(progress.percent)))
+  const heartbeatAt = new Date().toISOString()
   const { data: current } = await admin
     .from('prospect_discovery_runs')
     .select('details')
@@ -171,6 +173,7 @@ async function writeRunProgress(
     .update({
       details: {
         ...prevDetails,
+        heartbeatAt,
         progress: { ...progress, percent },
       },
     })
@@ -194,28 +197,34 @@ export async function runProspectDiscovery(
   const budget = getDiscoveryTotalBudget()
   const apiCallBudget = getDiscoveryApiCallBudget()
   const replacePrevious = options.replacePrevious === true
-  const deadlineAt = Date.now() + getDiscoveryWallClockMs()
+  const hardDeadlineAt = Date.now() + getDiscoveryWallClockMs()
+  // Stop Places early so ingest + DB finalize can finish before Vercel kill.
+  const placesDeadlineAt = hardDeadlineAt - getDiscoveryFinalizeBufferMs()
 
-  // Unlock abandoned serverless runs before the busy gate.
+  // Unlock abandoned serverless runs before the busy gate (heartbeat + age).
   await releaseStaleDiscoveryRuns(admin).catch(() => 0)
 
   if (await hasRunningDiscovery(admin)) {
-    return {
-      runId: null,
-      status: 'busy',
-      city,
-      sources: [],
-      found: 0,
-      created: 0,
-      updated: 0,
-      skipped: 0,
-      errors: 1,
-      deletedPrevious: 0,
-      budget,
-      apiCallBudget,
-      errorMessage:
-        'ריצת גילוי כבר פעילה — אם היא תקועה, לחצו «שחרר נעילה» או המתינו כ־6 דקות',
-      bySource: {},
+    // Second pass: release again in case heartbeat just went stale.
+    const unlocked = await releaseStaleDiscoveryRuns(admin).catch(() => 0)
+    if (!unlocked || (await hasRunningDiscovery(admin))) {
+      return {
+        runId: null,
+        status: 'busy',
+        city,
+        sources: [],
+        found: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        errors: 1,
+        deletedPrevious: 0,
+        budget,
+        apiCallBudget,
+        errorMessage:
+          'ריצת גילוי כבר פעילה — לחצו «שחרר נעילה» אם היא תקועה (או המתינו כ־90 שניות)',
+        bySource: {},
+      }
     }
   }
 
@@ -245,7 +254,7 @@ export async function runProspectDiscovery(
     city,
     totalBudget: budget,
     apiCallBudget,
-    deadlineAt,
+    deadlineAt: placesDeadlineAt,
     queryStats,
     onPlacesProgress: async (p) => {
       const jobRatio =
@@ -276,6 +285,7 @@ export async function runProspectDiscovery(
       status: 'running',
       actor_user_id: options.actorUserId ?? null,
       details: {
+        heartbeatAt: new Date().toISOString(),
         progress: {
           percent: 2,
           phase: 'starting',
@@ -351,7 +361,7 @@ export async function runProspectDiscovery(
     })
 
     for (const adapter of adapters) {
-      if (Date.now() >= deadlineAt) {
+      if (Date.now() >= hardDeadlineAt) {
         stopReason = stopReason ?? 'wall_clock'
         break
       }
@@ -450,9 +460,18 @@ export async function runProspectDiscovery(
           }
         }
 
+        const timeLeftMs = hardDeadlineAt - Date.now()
+        // Cap ingest size when little wall-clock remains so we can finalize.
+        let ingestRecords = records
+        if (timeLeftMs < 40_000) {
+          ingestRecords = records.slice(0, 60)
+          stopReason = stopReason ?? 'wall_clock'
+        } else if (timeLeftMs < 70_000) {
+          ingestRecords = records.slice(0, 150)
+        }
         const wrap: ProspectSourceAdapter = {
           name: adapter.name,
-          fetchRecords: async () => records,
+          fetchRecords: async () => ingestRecords,
         }
         await reportProgress({
           percent:
@@ -466,6 +485,10 @@ export async function runProspectDiscovery(
           apiCallBudget,
           apiCalls: totalApiCalls,
         })
+        if (Date.now() >= hardDeadlineAt) {
+          stopReason = stopReason ?? 'wall_clock'
+          break
+        }
         const result: IngestResult = await ingestFromAdapter(
           admin,
           wrap,
