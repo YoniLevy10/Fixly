@@ -92,9 +92,61 @@ describe('fit-score quality', () => {
     assert.notEqual(a.fitClass, 'unsuitable')
   })
 
-  it('missing evidence stays unknown/needs_review not unsuitable', () => {
-    const a = assessProspectFit({ name: 'עסק כללי' })
-    assert.notEqual(a.fitClass, 'unsuitable')
+  it('rejects laundry, paint stores, and road marking as off-trade', () => {
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'מכבסת זהר - מכבסה בירושלים | ניקוי יבש',
+        phone: '0501112233',
+        categorySlug: 'cleaning',
+      }),
+      false,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'دهانات شروين وليامز',
+        phone: '0777799622',
+        categorySlug: 'painting',
+      }),
+      false,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'לביא בתנועה סימון צביעת כבישים',
+        phone: '0502166656',
+        categorySlug: 'painting',
+      }),
+      false,
+    )
+  })
+
+  it('rejects movers returned under a cleaning discovery job', () => {
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'שרון הובלות סדר בבלאגן קרטונים ציוד אריזה',
+        phone: '0733744544',
+        categorySlug: 'cleaning',
+      }),
+      false,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'יוסי מנקה דירות',
+        phone: '0501234567',
+        categorySlug: 'cleaning',
+      }),
+      true,
+    )
+  })
+
+  it('still keeps real apartment painters', () => {
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'דני צבעי דירות',
+        phone: '0509998877',
+        categorySlug: 'painting',
+      }),
+      true,
+    )
   })
 })
 

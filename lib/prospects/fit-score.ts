@@ -77,7 +77,58 @@ const RETAIL_MARKERS = [
   /סיטונ/i,
   /\bwholesale\b/i,
   /\bshowroom\b/i,
+  /חנות\s*צבע/i,
+  /חומרי\s*צבע/i,
+  /paint\s*store/i,
+  /paint\s*supply/i,
+  /sherwin\s*-?\s*williams/i,
+  /benjamin\s*moore/i,
+  /nippon\s*paint/i,
+  /دهانات/,
 ]
+
+/**
+ * Off-trade for Fixly home-service recruit — always unsuitable regardless of
+ * soft paint/cleaning word matches (laundry ≠ house cleaner, road marking ≠ painter).
+ */
+const OFF_TRADE_MARKERS = [
+  /מכבס/i,
+  /ניקוי\s*יבש/i,
+  /dry\s*-?\s*clean/i,
+  /\blaundry\b/i,
+  /כביש/i,
+  /סימון\s*(?:ו)?צביע/i,
+  /צביעת\s*כביש/i,
+  /road\s*mark/i,
+  /line\s*marking/i,
+  /traffic\s*paint/i,
+  /دهانات/,
+  /sherwin/i,
+  /benjamin\s*moore/i,
+  /nippon\s*paint/i,
+  /מספרה/i,
+  /ברבר/i,
+  /\bbarber\b/i,
+  /salon/i,
+  /מרפא/i,
+  /clinic/i,
+  /מסעד/i,
+  /restaurant/i,
+  /בית\s*קפה/i,
+  /\bcafe\b/i,
+  /מלון/i,
+  /\bhotel\b/i,
+  /סופרמרקט/i,
+  /supermarket/i,
+  /מוסך/i,
+  /car\s*wash/i,
+  /הדפס|דפוס|printing\s*shop/i,
+  /פרחים|florist/i,
+  /אופטיק|optician/i,
+]
+
+const OFF_TRADE_PLACE_TYPES =
+  /paint_store|laundry|hardware_store|home_goods_store|furniture_store|electronics_store|supermarket|grocery_or_supermarket|clothing_store|shoe_store|convenience_store|department_store|shopping_mall|restaurant|cafe|bar|lodging|car_repair|car_wash|gas_station|beauty_salon|hair_care|doctor|hospital|pharmacy|florist|book_store|pet_store/
 
 const INSTALLER_HINTS =
   /מתקין|רצף|ריצוף|התקנ|טכנאי|צבעי|צביע|גנן|גיזום|מנעולן|אינסטלטור|אינסטלציה|שרברב|סתימ|נזיל|חשמלאי|חשמל|מיזוג|מזגן|מדביר|הדבר|נגר|קבלן|שיפוצ|הנדימן|תיקון|איטום|אלומיניום|גבס|טיח|דוד שמש|דודי שמש|זכוכית|פרקט|פודים|מרצפות|מסגר|מעקות|סורגים|תריס|מקלחון|הובל|מוביל|ניקיון|מנקה|בלאי|ריתוך|גרוב|גריזוב|ציפוי|זפת|רהיט|plumber|electrician|locksmith|painter|gardener|cleaner|handyman|movers?|tiler|glazier|carpenter|فني|سباك|كهربائي|نجار|دهان/i
@@ -195,6 +246,50 @@ export type FitScoreInput = {
   pureServiceAreaBusiness?: boolean | null
   /** Soft area evidence (query neighborhood) — not verified service area */
   searchAreaHint?: string | null
+  /** Recruit category slug from the discovery job — used for off-category rejects */
+  categorySlug?: string | null
+}
+
+/**
+ * Reject names that clearly belong to another trade than the discovery job.
+ * Example: moving company returned under a cleaning Places query.
+ */
+export function isOffCategoryForSlug(
+  categorySlug: string | null | undefined,
+  label: string,
+): boolean {
+  if (!categorySlug?.trim() || !label.trim()) return false
+  const slug = categorySlug.trim()
+  const l = label
+
+  if (slug === 'cleaning') {
+    if (
+      /מכבס|laundry|dry\s*-?\s*clean|הובל|מוביל|קרטון|אריז|packing|movers?/i.test(
+        l,
+      ) &&
+      !/ניקיון|מנקה|clean(?:ing|er)?|تنظيف|עוזרת\s*בית/i.test(l)
+    ) {
+      return true
+    }
+  }
+
+  if (slug === 'painting') {
+    if (
+      /כביש|road\s*mark|סימון|paint\s*store|חנות\s*צבע|חומרי\s*צבע|sherwin|williams|دهانات|lavi\s*in\s*motion/i.test(
+        l,
+      )
+    ) {
+      return true
+    }
+  }
+
+  if (slug === 'moving') {
+    if (/מכבס|laundry|ניקוי\s*יבש/i.test(l) && !/הובל|מוביל|movers?/i.test(l)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 /**
@@ -211,20 +306,46 @@ export function assessProspectFit(input: FitScoreInput): FitAssessment {
   let confidence = 35
 
   const hardCompany = hasAny(HARD_COMPANY_MARKERS, label)
+  const offTrade = hasAny(OFF_TRADE_MARKERS, label)
   const retail =
     hasAny(RETAIL_MARKERS, label) &&
     !INSTALLER_HINTS.test(label)
   const types = (input.placeTypes ?? []).map((t) => t.toLowerCase())
   const retailType = types.some((t) =>
-    /store|shop|shopping|hardware|home_goods|furniture_store|electronics_store|supermarket/.test(
+    /store|shop|shopping|hardware|home_goods|furniture_store|electronics_store|supermarket|paint_store/.test(
       t,
     ),
   )
+  const offTradeType = types.some((t) => OFF_TRADE_PLACE_TYPES.test(t))
   const serviceType = types.some((t) =>
-    /plumber|electrician|locksmith|painter|roofing|general_contractor|moving_company|laundry|car_repair|home_services/.test(
+    /plumber|electrician|locksmith|painter|roofing|general_contractor|moving_company|car_repair|home_services/.test(
       t,
     ),
   )
+
+  if (offTrade || offTradeType) {
+    reasons.push(offTrade ? 'off_trade_name' : 'off_trade_place_type')
+    return {
+      score: Math.max(0, score + FIT_WEIGHTS.businessTypeRetailPenalty),
+      confidence: 85,
+      fitClass: 'unsuitable',
+      reasons,
+      contactability,
+      phoneKind,
+    }
+  }
+
+  if (isOffCategoryForSlug(input.categorySlug, label)) {
+    reasons.push('off_category_for_job')
+    return {
+      score: Math.max(0, score + FIT_WEIGHTS.businessTypeRetailPenalty),
+      confidence: 80,
+      fitClass: 'unsuitable',
+      reasons,
+      contactability,
+      phoneKind,
+    }
+  }
 
   const legalEntityOnly =
     hardCompany &&
@@ -412,6 +533,7 @@ export function shouldKeepDiscoveredProspect(input: {
   placeTypes?: string[] | null
   pureServiceAreaBusiness?: boolean | null
   searchAreaHint?: string | null
+  categorySlug?: string | null
 }): boolean {
   const a = assessProspectFit(input)
   if (a.fitClass === 'unsuitable') return false

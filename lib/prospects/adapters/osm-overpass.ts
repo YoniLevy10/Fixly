@@ -116,6 +116,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
           phone: phone || null,
           websiteUrl: website,
           address,
+          categorySlug: mapping.slug,
         })
 
         if (
@@ -125,6 +126,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
             phone: phone || null,
             websiteUrl: website,
             address,
+            categorySlug: mapping.slug,
           })
         ) {
           continue
