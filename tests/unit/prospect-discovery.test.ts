@@ -28,12 +28,12 @@ describe('discovery mapping', () => {
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
   })
 
-  it('defaults discovery budget to 1200 for neighborhood coverage', async () => {
+  it('defaults discovery budget to 3000 for neighborhood coverage', async () => {
     const { DISCOVERY_TOTAL_BUDGET, getDiscoveryTotalBudget } = await import(
       '@/lib/prospects/config'
     )
-    assert.equal(DISCOVERY_TOTAL_BUDGET, 1200)
-    assert.equal(getDiscoveryTotalBudget(), 1200)
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 3000)
+    assert.equal(getDiscoveryTotalBudget(), 3000)
   })
 
   it('includes English/Arabic Places queries and Jerusalem neighborhood jobs', () => {
@@ -262,7 +262,7 @@ describe('GooglePlacesProspectAdapter', () => {
               },
               {
                 id: 'places/company',
-                displayName: { text: 'אינסטלציה בע״מ' },
+                displayName: { text: 'ש.א.ל ניהול נכסים בע״מ' },
                 nationalPhoneNumber: '02-555-2222',
               },
             ],
@@ -288,7 +288,9 @@ describe('person-score solo filter', () => {
       await import('@/lib/prospects/person-score')
     assert.equal(shouldKeepAsSoloProspect('יוסי כהן'), true)
     assert.equal(shouldKeepAsSoloProspect('דני אינסטלטור'), true)
-    assert.equal(shouldKeepAsSoloProspect('אינסטלציה בע״מ'), false)
+    // Trade-word בע"מ (solo pro with legal entity) is kept — only chains/מוקד/retail drop
+    assert.equal(shouldKeepAsSoloProspect('אינסטלציה בע״מ'), true)
+    assert.equal(shouldKeepAsSoloProspect('ש.א.ל ניהול נכסים בע״מ'), false)
     assert.equal(shouldKeepAsSoloProspect('חנות טובול חומרי בניין'), false)
     assert.ok(scorePersonFit('יוסי כהן').score >= 50)
 

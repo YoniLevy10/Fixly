@@ -36,13 +36,13 @@ export const RECRUIT_TOTAL_TARGET =
   CORE_RECRUIT_CATEGORY_SLUGS.length * RECRUIT_PER_CATEGORY_TARGET
 
 /** Raw Places results soft cap (before filter). */
-export const DISCOVERY_TOTAL_BUDGET = 1200
+export const DISCOVERY_TOTAL_BUDGET = 3000
 
 /** Soft cap per category after keep decision. */
-export const DISCOVERY_PER_CATEGORY_CAP = 120
+export const DISCOVERY_PER_CATEGORY_CAP = 250
 
 /** Hard cap on Places HTTP calls per discovery run. */
-export const DISCOVERY_API_CALL_BUDGET = 80
+export const DISCOVERY_API_CALL_BUDGET = 300
 
 /** Share of query budget reserved for experimental / low-stats queries. */
 export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
@@ -85,18 +85,18 @@ export function getRecruitPerCategoryTarget(): number {
 
 export function getDiscoveryTotalBudget(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_TOTAL_BUDGET)
-  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 3000)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 6000)
   return DISCOVERY_TOTAL_BUDGET
 }
 
 export function getDiscoveryPerCategoryCap(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_PER_CATEGORY_CAP)
-  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 250)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 300)
   return DISCOVERY_PER_CATEGORY_CAP
 }
 
 export function getDiscoveryApiCallBudget(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_API_CALL_BUDGET)
-  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 400)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 600)
   return DISCOVERY_API_CALL_BUDGET
 }

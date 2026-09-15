@@ -80,7 +80,7 @@ const RETAIL_MARKERS = [
 ]
 
 const INSTALLER_HINTS =
-  /מתקין|רצף|התקנ|טכנאי|צבעי|גנן|מנעולן|אינסטלטור|שרברב|חשמלאי|זגג|מדביר|נגר|קבלן|שיפוצ|הנדימן|plumber|electrician|locksmith|painter|gardener|cleaner|handyman|فني|سباك|كهربائي/i
+  /מתקין|רצף|ריצוף|התקנ|טכנאי|צבעי|צביע|גנן|גיזום|מנעולן|אינסטלטור|אינסטלציה|שרברב|סתימ|נזיל|חשמלאי|חשמל|מיזוג|מזגן|מדביר|הדבר|נגר|קבלן|שיפוצ|הנדימן|תיקון|איטום|אלומיניום|גבס|טיח|דוד שמש|דודי שמש|זכוכית|פרקט|פודים|מרצפות|מסגר|מעקות|סורגים|תריס|מקלחון|הובל|מוביל|ניקיון|מנקה|בלאי|ריתוך|גרוב|גריזוב|ציפוי|זפת|רהיט|plumber|electrician|locksmith|painter|gardener|cleaner|handyman|movers?|tiler|glazier|carpenter|فني|سباك|كهربائي|نجار|دهان/i
 
 const SERVICE_AT_HOME_HINTS =
   /עד\s*הבית|אצל\s*הלקוח|נייד|mobile|at\s*home|house\s*call|خدمة\s*منزلية|الى\s*المنزل|סאב|sab|service\s*area/i
@@ -226,13 +226,31 @@ export function assessProspectFit(input: FitScoreInput): FitAssessment {
     ),
   )
 
-  if ((hardCompany || retail || retailType) && !INSTALLER_HINTS.test(label) && !serviceType && !input.pureServiceAreaBusiness) {
+  const legalEntityOnly =
+    hardCompany &&
+    !/רשת|קול\s*סנטר|call\s*center|מרכז\s+שירות|מוקד|סניף|קניון|סופר|הובלות\s+ארצי|בינלאומ|גרופ|\bgroup\b|אחזקות|השקעות|ניהול\s+נכס/i.test(label)
+  // Chain / call-center markers reject even when a trade word is present —
+  // "מוקד אינסטלציה ארצי" is a dispatch operation, not a solo pro.
+  const chainOrCallCenter =
+    /רשת\s|קול\s*סנטר|call\s*center|מרכז\s+שירות|מוקד|הובלות\s+ארצי|בינלאומ|\bgroup\b|אחזקות|השקעות/i.test(
+      label,
+    )
+  if (
+    (chainOrCallCenter ||
+      ((hardCompany || retail || retailType) &&
+        !INSTALLER_HINTS.test(label) &&
+        !serviceType &&
+        !input.pureServiceAreaBusiness &&
+        !(legalEntityOnly && (retail || retailType))))
+  ) {
     reasons.push(
-      hardCompany
-        ? 'company_or_chain_marker'
-        : retail || retailType
-          ? 'retail_or_materials_supplier'
-          : 'unsuitable_business_type',
+      chainOrCallCenter
+        ? 'chain_or_call_center'
+        : hardCompany
+          ? 'company_or_chain_marker'
+          : retail || retailType
+            ? 'retail_or_materials_supplier'
+            : 'unsuitable_business_type',
     )
     return {
       score: Math.max(0, score + FIT_WEIGHTS.businessTypeRetailPenalty),
@@ -245,9 +263,9 @@ export function assessProspectFit(input: FitScoreInput): FitAssessment {
   }
 
   if (hardCompany) {
-    score += FIT_WEIGHTS.businessTypeCompanyPenalty
-    confidence += 15
-    reasons.push('company_marker_soft')
+    score += legalEntityOnly ? Math.round(FIT_WEIGHTS.businessTypeCompanyPenalty * 0.5) : FIT_WEIGHTS.businessTypeCompanyPenalty
+    confidence += legalEntityOnly ? 8 : 15
+    reasons.push(legalEntityOnly ? 'legal_entity_marker_soft' : 'company_marker_soft')
   }
 
   if (SOFT_COMMERCIAL_WORDS.some((re) => re.test(label))) {

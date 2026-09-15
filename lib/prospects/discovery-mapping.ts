@@ -197,6 +197,9 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
       'תיקון נזילות',
       'החלפת ברז',
       'אינסטלטור ירושלים',
+      'אינסטלטור מוסמך',
+      'בלאי צנרת',
+      'אינסטלציה',
     ],
     placesQueryEn: 'plumber',
     placesQueriesEnExtra: ['drain cleaning', 'leak repair'],
@@ -207,7 +210,13 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'electricity',
     placesQueryHe: 'חשמלאי',
-    placesQueriesHeExtra: ['חשמלאי מוסמך', 'תיקון קצר חשמלי', 'התקנת נקודת חשמל'],
+    placesQueriesHeExtra: [
+      'חשמלאי מוסמך',
+      'תיקון קצר חשמלי',
+      'התקנת נקודת חשמל',
+      'בלאי חשמל',
+      'חשמלאי מוסמך ירושלים',
+    ],
     placesQueryEn: 'electrician',
     placesQueriesEnExtra: ['licensed electrician'],
     placesQueryAr: 'كهربائي',
@@ -216,7 +225,13 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'ac',
     placesQueryHe: 'טכנאי מזגנים',
-    placesQueriesHeExtra: ['מילוי גז מזגן', 'התקנת מזגן', 'תיקון מזגן'],
+    placesQueriesHeExtra: [
+      'מילוי גז מזגן',
+      'התקנת מזגן',
+      'תיקון מזגן',
+      'טכנאי מיזוג אוויר',
+      'מזגן ירושלים',
+    ],
     placesQueryEn: 'AC technician',
     placesQueriesEnExtra: ['air conditioner repair'],
     placesQueryAr: 'فني تكييف',
@@ -225,7 +240,12 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'cleaning',
     placesQueryHe: 'ניקיון דירות',
-    placesQueriesHeExtra: ['מנקה דירות', 'ניקיון אחרי שיפוץ'],
+    placesQueriesHeExtra: [
+      'מנקה דירות',
+      'ניקיון אחרי שיפוץ',
+      'עוזרת בית',
+      'ניקיון בתים פרטיים',
+    ],
     placesQueryEn: 'house cleaning',
     placesQueryAr: 'تنظيف منازل',
     osmFilters: ['craft=cleaner'],
@@ -233,7 +253,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'painting',
     placesQueryHe: 'צבעי',
-    placesQueriesHeExtra: ['צבעי דירות', 'צביעת דירה'],
+    placesQueriesHeExtra: ['צבעי דירות', 'צביעת דירה', 'צבעי מבנים', 'לכה'],
     placesQueryEn: 'house painter',
     placesQueryAr: 'دهان',
     osmFilters: ['craft=painter'],
@@ -241,7 +261,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'carpentry',
     placesQueryHe: 'נגר',
-    placesQueriesHeExtra: ['נגר רהיטים', 'תיקון דלתות'],
+    placesQueriesHeExtra: ['נגר רהיטים', 'תיקון דלתות', 'נגר מטבחים', 'נגרות'],
     placesQueryEn: 'carpenter',
     placesQueryAr: 'نجار',
     osmFilters: ['craft=carpenter'],
@@ -257,7 +277,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'gardening',
     placesQueryHe: 'גנן',
-    placesQueriesHeExtra: ['גיזום עצים', 'טיפול בגינה'],
+    placesQueriesHeExtra: ['גיזום עצים', 'טיפול בגינה', 'מנקה גינות', 'אחזקת גינות'],
     placesQueryEn: 'gardener',
     placesQueryAr: 'بستاني',
     osmFilters: ['craft=gardener'],
@@ -265,7 +285,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'moving',
     placesQueryHe: 'הובלות',
-    placesQueriesHeExtra: ['הובלת דירה', 'הובלות קטנות'],
+    placesQueriesHeExtra: ['הובלת דירה', 'הובלות קטנות', 'הובלות בירושלים'],
     placesQueryEn: 'movers',
     placesQueryAr: 'نقل عفش',
     osmFilters: ['office=moving_company'],
@@ -273,7 +293,14 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'tiling',
     placesQueryHe: 'רצף',
-    placesQueriesHeExtra: ['התקנת קרמיקה', 'רצף דירות', 'התקנת פרקט'],
+    placesQueriesHeExtra: [
+      'התקנת קרמיקה',
+      'רצף דירות',
+      'התקנת פרקט',
+      'פודים',
+      'גרוב וקרמיקה',
+      'מרצפות',
+    ],
     placesQueryEn: 'tile installer',
     placesQueryAr: 'بلاط',
     osmFilters: ['craft=tiler'],
@@ -281,7 +308,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'renovations',
     placesQueryHe: 'שיפוצים',
-    placesQueriesHeExtra: ['קבלן שיפוצים', 'שיפוצניק'],
+    placesQueriesHeExtra: ['קבלן שיפוצים', 'שיפוצניק', 'הנדימן', 'תיקונים בבית', 'איש תחזוקה'],
     placesQueryEn: 'home renovation',
     placesQueryAr: 'ترميم منازل',
     osmFilters: ['craft=builder'],
@@ -289,7 +316,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'waterproofing',
     placesQueryHe: 'איטום',
-    placesQueriesHeExtra: ['איטום גגות', 'איטום רטיבות'],
+    placesQueriesHeExtra: ['איטום גגות', 'איטום רטיבות', 'ציפוי גגות', 'זפת'],
     placesQueryEn: 'waterproofing',
     placesQueryAr: 'عزل رطوبة',
     osmFilters: ['craft=roofer'],
@@ -297,7 +324,13 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'aluminum',
     placesQueryHe: 'אלומיניום',
-    placesQueriesHeExtra: ['התקנת תריסים', 'חלונות אלומיניום'],
+    placesQueriesHeExtra: [
+      'התקנת תריסים',
+      'חלונות אלומיניום',
+      'מסגרות אלומיניום',
+      'מעקות',
+      'סורגים',
+    ],
     placesQueryEn: 'aluminum windows',
     placesQueryAr: 'ألمنيوم',
     osmFilters: ['craft=window_construction'],
@@ -305,7 +338,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'drywall',
     placesQueryHe: 'גבס',
-    placesQueriesHeExtra: ['התקנת גבס', 'טייח'],
+    placesQueriesHeExtra: ['התקנת גבס', 'טייח', 'שליכת גבס', 'גבס מבנים'],
     placesQueryEn: 'drywall',
     placesQueryAr: 'جبس',
     osmFilters: ['craft=plasterer'],
@@ -313,7 +346,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'solar',
     placesQueryHe: 'דוד שמש',
-    placesQueriesHeExtra: ['טכנאי דודי שמש', 'התקנת דוד שמש'],
+    placesQueriesHeExtra: ['טכנאי דודי שמש', 'התקנת דוד שמש', 'תיקון דוד שמש'],
     placesQueryEn: 'solar water heater',
     placesQueryAr: 'سخان شمسي',
     osmFilters: ['craft=plumber'],
@@ -321,7 +354,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'appliance_repair',
     placesQueryHe: 'טכנאי מכשירי חשמל',
-    placesQueriesHeExtra: ['תיקון מכונת כביסה', 'תיקון מקרר'],
+    placesQueriesHeExtra: ['תיקון מכונת כביסה', 'תיקון מקרר', 'טכנאי מכשירי בית'],
     placesQueryEn: 'appliance repair',
     placesQueryAr: 'تصليح اجهزة',
     osmFilters: ['craft=electronics_repair'],
@@ -329,7 +362,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'pest_control',
     placesQueryHe: 'מדביר',
-    placesQueriesHeExtra: ['הדברה', 'הדברת דירות'],
+    placesQueriesHeExtra: ['הדברה', 'הדברת דירות', 'הדברת פשפשים', 'הדברה ירושלים'],
     placesQueryEn: 'pest control',
     placesQueryAr: 'مكافحة حشرات',
     osmFilters: [],
@@ -337,7 +370,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'glazing',
     placesQueryHe: 'זגג',
-    placesQueriesHeExtra: ['החלפת זכוכית', 'תיקון חלון'],
+    placesQueriesHeExtra: ['החלפת זכוכית', 'תיקון חלון', 'זגגות', 'מקלחונים'],
     placesQueryEn: 'glazier',
     placesQueryAr: 'زجاج',
     osmFilters: ['craft=glaziery'],
@@ -345,7 +378,7 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
   {
     slug: 'furniture',
     placesQueryHe: 'הרכבת רהיטים',
-    placesQueriesHeExtra: ['תיקון רהיטים', 'הרכבת איקאה'],
+    placesQueriesHeExtra: ['תיקון רהיטים', 'הרכבת איקאה', 'סובב מיטות', 'מרפד'],
     placesQueryEn: 'furniture assembly',
     placesQueryAr: 'تركيب اثاث',
     osmFilters: ['craft=cabinet_maker'],
