@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { QueryYieldUpdate } from '@/lib/prospects/query-queue'
 import { computeYieldScore } from '@/lib/prospects/query-queue'
+import { getDiscoveryStaleLockMs } from '@/lib/prospects/config'
 
 export async function upsertQueryStats(
   admin: SupabaseClient,
@@ -63,9 +64,51 @@ export async function loadQueryStats(
   return data ?? []
 }
 
+/**
+ * Mark abandoned `running` rows as failed so a killed serverless invocation
+ * cannot block discovery forever.
+ */
+export async function releaseStaleDiscoveryRuns(
+  admin: SupabaseClient,
+  maxAgeMs: number = getDiscoveryStaleLockMs(),
+): Promise<number> {
+  const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
+  const { data, error } = await admin
+    .from('prospect_discovery_runs')
+    .update({
+      status: 'failed',
+      error_message:
+        'ריצה נקטעה (timeout / תהליך מת) — הנעילה שוחררה אוטומטית',
+      finished_at: new Date().toISOString(),
+    })
+    .eq('status', 'running')
+    .lt('started_at', cutoff)
+    .select('id')
+  if (error) return 0
+  return data?.length ?? 0
+}
+
+/** Immediate unlock — admin force-clear of every stuck `running` row. */
+export async function forceUnlockDiscoveryRuns(
+  admin: SupabaseClient,
+): Promise<number> {
+  const { data, error } = await admin
+    .from('prospect_discovery_runs')
+    .update({
+      status: 'failed',
+      error_message: 'נעילה שוחררה ידנית ע״י מנהל',
+      finished_at: new Date().toISOString(),
+    })
+    .eq('status', 'running')
+    .select('id')
+  if (error) return 0
+  return data?.length ?? 0
+}
+
 export async function hasRunningDiscovery(
   admin: SupabaseClient,
 ): Promise<boolean> {
+  await releaseStaleDiscoveryRuns(admin).catch(() => 0)
   const { data } = await admin
     .from('prospect_discovery_runs')
     .select('id')

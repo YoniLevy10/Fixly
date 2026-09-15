@@ -271,6 +271,26 @@ export default function ProspectsRecruitmentScreen() {
     }
   }, [])
 
+  const unlockDiscovery = useCallback(async () => {
+    setActionMsg(null)
+    try {
+      const res = await fetch('/api/admin/prospects/discover', { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setActionMsg(typeof data.error === 'string' ? data.error : 'שחרור נעילה נכשל')
+        return
+      }
+      setRuns(data.runs ?? [])
+      setActionMsg(
+        data.unlocked > 0
+          ? `שוחררו ${data.unlocked} נעילות תקועות — אפשר להריץ גילוי שוב`
+          : 'אין נעילה פעילה',
+      )
+    } catch {
+      setActionMsg('שחרור נעילה נכשל')
+    }
+  }, [])
+
   useEffect(() => {
     loadList()
   }, [loadList])
@@ -528,6 +548,14 @@ export default function ProspectsRecruitmentScreen() {
         body: JSON.stringify({ replacePrevious }),
       })
       const data = await res.json().catch(() => ({}))
+      if (res.status === 409 || data.status === 'busy') {
+        setActionMsg(
+          data.errorMessage ??
+            'ריצת גילוי תקועה — לחצו «שחרר נעילה» ואז הריצו שוב',
+        )
+        await loadRuns()
+        return
+      }
       if (!res.ok && data.status !== 'completed') {
         setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
         return
@@ -606,6 +634,15 @@ export default function ProspectsRecruitmentScreen() {
           ) : null}
           <button
             type="button"
+            onClick={unlockDiscovery}
+            disabled={discovering}
+            className="w-full rounded-xl border border-rose-500 text-rose-800 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            title="משחרר ריצת גילוי שנתקעה אחרי timeout של השרת"
+          >
+            שחרר נעילה
+          </button>
+          <button
+            type="button"
             onClick={exportCsv}
             className="w-full rounded-xl border px-4 py-2.5 text-sm font-semibold"
           >
@@ -615,7 +652,7 @@ export default function ProspectsRecruitmentScreen() {
             type="button"
             onClick={rejectCompanyLike}
             disabled={companyLikeOnPage.length === 0}
-            className="w-full rounded-xl border border-amber-600 text-amber-900 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            className="w-full rounded-xl border border-amber-600 text-amber-900 px-4 py-2.5 text-sm font-semibold disabled:opacity-40 sm:col-span-3"
             title="דוחה לידים בעמוד הנוכחי שנראים כמו חברה ולא אדם פרטי"
           >
             דחה חברות ({companyLikeOnPage.length})

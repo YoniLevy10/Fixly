@@ -13,12 +13,15 @@ import {
   getDiscoveryApiCallBudget,
   getDiscoveryPerCategoryCap,
   getDiscoveryTotalBudget,
+  getDiscoveryWallClockMs,
   getRecruitCategorySlugs,
 } from '@/lib/prospects/config'
 import { assessProspectFit } from '@/lib/prospects/fit-score'
 import {
+  forceUnlockDiscoveryRuns,
   hasRunningDiscovery,
   loadQueryStats,
+  releaseStaleDiscoveryRuns,
   upsertQueryStats,
 } from '@/lib/prospects/query-stats-store'
 
@@ -81,6 +84,7 @@ function buildAdapters(input?: {
   city?: string
   totalBudget?: number
   apiCallBudget?: number
+  deadlineAt?: number
   queryStats?: Awaited<ReturnType<typeof loadQueryStats>>
   onPlacesProgress?: NonNullable<
     ConstructorParameters<typeof GooglePlacesProspectAdapter>[0]
@@ -110,6 +114,7 @@ function buildAdapters(input?: {
       adapters.push(
         new GooglePlacesProspectAdapter({
           ...common,
+          deadlineAt: input?.deadlineAt,
           onProgress: input?.onPlacesProgress,
         }),
       )
@@ -179,6 +184,10 @@ export async function runProspectDiscovery(
   const budget = getDiscoveryTotalBudget()
   const apiCallBudget = getDiscoveryApiCallBudget()
   const replacePrevious = options.replacePrevious === true
+  const deadlineAt = Date.now() + getDiscoveryWallClockMs()
+
+  // Unlock abandoned serverless runs before the busy gate.
+  await releaseStaleDiscoveryRuns(admin).catch(() => 0)
 
   if (await hasRunningDiscovery(admin)) {
     return {
@@ -194,7 +203,8 @@ export async function runProspectDiscovery(
       deletedPrevious: 0,
       budget,
       apiCallBudget,
-      errorMessage: 'ריצת גילוי כבר פעילה — נסו שוב בעוד כמה דקות',
+      errorMessage:
+        'ריצת גילוי כבר פעילה — אם היא תקועה, לחצו «שחרר נעילה» או המתינו כ־6 דקות',
       bySource: {},
     }
   }
@@ -225,6 +235,7 @@ export async function runProspectDiscovery(
     city,
     totalBudget: budget,
     apiCallBudget,
+    deadlineAt,
     queryStats,
     onPlacesProgress: async (p) => {
       const jobRatio =
@@ -330,6 +341,10 @@ export async function runProspectDiscovery(
     })
 
     for (const adapter of adapters) {
+      if (Date.now() >= deadlineAt) {
+        stopReason = stopReason ?? 'wall_clock'
+        break
+      }
       bySource[adapter.name] = {
         found: 0,
         created: 0,
@@ -614,6 +629,7 @@ export async function listDiscoveryRuns(
   admin: SupabaseClient,
   limit = 10,
 ) {
+  await releaseStaleDiscoveryRuns(admin).catch(() => 0)
   const { data, error } = await admin
     .from('prospect_discovery_runs')
     .select('*')
@@ -622,3 +638,5 @@ export async function listDiscoveryRuns(
   if (error) throw error
   return data ?? []
 }
+
+export { forceUnlockDiscoveryRuns, releaseStaleDiscoveryRuns }
