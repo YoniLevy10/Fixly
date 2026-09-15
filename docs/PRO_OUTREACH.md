@@ -71,6 +71,20 @@
 5. `20260909160000_prospect_fit_quality.sql`
 6. **`20260909180000_prospect_source_refs_license.sql`** — website_url, source_refs, license
 
+### חובה לפרודקשן (שגיאת «website_url does not exist»)
+
+אם Superadmin מציג:
+
+`תקלה חלקית: google_places: column professional_prospects.website_url does not exist`
+
+הקוד כבר מנסה soft-fallback בלי העמודה, אבל **המיגרציה חייבת לרוץ** על פרויקט Supabase של Fixly:
+
+1. פתחו SQL Editor בפרויקט Fixly.
+2. הריצו את תוכן [`supabase/migrations/20260909180000_prospect_source_refs_license.sql`](../supabase/migrations/20260909180000_prospect_source_refs_license.sql).
+3. Superadmin → «שחרר נעילה» → הריצו גילוי מחדש.
+
+בלי שלב זה אין גילוי ב־100% (לידים נשמרים חלקית בלי אתר/`source_refs`).
+
 ## משתני סביבה
 
 | מפתח | תיאור |

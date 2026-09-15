@@ -18,14 +18,17 @@ import {
 } from '@/lib/prospects/humanize-discovery-error'
 
 describe('discovery mapping', () => {
-  it('covers expanded recruit categories including ceramics/tiling trades', () => {
-    assert.ok(DISCOVERY_CATEGORY_MAP.length >= 19)
+  it('covers expanded recruit categories including home-visit beauty and tutors', () => {
+    assert.ok(DISCOVERY_CATEGORY_MAP.length >= 23)
     assert.ok(DISCOVERY_CATEGORY_MAP.every((m) => m.placesQueryHe))
     const tiling = DISCOVERY_CATEGORY_MAP.find((m) => m.slug === 'tiling')
     assert.ok(tiling)
     assert.ok(tiling!.placesQueriesHeExtra?.some((q) => q.includes('קרמיקה')))
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'renovations'))
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'nails'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'hair'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'home_tutor'))
   })
 
   it('defaults per-chunk discovery budgets for continue-loop coverage', async () => {
@@ -112,6 +115,14 @@ describe('humanizeDiscoveryError', () => {
     const msg = humanizeDiscoveryError('google_places: source failed')
     assert.ok(msg)
     assert.match(msg!, /שמירה|מסד/)
+  })
+
+  it('explains missing website_url column with migration hint', () => {
+    const msg = humanizeDiscoveryError(
+      'google_places: column professional_prospects.website_url does not exist',
+    )
+    assert.ok(msg)
+    assert.match(msg!, /website_url|מיגרצ/)
   })
 })
 

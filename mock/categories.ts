@@ -32,6 +32,7 @@ export const CATEGORIES: Category[] = [
   { id: '19', name: 'מניקור וציפורניים', slug: 'nails', icon: '💅', description: 'מניקור, ג׳ל ופדיקור עד הבית' },
   { id: '20', name: 'תספורת ועיצוב', slug: 'hair', icon: '✂️', description: 'ספרים ומעצבי שיער ניידים' },
   { id: '21', name: 'איפור', slug: 'makeup', icon: '💄', description: 'מאפרות עד הבית, מלון או משרד' },
+  { id: '26', name: 'מורה פרטי', slug: 'home_tutor', icon: '📚', description: 'שיעורים פרטיים עד הבית' },
   { id: '18', name: 'כללי / אחר', slug: 'general', icon: '🧰', description: 'שירותים כלליים' },
 ]
 
@@ -40,6 +41,7 @@ export const HOME_DISPLAY_CATEGORIES = [
   { name: 'מניקור וציפורניים', slug: 'nails', emoji: '💅' },
   { name: 'תספורת ועיצוב', slug: 'hair', emoji: '✂️' },
   { name: 'איפור', slug: 'makeup', emoji: '💄' },
+  { name: 'מורה פרטי', slug: 'home_tutor', emoji: '📚' },
   { name: 'מיזוג אוויר', slug: 'ac', emoji: '❄️' },
   { name: 'אינסטלציה', slug: 'plumbing', emoji: '🚿' },
   { name: 'חשמל', slug: 'electricity', emoji: '⚡' },

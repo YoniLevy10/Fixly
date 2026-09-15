@@ -171,6 +171,41 @@ const PROSPECT_SELECT = `
   ${PROSPECT_CATEGORY_EMBED}
 `
 
+const OPTIONAL_PROSPECT_COLUMNS = [
+  'website_url',
+  'source_refs',
+  'license',
+  'search_city',
+  'service_areas',
+  'enrichment',
+  'fit_class',
+  'fit_confidence',
+  'fit_reasons',
+  'contactability',
+  'last_seen_at',
+  'services',
+] as const
+
+function isMissingProspectColumnError(message: string | null | undefined): boolean {
+  if (!message) return false
+  return (
+    /does not exist|schema cache|could not find.*column/i.test(message) &&
+    /website_url|source_refs|license|search_city|fit_class|fit_score|fit_confidence|fit_reasons|contactability|last_seen_at|service_areas|enrichment|services/i.test(
+      message,
+    )
+  )
+}
+
+function stripOptionalProspectColumns(
+  payload: Record<string, unknown>,
+): Record<string, unknown> {
+  const next = { ...payload }
+  for (const col of OPTIONAL_PROSPECT_COLUMNS) {
+    delete next[col]
+  }
+  return next
+}
+
 async function loadCategoryMap(
   admin: SupabaseClient,
 ): Promise<Map<string, CategoryRow>> {
@@ -499,18 +534,20 @@ export async function ingestFromAdapter(
         .maybeSingle()
 
       if (updErr || !upd) {
-        const missingCol =
-          /fit_class|fit_score|contactability|website_url|source_refs|license|last_seen_at/i.test(
-            updErr?.message ?? '',
-          )
-        if (missingCol) {
-          const soft = {
+        if (isMissingProspectColumnError(updErr?.message)) {
+          const soft = stripOptionalProspectColumns({
             updated_by: actorUserId ?? null,
             fit_score: fitFields.fit_score,
             ...(record.phone && !current.phone
               ? { phone: record.phone, phone_normalized: phoneNormalized }
               : {}),
-          }
+            ...(record.businessAddress && !current.businessAddress
+              ? { business_address: record.businessAddress }
+              : {}),
+            ...(record.sourceUrl && !current.sourceUrl
+              ? { source_url: record.sourceUrl }
+              : {}),
+          })
           const retry = await admin
             .from('professional_prospects')
             .update(soft)
@@ -530,11 +567,12 @@ export async function ingestFromAdapter(
             })
             continue
           }
-          skipped.push({
-            reason: dup.reason,
-            existingId: current.id,
-            name: record.name,
+          // Count as updated without failing the whole chunk on missing columns.
+          const mappedSoft = mapProspectRow({
+            ...(retry.data as unknown as ProspectRow),
+            ...fitFields,
           })
+          updated.push(mappedSoft)
           continue
         }
         errors.push({
@@ -639,18 +677,15 @@ export async function ingestFromAdapter(
 
     if (error || !data) {
       // Graceful fallback if new columns not migrated yet
-      const missingCol =
-        /fit_class|fit_score|contactability|search_city|website_url|source_refs|license|last_seen_at|service_areas|enrichment/i.test(
-          error?.message ?? '',
-        )
-      if (missingCol) {
-        const legacy = {
+      if (isMissingProspectColumnError(error?.message)) {
+        const legacy = stripOptionalProspectColumns({
           name: insertPayload.name,
           business_name: insertPayload.business_name,
           phone: insertPayload.phone,
           whatsapp_phone: insertPayload.whatsapp_phone,
           phone_normalized: insertPayload.phone_normalized,
           city: insertPayload.city,
+          business_address: insertPayload.business_address,
           category_id: insertPayload.category_id,
           source_name: insertPayload.source_name,
           source_url: insertPayload.source_url,
@@ -661,7 +696,7 @@ export async function ingestFromAdapter(
           fit_score: fitFields.fit_score,
           created_by: actorUserId ?? null,
           updated_by: actorUserId ?? null,
-        }
+        })
         const retry = await admin
           .from('professional_prospects')
           .insert(legacy)
@@ -701,7 +736,11 @@ export async function ingestFromAdapter(
           action: 'created',
           fromStatus: null,
           toStatus: 'discovered',
-          payload: { source: adapter.name, fitClass: fitFields.fit_class },
+          payload: {
+            source: adapter.name,
+            fitClass: fitFields.fit_class,
+            legacyColumns: true,
+          },
         })
         created.push(mapped)
         continue

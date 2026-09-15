@@ -28,7 +28,15 @@ export const CORE_RECRUIT_CATEGORY_SLUGS = [
   'pest_control',
   'glazing',
   'furniture',
+  // Home-visit personal services (people invite to the home)
+  'nails',
+  'hair',
+  'makeup',
+  'home_tutor',
 ] as const
+
+/** Marketplace-only / low recruit priority (not typical home fault callouts). */
+export const LOW_PRIORITY_RECRUIT_SLUGS = ['elevators', 'computers', 'general'] as const
 
 export const RECRUIT_PER_CATEGORY_TARGET = 10
 

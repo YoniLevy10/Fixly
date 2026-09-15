@@ -14,7 +14,6 @@ import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
-import { isDemoDataMode } from '@/lib/data/demo-mode'
 
 const DemoPlatformStats = dynamic(
   () => import('@/components/demo/DemoPlatformStats'),
@@ -35,7 +34,7 @@ const FeaturedProCard = dynamic(
 )
 
 export default function HomeScreen() {
-  const { user, switchDemoRole } = useAuth()
+  const { user } = useAuth()
   const { locale, dir, t } = useLocale()
   const [searchQuery, setSearchQuery] = useState('')
   const [showAllCats, setShowAllCats] = useState(false)
@@ -146,21 +145,6 @@ export default function HomeScreen() {
       </div>
 
       <DemoPlatformStats />
-
-      {isDemoDataMode() && (
-        <div className="mx-4 lg:mx-8 mb-4">
-          <button
-            type="button"
-            onClick={() => {
-              switchDemoRole('professional')
-              router.push(routes.proDashboard)
-            }}
-            className="w-full text-center py-3 rounded-xl bg-secondary text-secondary-foreground text-sm font-bold shadow-sm"
-          >
-            {t('demo.viewYossiDashboard')}
-          </button>
-        </div>
-      )}
 
       <div className="px-4 lg:px-8">
         {featureFlags.quickRequest && (

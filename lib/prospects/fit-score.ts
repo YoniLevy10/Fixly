@@ -106,10 +106,6 @@ const OFF_TRADE_MARKERS = [
   /sherwin/i,
   /benjamin\s*moore/i,
   /nippon\s*paint/i,
-  /מספרה/i,
-  /ברבר/i,
-  /\bbarber\b/i,
-  /salon/i,
   /מרפא/i,
   /clinic/i,
   /מסעד/i,
@@ -127,14 +123,20 @@ const OFF_TRADE_MARKERS = [
   /אופטיק|optician/i,
 ]
 
+/** Never home-visit performers for Fixly core trades. */
 const OFF_TRADE_PLACE_TYPES =
-  /paint_store|laundry|hardware_store|home_goods_store|furniture_store|electronics_store|supermarket|grocery_or_supermarket|clothing_store|shoe_store|convenience_store|department_store|shopping_mall|restaurant|cafe|bar|lodging|car_repair|car_wash|gas_station|beauty_salon|hair_care|doctor|hospital|pharmacy|florist|book_store|pet_store/
+  /paint_store|laundry|hardware_store|home_goods_store|furniture_store|electronics_store|supermarket|grocery_or_supermarket|clothing_store|shoe_store|convenience_store|department_store|shopping_mall|restaurant|cafe|bar|lodging|car_repair|car_wash|gas_station|doctor|hospital|pharmacy|florist|book_store|pet_store/
+
+/** Beauty shop types — off-trade unless the discovery job is nails/hair/makeup. */
+const BEAUTY_SHOP_PLACE_TYPES = /beauty_salon|hair_care|spa/
+
+const HOME_VISIT_BEAUTY_SLUGS = new Set(['nails', 'hair', 'makeup'])
 
 const INSTALLER_HINTS =
-  /מתקין|רצף|ריצוף|התקנ|טכנאי|צבעי|צביע|גנן|גיזום|מנעולן|אינסטלטור|אינסטלציה|שרברב|סתימ|נזיל|חשמלאי|חשמל|מיזוג|מזגן|מדביר|הדבר|נגר|קבלן|שיפוצ|הנדימן|תיקון|איטום|אלומיניום|גבס|טיח|דוד שמש|דודי שמש|זכוכית|פרקט|פודים|מרצפות|מסגר|מעקות|סורגים|תריס|מקלחון|הובל|מוביל|ניקיון|מנקה|בלאי|ריתוך|גרוב|גריזוב|ציפוי|זפת|רהיט|plumber|electrician|locksmith|painter|gardener|cleaner|handyman|movers?|tiler|glazier|carpenter|فني|سباك|كهربائي|نجار|دهان/i
+  /מתקין|רצף|ריצוף|התקנ|טכנאי|צבעי|צביע|גנן|גיזום|מנעולן|אינסטלטור|אינסטלציה|שרברב|סתימ|נזיל|חשמלאי|חשמל|מיזוג|מזגן|מדביר|הדבר|נגר|קבלן|שיפוצ|הנדימן|תיקון|איטום|אלומיניום|גבס|טיח|דוד שמש|דודי שמש|זכוכית|פרקט|פודים|מרצפות|מסגר|מעקות|סורגים|תריס|מקלחון|הובל|מוביל|ניקיון|מנקה|בלאי|ריתוך|גרוב|גריזוב|ציפוי|זפת|רהיט|מניקור|ציפורנ|פדיקור|ספר|תספורת|מאפר|איפור|מורה\s*פרטי|שיעורים\s*פרטי|plumber|electrician|locksmith|painter|gardener|cleaner|handyman|movers?|tiler|glazier|carpenter|manicur|nail\s*tech|barber|hairdresser|makeup|tutor|فني|سباك|كهربائي|نجار|دهان/i
 
 const SERVICE_AT_HOME_HINTS =
-  /עד\s*הבית|אצל\s*הלקוח|נייד|mobile|at\s*home|house\s*call|خدمة\s*منزلية|الى\s*المنزل|סאב|sab|service\s*area/i
+  /עד\s*הבית|אצל\s*הלקוח|נייד|mobile|at\s*home|house\s*call|خدمة\s*منزلية|الى\s*المنزل|סאב|sab|service\s*area|home\s*visit/i
 
 /** Words that are trade / place — not a person's given name token. */
 const NON_PERSONAL_WORDS = new Set(
@@ -289,6 +291,37 @@ export function isOffCategoryForSlug(
     }
   }
 
+  // Non-beauty jobs should not keep salon/barber storefront names
+  if (!HOME_VISIT_BEAUTY_SLUGS.has(slug) && slug !== 'home_tutor') {
+    if (
+      /מספרה|salon|ברבר|\bbarber\b|מניקור|ציפורנ|מאפר|איפור/i.test(l) &&
+      !INSTALLER_HINTS.test(l)
+    ) {
+      return true
+    }
+  }
+
+  if (slug === 'nails') {
+    if (/מספרה|תספורת|barber|hairdresser|מאפר|איפור/i.test(l) && !/מניקור|ציפורנ|פדיקור|nail/i.test(l)) {
+      return true
+    }
+  }
+
+  if (slug === 'hair') {
+    if (/מניקור|ציפורנ|מאפר|איפור|nail|makeup/i.test(l) && !/ספר|תספורת|שיער|barber|hair/i.test(l)) {
+      return true
+    }
+  }
+
+  if (slug === 'home_tutor') {
+    if (
+      !/מורה|שיעור|tutor|מתמטיקה|אנגלית|עברית|פיזיקה|כימיה/i.test(l)
+    ) {
+      // Keep only tutor-shaped names for this job; generic businesses drop.
+      if (/חנות|מסעד|מכבס|אינסטל|חשמל|צבעי/i.test(l)) return true
+    }
+  }
+
   return false
 }
 
@@ -317,14 +350,24 @@ export function assessProspectFit(input: FitScoreInput): FitAssessment {
     ),
   )
   const offTradeType = types.some((t) => OFF_TRADE_PLACE_TYPES.test(t))
+  const beautyShopType = types.some((t) => BEAUTY_SHOP_PLACE_TYPES.test(t))
+  const beautyJob = HOME_VISIT_BEAUTY_SLUGS.has(
+    (input.categorySlug ?? '').trim(),
+  )
   const serviceType = types.some((t) =>
-    /plumber|electrician|locksmith|painter|roofing|general_contractor|moving_company|car_repair|home_services/.test(
+    /plumber|electrician|locksmith|painter|roofing|general_contractor|moving_company|car_repair|home_services|beauty_salon|hair_care/i.test(
       t,
     ),
   )
 
-  if (offTrade || offTradeType) {
-    reasons.push(offTrade ? 'off_trade_name' : 'off_trade_place_type')
+  if (offTrade || offTradeType || (beautyShopType && !beautyJob)) {
+    reasons.push(
+      offTrade
+        ? 'off_trade_name'
+        : beautyShopType && !beautyJob
+          ? 'beauty_shop_off_category'
+          : 'off_trade_place_type',
+    )
     return {
       score: Math.max(0, score + FIT_WEIGHTS.businessTypeRetailPenalty),
       confidence: 85,
