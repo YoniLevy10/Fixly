@@ -11,6 +11,7 @@ import {
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
 import {
   getDiscoveryApiCallBudget,
+  getDiscoveryChunkMaxJobs,
   getDiscoveryFinalizeBufferMs,
   getDiscoveryPerCategoryCap,
   getDiscoveryTotalBudget,
@@ -35,7 +36,8 @@ export type DiscoveryAutoSource =
 
 export type DiscoveryRunResult = {
   runId: string | null
-  status: 'completed' | 'failed' | 'busy'
+  /** `continue` = more chunks remain — client should POST again with continueRunId */
+  status: 'completed' | 'failed' | 'busy' | 'continue'
   city: string
   sources: string[]
   found: number
@@ -47,6 +49,12 @@ export type DiscoveryRunResult = {
   budget: number
   apiCallBudget: number
   errorMessage?: string
+  continueRunId?: string | null
+  chunk?: {
+    phase: string
+    placesJobOffset: number
+    placesJobsTotal: number
+  }
   bySource: Record<
     string,
     {
@@ -79,6 +87,34 @@ export type DiscoveryProgress = {
   jobsTotal?: number
 }
 
+type DiscoveryCursor = {
+  phase: 'places' | 'osm' | 'gov' | 'done'
+  placesJobOffset: number
+  placesJobsTotal: number
+  sourcesWanted: DiscoveryAutoSource[]
+  cumulative: {
+    found: number
+    created: number
+    updated: number
+    skipped: number
+    errors: number
+    apiCalls: number
+  }
+}
+
+type RunDetails = Record<string, unknown> & {
+  cursor?: DiscoveryCursor
+  heartbeatAt?: string
+  progress?: DiscoveryProgress
+  bySource?: DiscoveryRunResult['bySource']
+  allErrors?: string[]
+  deletedPrevious?: number
+  budget?: number
+  apiCallBudget?: number
+  replacePrevious?: boolean
+  stopReason?: string | null
+}
+
 function unknownErrorMessage(e: unknown, fallback = 'source failed'): string {
   if (e instanceof Error && e.message.trim()) return e.message
   if (e && typeof e === 'object' && 'message' in e) {
@@ -89,71 +125,51 @@ function unknownErrorMessage(e: unknown, fallback = 'source failed'): string {
   return fallback
 }
 
-function buildAdapters(input?: {
-  sources?: DiscoveryAutoSource[]
-  categorySlugs?: string[]
-  city?: string
-  totalBudget?: number
-  apiCallBudget?: number
-  deadlineAt?: number
-  queryStats?: Awaited<ReturnType<typeof loadQueryStats>>
-  onPlacesProgress?: NonNullable<
-    ConstructorParameters<typeof GooglePlacesProspectAdapter>[0]
-  >['onProgress']
-}): ProspectSourceAdapter[] {
-  const wanted = new Set(
-    input?.sources ??
-      (['google_places', 'osm', 'gov_pest_control'] as DiscoveryAutoSource[]),
-  )
-  const adapters: ProspectSourceAdapter[] = []
-  const budget = input?.totalBudget ?? getDiscoveryTotalBudget()
-  const categorySlugs = input?.categorySlugs ?? getRecruitCategorySlugs()
-  const common = {
-    categorySlugs,
-    city: input?.city ?? getDiscoveryCity(),
-    totalBudget: budget,
-    apiCallBudget: input?.apiCallBudget ?? getDiscoveryApiCallBudget(),
-    perCategoryLimit: Math.min(
-      Math.ceil(budget / Math.max(1, categorySlugs.length)),
-      getDiscoveryPerCategoryCap(),
-    ),
-    queryStats: input?.queryStats,
-  }
+function emptyCumulative(): DiscoveryCursor['cumulative'] {
+  return { found: 0, created: 0, updated: 0, skipped: 0, errors: 0, apiCalls: 0 }
+}
 
-  if (wanted.has('google_places')) {
-    if (process.env.GOOGLE_PLACES_API_KEY?.trim()) {
-      adapters.push(
-        new GooglePlacesProspectAdapter({
-          ...common,
-          deadlineAt: input?.deadlineAt,
-          onProgress: input?.onPlacesProgress,
-        }),
-      )
-    }
+function initialCursor(sources: DiscoveryAutoSource[]): DiscoveryCursor {
+  const wanted = sources.length
+    ? sources
+    : (['google_places', 'osm', 'gov_pest_control'] as DiscoveryAutoSource[])
+  const phase: DiscoveryCursor['phase'] = wanted.includes('google_places')
+    ? 'places'
+    : wanted.includes('osm')
+      ? 'osm'
+      : wanted.includes('gov_pest_control')
+        ? 'gov'
+        : 'done'
+  return {
+    phase,
+    placesJobOffset: 0,
+    placesJobsTotal: 0,
+    sourcesWanted: wanted,
+    cumulative: emptyCumulative(),
   }
-  if (wanted.has('osm')) {
-    adapters.push(new OsmOverpassProspectAdapter(common))
-  }
-  if (wanted.has('gov_pest_control')) {
-    if (
-      categorySlugs.includes('pest_control') ||
-      input?.sources?.includes('gov_pest_control')
-    ) {
-      adapters.push(
-        new GovPestControlProspectAdapter({
-          city: common.city,
-        }),
-      )
-    }
-  }
+}
 
-  return adapters
+function nextPhaseAfter(
+  cursor: DiscoveryCursor,
+): DiscoveryCursor['phase'] {
+  const wanted = new Set(cursor.sourcesWanted)
+  if (cursor.phase === 'places') {
+    if (wanted.has('osm')) return 'osm'
+    if (wanted.has('gov_pest_control')) return 'gov'
+    return 'done'
+  }
+  if (cursor.phase === 'osm') {
+    if (wanted.has('gov_pest_control')) return 'gov'
+    return 'done'
+  }
+  return 'done'
 }
 
 async function writeRunProgress(
   admin: SupabaseClient,
   runId: string | null,
   progress: DiscoveryProgress,
+  patch?: Partial<RunDetails>,
 ) {
   if (!runId) return
   const percent = Math.max(0, Math.min(100, Math.round(progress.percent)))
@@ -166,13 +182,14 @@ async function writeRunProgress(
     .maybeSingle()
   const prevDetails =
     current?.details && typeof current.details === 'object'
-      ? (current.details as Record<string, unknown>)
+      ? (current.details as RunDetails)
       : {}
   await admin
     .from('prospect_discovery_runs')
     .update({
       details: {
         ...prevDetails,
+        ...patch,
         heartbeatAt,
         progress: { ...progress, percent },
       },
@@ -181,6 +198,10 @@ async function writeRunProgress(
     .eq('status', 'running')
 }
 
+/**
+ * Process ONE discovery chunk (Places slice / OSM / gov).
+ * Client should loop while status === 'continue'.
+ */
 export async function runProspectDiscovery(
   admin: SupabaseClient,
   options: {
@@ -189,28 +210,114 @@ export async function runProspectDiscovery(
     sources?: DiscoveryAutoSource[]
     categorySlugs?: string[]
     city?: string
-    /** Default false: cumulative merge. Opt-in wipe only. */
     replacePrevious?: boolean
+    /** Continue an in-progress chunked run */
+    continueRunId?: string | null
   },
 ): Promise<DiscoveryRunResult> {
   const city = options.city ?? getDiscoveryCity()
   const budget = getDiscoveryTotalBudget()
   const apiCallBudget = getDiscoveryApiCallBudget()
+  const chunkMaxJobs = getDiscoveryChunkMaxJobs()
   const replacePrevious = options.replacePrevious === true
   const hardDeadlineAt = Date.now() + getDiscoveryWallClockMs()
-  // Stop Places early so ingest + DB finalize can finish before Vercel kill.
   const placesDeadlineAt = hardDeadlineAt - getDiscoveryFinalizeBufferMs()
+  const categorySlugs = options.categorySlugs ?? getRecruitCategorySlugs()
 
-  // Unlock abandoned serverless runs before the busy gate (heartbeat + age).
   await releaseStaleDiscoveryRuns(admin).catch(() => 0)
 
-  if (await hasRunningDiscovery(admin)) {
-    // Second pass: release again in case heartbeat just went stale.
-    const unlocked = await releaseStaleDiscoveryRuns(admin).catch(() => 0)
-    if (!unlocked || (await hasRunningDiscovery(admin))) {
+  let runId: string | null = options.continueRunId?.trim() || null
+  let cursor: DiscoveryCursor
+  let details: RunDetails = {}
+  let deletedPrevious = 0
+  const bySource: DiscoveryRunResult['bySource'] = {}
+  const topErrors: string[] = []
+
+  if (runId) {
+    const { data: existing, error } = await admin
+      .from('prospect_discovery_runs')
+      .select('*')
+      .eq('id', runId)
+      .maybeSingle()
+    if (error || !existing) {
       return {
         runId: null,
-        status: 'busy',
+        status: 'failed',
+        city,
+        sources: [],
+        found: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        errors: 1,
+        deletedPrevious: 0,
+        budget,
+        apiCallBudget,
+        errorMessage: 'ריצת המשך לא נמצאה — התחילו גילוי מחדש',
+        bySource: {},
+      }
+    }
+    if (existing.status !== 'running') {
+      return {
+        runId,
+        status: existing.status === 'completed' ? 'completed' : 'failed',
+        city: existing.city ?? city,
+        sources: (existing.sources as string[]) ?? [],
+        found: existing.found_count ?? 0,
+        created: existing.created_count ?? 0,
+        updated: 0,
+        skipped: existing.skipped_count ?? 0,
+        errors: existing.error_count ?? 0,
+        deletedPrevious: 0,
+        budget,
+        apiCallBudget,
+        errorMessage: existing.error_message ?? undefined,
+        bySource: {},
+      }
+    }
+    details =
+      existing.details && typeof existing.details === 'object'
+        ? (existing.details as RunDetails)
+        : {}
+    cursor = details.cursor ?? initialCursor(options.sources ?? [])
+    deletedPrevious = Number(details.deletedPrevious ?? 0)
+    if (details.bySource && typeof details.bySource === 'object') {
+      Object.assign(bySource, details.bySource)
+    }
+  } else {
+    if (await hasRunningDiscovery(admin)) {
+      const unlocked = await releaseStaleDiscoveryRuns(admin).catch(() => 0)
+      if (!unlocked || (await hasRunningDiscovery(admin))) {
+        return {
+          runId: null,
+          status: 'busy',
+          city,
+          sources: [],
+          found: 0,
+          created: 0,
+          updated: 0,
+          skipped: 0,
+          errors: 1,
+          deletedPrevious: 0,
+          budget,
+          apiCallBudget,
+          errorMessage:
+            'ריצת גילוי כבר פעילה — לחצו «שחרר נעילה» אם היא תקועה',
+          bySource: {},
+        }
+      }
+    }
+
+    cursor = initialCursor(options.sources ?? [])
+    const sourceNames = cursor.sourcesWanted.filter((s) => {
+      if (s === 'google_places') return Boolean(process.env.GOOGLE_PLACES_API_KEY?.trim())
+      return true
+    })
+
+    if (sourceNames.length === 0) {
+      return {
+        runId: null,
+        status: 'failed',
         city,
         sources: [],
         found: 0,
@@ -222,416 +329,492 @@ export async function runProspectDiscovery(
         budget,
         apiCallBudget,
         errorMessage:
-          'ריצת גילוי כבר פעילה — לחצו «שחרר נעילה» אם היא תקועה (או המתינו כ־90 שניות)',
+          'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY או הפעל OSM / מאגר מדבירים',
+        bySource: {},
+      }
+    }
+
+    if (replacePrevious) {
+      const cleared = await clearReplaceableAutoProspects(admin)
+      deletedPrevious = cleared.deleted
+    }
+
+    const { data: runRow } = await admin
+      .from('prospect_discovery_runs')
+      .insert({
+        trigger: options.trigger,
+        sources: sourceNames,
+        city,
+        status: 'running',
+        actor_user_id: options.actorUserId ?? null,
+        details: {
+          heartbeatAt: new Date().toISOString(),
+          cursor,
+          deletedPrevious,
+          budget,
+          apiCallBudget,
+          replacePrevious,
+          bySource: {},
+          allErrors: [],
+          progress: {
+            percent: 2,
+            phase: 'starting',
+            labelHe: 'מתחיל גילוי מחולק…',
+            apiCallBudget,
+          } satisfies DiscoveryProgress,
+        } satisfies RunDetails,
+      })
+      .select('id')
+      .maybeSingle()
+
+    runId = runRow?.id ?? null
+    if (!runId) {
+      return {
+        runId: null,
+        status: 'failed',
+        city,
+        sources: sourceNames,
+        found: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        errors: 1,
+        deletedPrevious,
+        budget,
+        apiCallBudget,
+        errorMessage: 'יצירת ריצת גילוי נכשלה',
         bySource: {},
       }
     }
   }
 
   const queryStats = await loadQueryStats(admin, city).catch(() => [])
-
-  let lastProgressWrite = 0
-  const reportProgress = async (progress: DiscoveryProgress) => {
-    const now = Date.now()
-    // Throttle DB writes (~700ms) except for terminal-ish jumps
-    if (
-      progress.percent < 99 &&
-      now - lastProgressWrite < 700 &&
-      progress.phase === 'places'
-    ) {
-      return
-    }
-    lastProgressWrite = now
-    await writeRunProgress(admin, runId, progress).catch(() => {})
-  }
-
-  // runId assigned below — placeholder; reassigned after insert
-  let runId: string | null = null
-
-  const adapters = buildAdapters({
-    sources: options.sources,
-    categorySlugs: options.categorySlugs,
-    city,
-    totalBudget: budget,
-    apiCallBudget,
-    deadlineAt: placesDeadlineAt,
-    queryStats,
-    onPlacesProgress: async (p) => {
-      const jobRatio =
-        p.jobsTotal > 0 ? p.jobsDone / p.jobsTotal : p.searchCalls / Math.max(1, p.apiCallBudget)
-      const callRatio = p.searchCalls / Math.max(1, p.apiCallBudget)
-      const ratio = Math.min(1, Math.max(jobRatio, callRatio * 0.85))
-      await reportProgress({
-        percent: 8 + ratio * 67,
-        phase: 'places',
-        labelHe: `סורק Google Places… ${Math.round(ratio * 100)}%`,
-        apiCalls: p.searchCalls,
-        apiCallBudget: p.apiCallBudget,
-        jobsDone: p.jobsDone,
-        jobsTotal: p.jobsTotal,
-      })
-    },
-  })
-
-  const sourceNames = adapters.map((a) => a.name)
-  let deletedPrevious = 0
-
-  const { data: runRow } = await admin
-    .from('prospect_discovery_runs')
-    .insert({
-      trigger: options.trigger,
-      sources: sourceNames,
-      city,
-      status: 'running',
-      actor_user_id: options.actorUserId ?? null,
-      details: {
-        heartbeatAt: new Date().toISOString(),
-        progress: {
-          percent: 2,
-          phase: 'starting',
-          labelHe: 'מתחיל גילוי…',
-          apiCallBudget,
-        } satisfies DiscoveryProgress,
-      },
-    })
-    .select('id')
-    .maybeSingle()
-
-  runId = runRow?.id ?? null
-
-  const bySource: DiscoveryRunResult['bySource'] = {}
-  let found = 0
-  let created = 0
-  let updated = 0
-  let skipped = 0
-  let errors = 0
-  const topErrors: string[] = []
+  let chunkFound = 0
+  let chunkCreated = 0
+  let chunkUpdated = 0
+  let chunkSkipped = 0
+  let chunkErrors = 0
   let stopReason: string | null = null
-  let totalApiCalls = 0
-  const queryYields: Array<Record<string, unknown>> = []
-
-  if (adapters.length === 0) {
-    const msg =
-      'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY או הפעל OSM / מאגר מדבירים'
-    if (runId) {
-      await admin
-        .from('prospect_discovery_runs')
-        .update({
-          status: 'failed',
-          error_message: msg,
-          finished_at: new Date().toISOString(),
-        })
-        .eq('id', runId)
-    }
-    return {
-      runId,
-      status: 'failed',
-      city,
-      sources: sourceNames,
-      found: 0,
-      created: 0,
-      updated: 0,
-      skipped: 0,
-      errors: 1,
-      deletedPrevious: 0,
-      budget,
-      apiCallBudget,
-      errorMessage: msg,
-      bySource,
-    }
-  }
 
   try {
-    if (replacePrevious) {
-      await reportProgress({
-        percent: 5,
-        phase: 'starting',
-        labelHe: 'מנקה לידים ישנים…',
+    await writeRunProgress(
+      admin,
+      runId,
+      {
+        percent: Math.min(95, 5 + cursor.placesJobOffset / Math.max(1, cursor.placesJobsTotal || 40) * 70),
+        phase: cursor.phase === 'done' ? 'done' : cursor.phase,
+        labelHe:
+          cursor.phase === 'places'
+            ? `סורק Places (צ׳אנק)… משרה ${cursor.placesJobOffset}`
+            : cursor.phase === 'osm'
+              ? 'סורק OpenStreetMap…'
+              : cursor.phase === 'gov'
+                ? 'טוען מאגר מדבירים…'
+                : 'מסיים…',
         apiCallBudget,
-      })
-      const cleared = await clearReplaceableAutoProspects(admin)
-      deletedPrevious = cleared.deleted
-    }
+        apiCalls: cursor.cumulative.apiCalls,
+        jobsDone: cursor.placesJobOffset,
+        jobsTotal: cursor.placesJobsTotal || undefined,
+      },
+      { cursor },
+    )
 
-    await reportProgress({
-      percent: 8,
-      phase: 'places',
-      labelHe: 'מתחיל סריקת Places…',
-      apiCallBudget,
-    })
-
-    for (const adapter of adapters) {
-      if (Date.now() >= hardDeadlineAt) {
-        stopReason = stopReason ?? 'wall_clock'
-        break
-      }
-      bySource[adapter.name] = {
-        found: 0,
-        created: 0,
-        updated: 0,
-        skipped: 0,
-        errors: [],
-      }
-      try {
-        if (adapter.name === 'osm') {
-          await reportProgress({
-            percent: 62,
-            phase: 'osm',
-            labelHe: 'סורק OpenStreetMap…',
-            apiCallBudget,
-            apiCalls: totalApiCalls,
-          })
-        } else if (adapter.name === 'gov_pest_control') {
-          await reportProgress({
-            percent: 82,
-            phase: 'gov',
-            labelHe: 'טוען מאגר מדבירים מורשים…',
-            apiCallBudget,
-            apiCalls: totalApiCalls,
-          })
-        }
+    if (cursor.phase === 'places' && cursor.sourcesWanted.includes('google_places')) {
+      if (!process.env.GOOGLE_PLACES_API_KEY?.trim()) {
+        cursor.phase = nextPhaseAfter(cursor)
+      } else {
+        const adapter = new GooglePlacesProspectAdapter({
+          categorySlugs,
+          city,
+          totalBudget: budget,
+          apiCallBudget,
+          perCategoryLimit: Math.min(
+            Math.ceil(budget / Math.max(1, categorySlugs.length)),
+            getDiscoveryPerCategoryCap(),
+          ),
+          jobOffset: cursor.placesJobOffset,
+          maxJobs: chunkMaxJobs,
+          queryStats,
+          deadlineAt: placesDeadlineAt,
+          onProgress: async (p) => {
+            await writeRunProgress(admin, runId, {
+              percent: 8 + (p.jobsTotal > 0 ? p.jobsDone / p.jobsTotal : 0) * 70,
+              phase: 'places',
+              labelHe: `סורק Google Places… ${p.jobsDone}/${p.jobsTotal}`,
+              apiCalls: cursor.cumulative.apiCalls + p.searchCalls,
+              apiCallBudget,
+              jobsDone: p.jobsDone,
+              jobsTotal: p.jobsTotal,
+            })
+          },
+        })
 
         const records = await adapter.fetchRecords()
         records.sort((a, b) => {
           const sa =
             a.fitScore ??
-            assessProspectFit({
-              name: a.name,
-              businessName: a.businessName,
-              phone: a.phone,
-            }).score
+            assessProspectFit({ name: a.name, businessName: a.businessName, phone: a.phone })
+              .score
           const sb =
             b.fitScore ??
-            assessProspectFit({
-              name: b.name,
-              businessName: b.businessName,
-              phone: b.phone,
-            }).score
+            assessProspectFit({ name: b.name, businessName: b.businessName, phone: b.phone })
+              .score
           return sb - sa
         })
-        bySource[adapter.name].found = records.length
-        found += records.length
 
-        if (adapter instanceof GooglePlacesProspectAdapter) {
-          const s = adapter.lastStats
-          totalApiCalls += s.searchCalls
-          stopReason = stopReason ?? s.stopReason
-          bySource[adapter.name].stats = {
+        const s = adapter.lastStats
+        const prevPlacesFound = bySource.google_places?.found ?? 0
+        chunkFound = records.length
+        cursor.placesJobsTotal = s.jobsTotal
+        cursor.placesJobOffset = s.nextJobOffset
+        cursor.cumulative.apiCalls += s.searchCalls
+        stopReason = s.stopReason
+        bySource.google_places = {
+          found: prevPlacesFound + records.length,
+          created: bySource.google_places?.created ?? 0,
+          updated: bySource.google_places?.updated ?? 0,
+          skipped: bySource.google_places?.skipped ?? 0,
+          errors: [
+            ...(bySource.google_places?.errors ?? []),
+            ...s.searchErrors.slice(0, 5),
+          ].slice(0, 12),
+          stats: {
             rawFetched: s.rawFetched,
             uniquePlaces: s.uniquePlaces,
-            rejectedNoPhone: s.rejectedNoPhone,
             rejectedFilter: s.rejectedFilter,
             kept: s.kept,
             suitable: s.suitable,
             needsReview: s.needsReview,
-            searchCalls: s.searchCalls,
+            searchCalls: cursor.cumulative.apiCalls,
             stopReason: s.stopReason,
-          }
-          queryYields.push(...s.queryYields)
-          if (s.searchErrors.length > 0) {
-            bySource[adapter.name].errors.push(...s.searchErrors.slice(0, 5))
-            errors += s.searchErrors.length
-            topErrors.push(
-              ...s.searchErrors.slice(0, 3).map((e) => `google_places: ${e}`),
-            )
-          }
-          await upsertQueryStats(admin, s.queryYields).catch(() => {})
+            jobsTotal: s.jobsTotal,
+            jobsOffset: s.jobsOffset,
+            nextJobOffset: s.nextJobOffset,
+            moreJobs: s.moreJobs ? 1 : 0,
+          },
         }
-        if (adapter instanceof OsmOverpassProspectAdapter) {
-          if (adapter.lastCategoryErrors.length > 0) {
-            bySource[adapter.name].errors.push(
-              ...adapter.lastCategoryErrors.slice(0, 5),
-            )
-            errors += adapter.lastCategoryErrors.length
-            topErrors.push(
-              ...adapter.lastCategoryErrors
-                .slice(0, 3)
-                .map((e) => `osm: ${e}`),
-            )
-          }
+        if (s.searchErrors.length) {
+          chunkErrors += s.searchErrors.length
+          topErrors.push(...s.searchErrors.slice(0, 3).map((e) => `google_places: ${e}`))
         }
-        if (adapter instanceof GovPestControlProspectAdapter) {
-          bySource[adapter.name].stats = {
-            fetched: adapter.lastFetched,
-            kept: adapter.lastKept,
-          }
-          if (adapter.lastErrors.length > 0) {
-            bySource[adapter.name].errors.push(...adapter.lastErrors.slice(0, 5))
-          }
-        }
+        await upsertQueryStats(admin, s.queryYields).catch(() => {})
 
-        const timeLeftMs = hardDeadlineAt - Date.now()
-        // Cap ingest size when little wall-clock remains so we can finalize.
-        let ingestRecords = records
-        if (timeLeftMs < 40_000) {
-          ingestRecords = records.slice(0, 60)
-          stopReason = stopReason ?? 'wall_clock'
-        } else if (timeLeftMs < 70_000) {
-          ingestRecords = records.slice(0, 150)
-        }
-        const wrap: ProspectSourceAdapter = {
-          name: adapter.name,
-          fetchRecords: async () => ingestRecords,
-        }
-        await reportProgress({
-          percent:
-            adapter.name === 'gov_pest_control'
-              ? 90
-              : adapter.name === 'osm'
-                ? 70
-                : 55,
+        await writeRunProgress(admin, runId, {
+          percent: 55,
           phase: 'ingest',
-          labelHe: `שומר לידים מ־${adapter.name}…`,
+          labelHe: `שומר ${records.length} לידים מ-Places…`,
+          apiCalls: cursor.cumulative.apiCalls,
           apiCallBudget,
-          apiCalls: totalApiCalls,
         })
-        if (Date.now() >= hardDeadlineAt) {
-          stopReason = stopReason ?? 'wall_clock'
-          break
-        }
-        const result: IngestResult = await ingestFromAdapter(
-          admin,
-          wrap,
-          options.actorUserId,
-        )
-        bySource[adapter.name].created = result.created.length
-        bySource[adapter.name].updated = result.updated.length
-        bySource[adapter.name].skipped = result.skipped.length
-        // Contribution: newly created = unique-to-this-source this run;
-        // updated = merged into an existing row from another/prior source.
-        bySource[adapter.name].uniqueToSource = result.created.length
-        bySource[adapter.name].mergedIntoExisting = result.updated.length
-        bySource[adapter.name].errors.push(
-          ...result.errors.map((e) => e.error),
-        )
-        created += result.created.length
-        updated += result.updated.length
-        skipped += result.skipped.length
-        errors += result.errors.length
-        topErrors.push(
-          ...result.errors.map((e) => `${adapter.name}: ${e.error}`),
-        )
 
-        // Sightings (best-effort)
-        if (runId) {
-          const sightingRows = [
-            ...result.created.map((p) => ({
-              run_id: runId,
-              prospect_id: p.id,
-              source_name: adapter.name,
-              external_id: p.externalId,
-              outcome: 'kept',
-              fit_class: p.fitClass,
-              reason: 'created',
-            })),
-            ...result.updated.map((p) => ({
-              run_id: runId,
-              prospect_id: p.id,
-              source_name: adapter.name,
-              external_id: p.externalId,
-              outcome: 'updated',
-              fit_class: p.fitClass,
-              reason: 'merged',
-            })),
-            ...result.skipped.slice(0, 50).map((s) => ({
-              run_id: runId,
-              prospect_id: s.existingId ?? null,
-              source_name: adapter.name,
-              outcome: s.reason.startsWith('protected_')
-                ? 'duplicate'
-                : 'duplicate',
-              reason: s.reason,
-            })),
-          ]
-          if (sightingRows.length > 0) {
-            try {
-              await admin.from('prospect_discovery_sightings').insert(sightingRows)
-            } catch {
-              /* best-effort */
+        // Always ingest what this chunk fetched — never advance past unsaved leads.
+        if (records.length > 0) {
+          try {
+            const wrap: ProspectSourceAdapter = {
+              name: 'google_places',
+              fetchRecords: async () => records,
             }
+            const result: IngestResult = await ingestFromAdapter(
+              admin,
+              wrap,
+              options.actorUserId,
+              { enrichWebsites: false },
+            )
+            chunkCreated = result.created.length
+            chunkUpdated = result.updated.length
+            chunkSkipped = result.skipped.length
+            chunkErrors += result.errors.length
+            bySource.google_places.created =
+              (bySource.google_places.created ?? 0) + result.created.length
+            bySource.google_places.updated =
+              (bySource.google_places.updated ?? 0) + result.updated.length
+            bySource.google_places.skipped =
+              (bySource.google_places.skipped ?? 0) + result.skipped.length
+            bySource.google_places.uniqueToSource = bySource.google_places.created
+            bySource.google_places.mergedIntoExisting = bySource.google_places.updated
+            if (result.errors.length) {
+              topErrors.push(
+                ...result.errors
+                  .slice(0, 3)
+                  .map((e) => `google_places: ${e.error}`),
+              )
+            }
+          } catch (e) {
+            chunkErrors += 1
+            chunkFound = 0
+            bySource.google_places.found = prevPlacesFound
+            topErrors.push(`google_places: ${unknownErrorMessage(e)}`)
+            // Roll back job cursor so the next chunk retries this slice.
+            cursor.placesJobOffset = s.jobsOffset
+            stopReason = 'ingest_failed'
           }
         }
-      } catch (e) {
-        const message = unknownErrorMessage(e)
-        bySource[adapter.name].errors.push(message)
-        errors += 1
-        topErrors.push(`${adapter.name}: ${message}`)
+
+        if (stopReason !== 'ingest_failed' && !s.moreJobs) {
+          cursor.phase = nextPhaseAfter(cursor)
+        }
       }
+    } else if (cursor.phase === 'osm' && cursor.sourcesWanted.includes('osm')) {
+      const adapter = new OsmOverpassProspectAdapter({
+        categorySlugs,
+        city,
+        totalBudget: budget,
+        perCategoryLimit: getDiscoveryPerCategoryCap(),
+      })
+      await writeRunProgress(admin, runId, {
+        percent: 78,
+        phase: 'osm',
+        labelHe: 'סורק OpenStreetMap…',
+        apiCalls: cursor.cumulative.apiCalls,
+        apiCallBudget,
+      })
+      const records = await adapter.fetchRecords()
+      chunkFound = records.length
+      bySource.osm = {
+        found: records.length,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        errors: adapter.lastCategoryErrors.slice(0, 5),
+      }
+      if (adapter.lastCategoryErrors.length) {
+        chunkErrors += adapter.lastCategoryErrors.length
+        topErrors.push(
+          ...adapter.lastCategoryErrors.slice(0, 3).map((e) => `osm: ${e}`),
+        )
+      }
+      if (records.length > 0) {
+        try {
+          const result = await ingestFromAdapter(
+            admin,
+            { name: 'osm', fetchRecords: async () => records },
+            options.actorUserId,
+            { enrichWebsites: false },
+          )
+          chunkCreated = result.created.length
+          chunkUpdated = result.updated.length
+          chunkSkipped = result.skipped.length
+          chunkErrors += result.errors.length
+          bySource.osm.created = result.created.length
+          bySource.osm.updated = result.updated.length
+          bySource.osm.skipped = result.skipped.length
+          bySource.osm.uniqueToSource = result.created.length
+          bySource.osm.mergedIntoExisting = result.updated.length
+          if (result.errors.length) {
+            topErrors.push(
+              ...result.errors.slice(0, 3).map((e) => `osm: ${e.error}`),
+            )
+          }
+        } catch (e) {
+          chunkErrors += 1
+          topErrors.push(`osm: ${unknownErrorMessage(e)}`)
+        }
+      }
+      cursor.phase = nextPhaseAfter(cursor)
+    } else if (
+      cursor.phase === 'gov' &&
+      cursor.sourcesWanted.includes('gov_pest_control')
+    ) {
+      const adapter = new GovPestControlProspectAdapter({ city })
+      await writeRunProgress(admin, runId, {
+        percent: 90,
+        phase: 'gov',
+        labelHe: 'טוען מאגר מדבירים…',
+        apiCalls: cursor.cumulative.apiCalls,
+        apiCallBudget,
+      })
+      const records = await adapter.fetchRecords()
+      chunkFound = records.length
+      bySource.gov_pest_control = {
+        found: records.length,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+        errors: adapter.lastErrors.slice(0, 5),
+        stats: { fetched: adapter.lastFetched, kept: adapter.lastKept },
+      }
+      if (records.length > 0) {
+        try {
+          const result = await ingestFromAdapter(
+            admin,
+            { name: 'gov_pest_control', fetchRecords: async () => records },
+            options.actorUserId,
+            { enrichWebsites: false },
+          )
+          chunkCreated = result.created.length
+          chunkUpdated = result.updated.length
+          chunkSkipped = result.skipped.length
+          chunkErrors += result.errors.length
+          bySource.gov_pest_control.created = result.created.length
+          bySource.gov_pest_control.updated = result.updated.length
+          bySource.gov_pest_control.skipped = result.skipped.length
+          if (result.errors.length) {
+            topErrors.push(
+              ...result.errors
+                .slice(0, 3)
+                .map((e) => `gov_pest_control: ${e.error}`),
+            )
+          }
+        } catch (e) {
+          chunkErrors += 1
+          topErrors.push(`gov_pest_control: ${unknownErrorMessage(e)}`)
+        }
+      }
+      cursor.phase = 'done'
+    } else {
+      cursor.phase = 'done'
     }
 
-    const details = {
+    cursor.cumulative.found += chunkFound
+    cursor.cumulative.created += chunkCreated
+    cursor.cumulative.updated += chunkUpdated
+    cursor.cumulative.skipped += chunkSkipped
+    cursor.cumulative.errors += chunkErrors
+
+    const prevErrors = Array.isArray(details.allErrors) ? details.allErrors : []
+    const allErrors = [...prevErrors, ...topErrors].slice(0, 20)
+    const done = cursor.phase === 'done'
+
+    const progress: DiscoveryProgress = done
+      ? {
+          percent: 100,
+          phase: 'done',
+          labelHe: 'הגילוי הסתיים',
+          apiCalls: cursor.cumulative.apiCalls,
+          apiCallBudget,
+        }
+      : {
+          percent: Math.min(
+            95,
+            10 +
+              (cursor.placesJobsTotal > 0
+                ? (cursor.placesJobOffset / cursor.placesJobsTotal) * 70
+                : 40),
+          ),
+          phase: cursor.phase === 'places' ? 'places' : cursor.phase,
+          labelHe:
+            cursor.phase === 'places'
+              ? `המשך גילוי Places… ${cursor.placesJobOffset}/${cursor.placesJobsTotal || '?'}`
+              : cursor.phase === 'osm'
+                ? 'המשך → OpenStreetMap'
+                : 'המשך → מאגר מדבירים',
+          apiCalls: cursor.cumulative.apiCalls,
+          apiCallBudget,
+          jobsDone: cursor.placesJobOffset,
+          jobsTotal: cursor.placesJobsTotal || undefined,
+        }
+
+    const nextDetails: RunDetails = {
+      ...details,
+      cursor,
+      heartbeatAt: new Date().toISOString(),
+      progress,
       bySource,
       deletedPrevious,
       budget,
       apiCallBudget,
-      apiCalls: totalApiCalls,
+      apiCalls: cursor.cumulative.apiCalls,
       stopReason,
-      created,
-      updated,
-      skipped,
-      queryYields: queryYields.slice(0, 40),
-      allErrors: topErrors.slice(0, 12),
+      updated: cursor.cumulative.updated,
+      allErrors,
       replacePrevious,
-      progress: {
-        percent: 100,
-        phase: 'done' as const,
-        labelHe: 'הגילוי הסתיים',
-        apiCalls: totalApiCalls,
-        apiCallBudget,
-      },
+      created: cursor.cumulative.created,
+      skipped: cursor.cumulative.skipped,
     }
 
-    if (runId) {
+    if (done) {
       await admin
         .from('prospect_discovery_runs')
         .update({
           status: 'completed',
-          found_count: found,
-          created_count: created,
-          skipped_count: skipped,
-          error_count: errors,
-          error_message: topErrors[0] ?? null,
-          details,
+          found_count: cursor.cumulative.found,
+          created_count: cursor.cumulative.created,
+          skipped_count: cursor.cumulative.skipped,
+          error_count: cursor.cumulative.errors,
+          error_message: allErrors[0] ?? null,
+          details: nextDetails,
           finished_at: new Date().toISOString(),
         })
         .eq('id', runId)
+
+      return {
+        runId,
+        status: 'completed',
+        city,
+        sources: cursor.sourcesWanted,
+        found: cursor.cumulative.found,
+        created: cursor.cumulative.created,
+        updated: cursor.cumulative.updated,
+        skipped: cursor.cumulative.skipped,
+        errors: cursor.cumulative.errors,
+        deletedPrevious,
+        budget,
+        apiCallBudget,
+        errorMessage: allErrors[0],
+        continueRunId: null,
+        chunk: {
+          phase: 'done',
+          placesJobOffset: cursor.placesJobOffset,
+          placesJobsTotal: cursor.placesJobsTotal,
+        },
+        bySource,
+      }
     }
+
+    await admin
+      .from('prospect_discovery_runs')
+      .update({
+        status: 'running',
+        found_count: cursor.cumulative.found,
+        created_count: cursor.cumulative.created,
+        skipped_count: cursor.cumulative.skipped,
+        error_count: cursor.cumulative.errors,
+        error_message: allErrors[0] ?? null,
+        details: nextDetails,
+      })
+      .eq('id', runId)
 
     return {
       runId,
-      status: 'completed',
+      status: 'continue',
       city,
-      sources: sourceNames,
-      found,
-      created,
-      updated,
-      skipped,
-      errors,
+      sources: cursor.sourcesWanted,
+      found: cursor.cumulative.found,
+      created: cursor.cumulative.created,
+      updated: cursor.cumulative.updated,
+      skipped: cursor.cumulative.skipped,
+      errors: cursor.cumulative.errors,
       deletedPrevious,
       budget,
       apiCallBudget,
-      errorMessage: topErrors[0],
+      continueRunId: runId,
+      chunk: {
+        phase: cursor.phase,
+        placesJobOffset: cursor.placesJobOffset,
+        placesJobsTotal: cursor.placesJobsTotal,
+      },
       bySource,
     }
   } catch (e) {
     const message = unknownErrorMessage(e, 'discovery failed')
+    cursor.cumulative.errors += 1
     if (runId) {
       await admin
         .from('prospect_discovery_runs')
         .update({
           status: 'failed',
-          found_count: found,
-          created_count: created,
-          skipped_count: skipped,
-          error_count: errors + 1,
+          found_count: cursor.cumulative.found + chunkFound,
+          created_count: cursor.cumulative.created + chunkCreated,
+          skipped_count: cursor.cumulative.skipped + chunkSkipped,
+          error_count: cursor.cumulative.errors,
           error_message: message,
           details: {
+            ...details,
+            cursor,
             bySource,
             deletedPrevious,
             budget,
             apiCallBudget,
-            apiCalls: totalApiCalls,
-            updated,
             allErrors: [...topErrors, message].slice(0, 12),
             replacePrevious,
           },
@@ -643,12 +826,12 @@ export async function runProspectDiscovery(
       runId,
       status: 'failed',
       city,
-      sources: sourceNames,
-      found,
-      created,
-      updated,
-      skipped,
-      errors: errors + 1,
+      sources: cursor.sourcesWanted,
+      found: cursor.cumulative.found + chunkFound,
+      created: cursor.cumulative.created + chunkCreated,
+      updated: cursor.cumulative.updated + chunkUpdated,
+      skipped: cursor.cumulative.skipped + chunkSkipped,
+      errors: cursor.cumulative.errors,
       deletedPrevious,
       budget,
       apiCallBudget,
@@ -658,10 +841,7 @@ export async function runProspectDiscovery(
   }
 }
 
-export async function listDiscoveryRuns(
-  admin: SupabaseClient,
-  limit = 10,
-) {
+export async function listDiscoveryRuns(admin: SupabaseClient, limit = 10) {
   await releaseStaleDiscoveryRuns(admin).catch(() => 0)
   const { data, error } = await admin
     .from('prospect_discovery_runs')

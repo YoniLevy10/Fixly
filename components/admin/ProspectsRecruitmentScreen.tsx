@@ -571,24 +571,47 @@ export default function ProspectsRecruitmentScreen() {
     }, 800)
 
     try {
-      const postDiscover = async () => {
+      const postDiscover = async (continueRunId?: string | null) => {
         const res = await fetch('/api/admin/prospects/discover', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ replacePrevious }),
+          body: JSON.stringify({
+            replacePrevious: continueRunId ? false : replacePrevious,
+            continueRunId: continueRunId || undefined,
+          }),
         })
         const data = await res.json().catch(() => ({}))
         return { res, data }
       }
 
-      let { res, data } = await postDiscover()
+      // Resume an in-progress chunked run instead of fighting the lock.
+      let resumeId: string | null = null
+      try {
+        const statusRes = await fetch('/api/admin/prospects/discover')
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (typeof statusData.runningRunId === 'string') {
+            resumeId = statusData.runningRunId
+          }
+        }
+      } catch {
+        /* ignore */
+      }
 
-      // Stuck lock: unlock and retry once automatically.
-      if (res.status === 409 || data.status === 'busy') {
+      let { res, data } = await postDiscover(resumeId)
+      let continueRunId: string | null =
+        typeof data.continueRunId === 'string'
+          ? data.continueRunId
+          : resumeId
+
+      // Truly stuck lock (no resumable run): unlock and start fresh once.
+      if ((res.status === 409 || data.status === 'busy') && !resumeId) {
         await fetch('/api/admin/prospects/discover', { method: 'DELETE' }).catch(
           () => null,
         )
-        ;({ res, data } = await postDiscover())
+        ;({ res, data } = await postDiscover(null))
+        continueRunId =
+          typeof data.continueRunId === 'string' ? data.continueRunId : null
       }
 
       if (res.status === 409 || data.status === 'busy') {
@@ -599,14 +622,61 @@ export default function ProspectsRecruitmentScreen() {
         await loadRuns()
         return
       }
-      if (!res.ok && data.status !== 'completed') {
+      if (!res.ok && data.status !== 'completed' && data.status !== 'continue') {
         setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
         return
       }
+
+      // Chunked discovery: keep posting until completed/failed.
+      let guard = 0
+      while (data.status === 'continue' && continueRunId && guard < 80) {
+        guard += 1
+        const chunk = data.chunk as
+          | { phase?: string; placesJobOffset?: number; placesJobsTotal?: number }
+          | undefined
+        if (chunk?.placesJobsTotal && chunk.placesJobOffset != null) {
+          const pct = Math.round(
+            (chunk.placesJobOffset / Math.max(1, chunk.placesJobsTotal)) * 90,
+          )
+          setDiscoveryPercent(Math.max(5, Math.min(95, pct)))
+          setDiscoveryProgressLabel(
+            `ממשיך גילוי… ${chunk.placesJobOffset}/${chunk.placesJobsTotal} · חדשים ${data.created ?? 0}`,
+          )
+        } else {
+          setDiscoveryProgressLabel(
+            `ממשיך גילוי (${chunk?.phase ?? '…'}) · חדשים ${data.created ?? 0}`,
+          )
+        }
+        ;({ res, data } = await postDiscover(continueRunId))
+        continueRunId =
+          typeof data.continueRunId === 'string' ? data.continueRunId : null
+        if (!res.ok && data.status !== 'continue' && data.status !== 'completed') {
+          setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל באמצע')
+          await loadRuns()
+          return
+        }
+      }
+
+      if (data.status === 'continue') {
+        setDiscoveryPercent(90)
+        setDiscoveryProgressLabel('הגילוי עדיין רץ ברקע — הריצו שוב להמשך')
+        setActionMsg(
+          `גילוי חלקי (המשך נדרש): חדשים ${data.created ?? 0} · נסרקו ${data.found ?? 0} · לחצו שוב על גילוי להמשך אותו ריצה`,
+        )
+        await Promise.all([loadList(), loadRuns()])
+        return
+      }
+
+      if (data.status === 'failed') {
+        setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
+        await loadRuns()
+        return
+      }
+
       setDiscoveryPercent(100)
       setDiscoveryProgressLabel('הגילוי הסתיים')
       setActionMsg(
-        `גילוי מצטבר: חדשים ${data.created ?? 0} · עודכנו ${data.updated ?? 0} · דולגו ${data.skipped ?? 0} · קריאות API ${data.bySource?.google_places?.stats?.searchCalls ?? '—'} · תקציב קריאות ${data.apiCallBudget ?? '—'}`,
+        `גילוי מצטבר: חדשים ${data.created ?? 0} · עודכנו ${data.updated ?? 0} · דולגו ${data.skipped ?? 0} · נסרקו ${data.found ?? 0} · קריאות API ${data.bySource?.google_places?.stats?.searchCalls ?? data.chunk?.placesJobOffset ?? '—'}`,
       )
       await Promise.all([loadList(), loadRuns()])
     } finally {

@@ -84,13 +84,22 @@ export function isDiscoveryRunStale(
   const heartbeatStaleMs = opts?.heartbeatStaleMs ?? getDiscoveryHeartbeatStaleMs()
   const started = Date.parse(row.started_at)
   if (!Number.isFinite(started)) return true
-  if (nowMs - started >= maxAgeMs) return true
+
   const hb = heartbeatAtMs(row.details)
-  if (hb == null) {
-    // No heartbeat yet — allow ~45s for the first progress write, then unlock.
-    return nowMs - started >= Math.min(45_000, heartbeatStaleMs)
-  }
-  return nowMs - hb >= heartbeatStaleMs
+
+  // Fresh heartbeat ⇒ alive, even if started_at is old (multi-chunk runs).
+  if (hb != null && nowMs - hb < heartbeatStaleMs) return false
+
+  // Dead heartbeat ⇒ unlock.
+  if (hb != null && nowMs - hb >= heartbeatStaleMs) return true
+
+  // No heartbeat yet: short grace for first progress write, then unlock.
+  if (nowMs - started >= Math.min(45_000, heartbeatStaleMs)) return true
+
+  // Absolute abandonment (past Vercel maxDuration + skew).
+  if (nowMs - started >= maxAgeMs) return true
+
+  return false
 }
 
 /**
