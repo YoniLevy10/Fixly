@@ -69,7 +69,20 @@ export async function GET(request: Request) {
         limit: Number.isFinite(limit) ? limit : 50,
         offset: Number.isFinite(offset) ? offset : 0,
       }),
-      getProspectCounters(auth.admin),
+      getProspectCounters(auth.admin).catch(() => ({
+        byStatus: {},
+        byCategory: [] as { categoryId: string | null; name: string; count: number }[],
+        byCity: [] as { city: string; count: number }[],
+        byFitClass: {},
+        needsReviewCount: 0,
+        total: 0,
+        verifiedTarget: {
+          city: 'ירושלים',
+          perCategory: 10,
+          categorySlugs: [] as string[],
+          verifiedCount: 0,
+        },
+      })),
     ])
 
     return NextResponse.json({

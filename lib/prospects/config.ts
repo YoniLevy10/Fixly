@@ -44,6 +44,17 @@ export const DISCOVERY_PER_CATEGORY_CAP = 250
 /** Hard cap on Places HTTP calls per discovery run. */
 export const DISCOVERY_API_CALL_BUDGET = 300
 
+/**
+ * Soft wall-clock for one discovery HTTP invocation (ms).
+ * Must stay under Vercel `maxDuration` (300s) so we can mark the run
+ * completed/failed before the platform kills the process — otherwise the
+ * DB row stays `running` forever and blocks every later attempt (409).
+ */
+export const DISCOVERY_WALL_CLOCK_MS = 270_000
+
+/** Fail + unlock `running` rows older than this (ms). Past Vercel maxDuration. */
+export const DISCOVERY_STALE_LOCK_MS = 330_000
+
 /** Share of query budget reserved for experimental / low-stats queries. */
 export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
 
@@ -99,4 +110,16 @@ export function getDiscoveryApiCallBudget(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_API_CALL_BUDGET)
   if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 600)
   return DISCOVERY_API_CALL_BUDGET
+}
+
+export function getDiscoveryWallClockMs(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_WALL_CLOCK_MS)
+  if (Number.isFinite(n) && n >= 30_000) return Math.min(Math.floor(n), 290_000)
+  return DISCOVERY_WALL_CLOCK_MS
+}
+
+export function getDiscoveryStaleLockMs(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_STALE_LOCK_MS)
+  if (Number.isFinite(n) && n >= 60_000) return Math.min(Math.floor(n), 3_600_000)
+  return DISCOVERY_STALE_LOCK_MS
 }

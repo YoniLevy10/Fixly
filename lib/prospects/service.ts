@@ -763,11 +763,22 @@ export async function listProspects(
 
   const { data, error, count } = await query
   if (error) {
-    // fit_score column may be missing until migration is applied
-    if (error.message?.includes('fit_score')) {
+    // Newer columns may be missing until migrations are applied — degrade gracefully.
+    const missingCol =
+      /fit_score|fit_class|contactability|website_url|source_refs|license|last_seen_at|search_city/i.test(
+        error.message ?? '',
+      )
+    if (missingCol || error.code === '42703') {
       let fallback = admin
         .from('professional_prospects')
-        .select(PROSPECT_SELECT.replace(', fit_score', ''), { count: 'exact' })
+        .select(
+          `id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
+           business_address, category_id, source_name, source_url, external_id, status,
+           verification_status, last_verified_at, contacted_at, consent_at, notes,
+           waitlist_id, professional_id, created_by, updated_by, created_at, updated_at,
+           ${PROSPECT_CATEGORY_EMBED}`,
+          { count: 'exact' },
+        )
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
       if (filters.status) {
@@ -785,7 +796,7 @@ export async function listProspects(
         .map((r) => mapProspectRow(r as unknown as ProspectRow))
         .map((p) => ({
           ...p,
-          fitScore: scorePersonFit(p.name, p.businessName).score,
+          fitScore: p.fitScore ?? scorePersonFit(p.name, p.businessName).score,
         }))
         .sort((a, b) => (b.fitScore ?? 0) - (a.fitScore ?? 0))
       return { items, total: retry.count ?? 0 }
@@ -802,14 +813,22 @@ export async function listProspects(
 export async function getProspectCounters(
   admin: SupabaseClient,
 ): Promise<ProspectCounters> {
-  const { data, error } = await admin
+  const primary = await admin
     .from('professional_prospects')
     .select(
       `status, city, category_id, fit_class, verification_status, ${PROSPECT_CATEGORY_EMBED}`,
     )
 
-  if (error) throw error
-  const rows = data ?? []
+  let rows: Array<Record<string, unknown>> = []
+  if (primary.error) {
+    const retry = await admin
+      .from('professional_prospects')
+      .select('status, city, category_id, verification_status')
+    if (retry.error) throw retry.error
+    rows = (retry.data ?? []) as Array<Record<string, unknown>>
+  } else {
+    rows = (primary.data ?? []) as Array<Record<string, unknown>>
+  }
 
   const byStatus: Record<string, number> = {}
   const byFitClass: Record<string, number> = {}
@@ -822,11 +841,12 @@ export async function getProspectCounters(
   const recruitSlugs = new Set(getRecruitCategorySlugs())
 
   for (const row of rows) {
-    byStatus[row.status] = (byStatus[row.status] ?? 0) + 1
-    const fc = (row as { fit_class?: string | null }).fit_class || 'unknown'
+    const status = String(row.status ?? '')
+    byStatus[status] = (byStatus[status] ?? 0) + 1
+    const fc = (row.fit_class as string | null | undefined) || 'unknown'
     byFitClass[fc] = (byFitClass[fc] ?? 0) + 1
     if (fc === 'needs_review') needsReviewCount += 1
-    const city = row.city || '—'
+    const city = (row.city as string | null) || '—'
     byCityMap.set(city, (byCityMap.get(city) ?? 0) + 1)
 
     const catRel = row.service_categories as
@@ -834,19 +854,19 @@ export async function getProspectCounters(
       | { name?: string; name_he?: string | null; slug?: string | null }[]
       | null
     const cat = Array.isArray(catRel) ? catRel[0] : catRel
-    const catKey = row.category_id ?? 'none'
+    const catKey = (row.category_id as string | null) ?? 'none'
     const catName = cat?.name_he || cat?.name || 'ללא קטגוריה'
     const prev = byCatMap.get(catKey)
     byCatMap.set(catKey, {
-      categoryId: row.category_id,
+      categoryId: (row.category_id as string | null) ?? null,
       name: catName,
       count: (prev?.count ?? 0) + 1,
     })
 
     const funnelOk = ['verified', 'approved', 'contacted', 'interested', 'joined', 'active']
     if (
-      funnelOk.includes(row.status) &&
-      row.city?.trim() === recruitCity &&
+      funnelOk.includes(status) &&
+      (row.city as string | null | undefined)?.trim() === recruitCity &&
       cat?.slug &&
       recruitSlugs.has(cat.slug)
     ) {

@@ -89,6 +89,8 @@ export type GooglePlacesAdapterOptions = {
   searchAreas?: DiscoverySearchArea[]
   queryStats?: QueryStatRow[]
   fetchImpl?: typeof fetch
+  /** Absolute timestamp (Date.now()) — stop before Vercel kills the process */
+  deadlineAt?: number
   /** Fired after each search call / job step for UI progress */
   onProgress?: (p: {
     jobsDone: number
@@ -110,6 +112,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
   private readonly searchAreas: DiscoverySearchArea[]
   private readonly queryStats: QueryStatRow[]
   private readonly fetchImpl: typeof fetch
+  private readonly deadlineAt: number | null
   private readonly onProgress?: GooglePlacesAdapterOptions['onProgress']
   lastStats: GooglePlacesFetchStats = emptyStats()
 
@@ -121,6 +124,10 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     this.apiKey = key
     this.city = options.city ?? getDiscoveryCity()
     this.fetchImpl = options.fetchImpl ?? fetch
+    this.deadlineAt =
+      typeof options.deadlineAt === 'number' && Number.isFinite(options.deadlineAt)
+        ? options.deadlineAt
+        : null
     this.onProgress = options.onProgress
     this.mappings = getDiscoveryMappingsForSlugs(
       options.categorySlugs ?? getRecruitCategorySlugs(),
@@ -179,6 +186,10 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
     }
 
     for (const job of selected) {
+      if (this.deadlineAt != null && Date.now() >= this.deadlineAt) {
+        stats.stopReason = 'wall_clock'
+        break
+      }
       if (stats.searchCalls >= this.apiCallBudget) {
         stats.stopReason = 'api_call_budget'
         break
@@ -211,6 +222,10 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
 
       try {
         do {
+          if (this.deadlineAt != null && Date.now() >= this.deadlineAt) {
+            stats.stopReason = 'wall_clock'
+            break
+          }
           if (stats.searchCalls >= this.apiCallBudget) {
             stats.stopReason = 'api_call_budget'
             break

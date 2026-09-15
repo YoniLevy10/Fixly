@@ -4,6 +4,7 @@ import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { z } from 'zod'
 import {
+  forceUnlockDiscoveryRuns,
   listDiscoveryRuns,
   runProspectDiscovery,
   type DiscoveryProgress,
@@ -73,5 +74,20 @@ export async function POST(request: Request) {
   } catch (error) {
     trackError(error, { route: 'POST /api/admin/prospects/discover' })
     return NextResponse.json({ error: 'Discovery failed' }, { status: 500 })
+  }
+}
+
+/** Force-clear stuck `running` locks (serverless kill leftover). */
+export async function DELETE() {
+  const auth = await requireAdminApi()
+  if (!auth.ok) return auth.response
+
+  try {
+    const unlocked = await forceUnlockDiscoveryRuns(auth.admin)
+    const runs = await listDiscoveryRuns(auth.admin, 15)
+    return NextResponse.json({ unlocked, runs })
+  } catch (error) {
+    trackError(error, { route: 'DELETE /api/admin/prospects/discover' })
+    return NextResponse.json({ error: 'Unlock failed' }, { status: 500 })
   }
 }
