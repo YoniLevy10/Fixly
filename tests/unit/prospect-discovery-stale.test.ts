@@ -2,37 +2,127 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 describe('discovery stale lock helpers', () => {
-  it('exports wall-clock and stale lock defaults under Vercel maxDuration', async () => {
+  it('exports wall-clock under Vercel maxDuration and short stale windows', async () => {
     const {
       DISCOVERY_WALL_CLOCK_MS,
       DISCOVERY_STALE_LOCK_MS,
+      DISCOVERY_HEARTBEAT_STALE_MS,
       getDiscoveryWallClockMs,
       getDiscoveryStaleLockMs,
+      getDiscoveryHeartbeatStaleMs,
     } = await import('@/lib/prospects/config')
     assert.ok(DISCOVERY_WALL_CLOCK_MS < 300_000)
-    assert.ok(DISCOVERY_STALE_LOCK_MS > 300_000)
+    assert.ok(DISCOVERY_STALE_LOCK_MS <= 180_000)
+    assert.ok(DISCOVERY_HEARTBEAT_STALE_MS <= 120_000)
     assert.equal(getDiscoveryWallClockMs(), DISCOVERY_WALL_CLOCK_MS)
     assert.equal(getDiscoveryStaleLockMs(), DISCOVERY_STALE_LOCK_MS)
+    assert.equal(getDiscoveryHeartbeatStaleMs(), DISCOVERY_HEARTBEAT_STALE_MS)
   })
 
-  it('releaseStaleDiscoveryRuns marks old running rows failed', async () => {
+  it('isDiscoveryRunStale uses heartbeat when present', async () => {
+    const { isDiscoveryRunStale } = await import(
+      '@/lib/prospects/query-stats-store'
+    )
+    const now = Date.now()
+    assert.equal(
+      isDiscoveryRunStale(
+        {
+          started_at: new Date(now - 60_000).toISOString(),
+          details: { heartbeatAt: new Date(now - 5_000).toISOString() },
+        },
+        now,
+        { maxAgeMs: 120_000, heartbeatStaleMs: 90_000 },
+      ),
+      false,
+    )
+    assert.equal(
+      isDiscoveryRunStale(
+        {
+          started_at: new Date(now - 60_000).toISOString(),
+          details: { heartbeatAt: new Date(now - 95_000).toISOString() },
+        },
+        now,
+        { maxAgeMs: 120_000, heartbeatStaleMs: 90_000 },
+      ),
+      true,
+    )
+  })
+
+  it('isDiscoveryRunStale unlocks runs with no heartbeat after grace', async () => {
+    const { isDiscoveryRunStale } = await import(
+      '@/lib/prospects/query-stats-store'
+    )
+    const now = Date.now()
+    assert.equal(
+      isDiscoveryRunStale(
+        {
+          started_at: new Date(now - 10_000).toISOString(),
+          details: {},
+        },
+        now,
+        { maxAgeMs: 120_000, heartbeatStaleMs: 90_000 },
+      ),
+      false,
+    )
+    assert.equal(
+      isDiscoveryRunStale(
+        {
+          started_at: new Date(now - 50_000).toISOString(),
+          details: {},
+        },
+        now,
+        { maxAgeMs: 120_000, heartbeatStaleMs: 90_000 },
+      ),
+      true,
+    )
+  })
+
+  it('releaseStaleDiscoveryRuns marks stale running rows failed', async () => {
     const updates: Array<Record<string, unknown>> = []
+    const now = Date.now()
     const admin = {
       from(table: string) {
         assert.equal(table, 'prospect_discovery_runs')
         return {
+          select() {
+            return {
+              eq() {
+                return Promise.resolve({
+                  data: [
+                    {
+                      id: 'fresh',
+                      started_at: new Date(now - 10_000).toISOString(),
+                      details: {
+                        heartbeatAt: new Date(now - 3_000).toISOString(),
+                      },
+                    },
+                    {
+                      id: 'dead',
+                      started_at: new Date(now - 60_000).toISOString(),
+                      details: {
+                        heartbeatAt: new Date(now - 100_000).toISOString(),
+                      },
+                    },
+                  ],
+                  error: null,
+                })
+              },
+            }
+          },
           update(payload: Record<string, unknown>) {
             updates.push(payload)
             return {
-              eq() {
+              in(col: string, ids: string[]) {
+                assert.equal(col, 'id')
+                assert.deepEqual(ids, ['dead'])
                 return this
               },
-              lt() {
+              eq() {
                 return this
               },
               select() {
                 return Promise.resolve({
-                  data: [{ id: 'run-1' }],
+                  data: [{ id: 'dead' }],
                   error: null,
                 })
               },
@@ -45,10 +135,10 @@ describe('discovery stale lock helpers', () => {
     const { releaseStaleDiscoveryRuns } = await import(
       '@/lib/prospects/query-stats-store'
     )
-    const n = await releaseStaleDiscoveryRuns(admin as never, 60_000)
+    const n = await releaseStaleDiscoveryRuns(admin as never, 120_000)
     assert.equal(n, 1)
     assert.equal(updates[0]?.status, 'failed')
-    assert.match(String(updates[0]?.error_message), /timeout|נקטעה/)
+    assert.match(String(updates[0]?.error_message), /נעילה שוחררה/)
   })
 
   it('forceUnlockDiscoveryRuns clears every running row', async () => {

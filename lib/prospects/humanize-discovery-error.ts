@@ -57,6 +57,13 @@ export function humanizeDiscoveryError(raw: string | null | undefined): string |
   ) {
     return 'OpenStreetMap (Overpass) לא הגיב במלואו — רוב הלידים מגיעים מ-Google Places'
   }
+  if (
+    msg.includes('נעילה שוחררה') ||
+    msg.includes('הריצה הקודמת מתה') ||
+    msg.includes('תהליך שרת נקטע')
+  ) {
+    return 'הנעילה שוחררה — הריצה הקודמת נקטעה; אפשר להריץ שוב'
+  }
   if (msg.includes('timeout') || msg.includes('aborted') || msg.includes('abort')) {
     return 'החיפוש ארך יותר מדי ונקטע — נסו שוב'
   }

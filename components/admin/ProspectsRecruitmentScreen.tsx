@@ -542,12 +542,26 @@ export default function ProspectsRecruitmentScreen() {
     }, 800)
 
     try {
-      const res = await fetch('/api/admin/prospects/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ replacePrevious }),
-      })
-      const data = await res.json().catch(() => ({}))
+      const postDiscover = async () => {
+        const res = await fetch('/api/admin/prospects/discover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ replacePrevious }),
+        })
+        const data = await res.json().catch(() => ({}))
+        return { res, data }
+      }
+
+      let { res, data } = await postDiscover()
+
+      // Stuck lock: unlock and retry once automatically.
+      if (res.status === 409 || data.status === 'busy') {
+        await fetch('/api/admin/prospects/discover', { method: 'DELETE' }).catch(
+          () => null,
+        )
+        ;({ res, data } = await postDiscover())
+      }
+
       if (res.status === 409 || data.status === 'busy') {
         setActionMsg(
           data.errorMessage ??

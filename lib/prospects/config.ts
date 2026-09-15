@@ -46,14 +46,24 @@ export const DISCOVERY_API_CALL_BUDGET = 300
 
 /**
  * Soft wall-clock for one discovery HTTP invocation (ms).
- * Must stay under Vercel `maxDuration` (300s) so we can mark the run
- * completed/failed before the platform kills the process — otherwise the
- * DB row stays `running` forever and blocks every later attempt (409).
+ * Must stay under Vercel `maxDuration` (300s) with headroom for ingest + DB finalize.
  */
-export const DISCOVERY_WALL_CLOCK_MS = 270_000
+export const DISCOVERY_WALL_CLOCK_MS = 220_000
 
-/** Fail + unlock `running` rows older than this (ms). Past Vercel maxDuration. */
-export const DISCOVERY_STALE_LOCK_MS = 330_000
+/**
+ * Absolute max age of a `running` row by started_at (ms).
+ * Kept short so a killed process cannot block the UI for many minutes.
+ */
+export const DISCOVERY_STALE_LOCK_MS = 120_000
+
+/**
+ * If progress heartbeat is older than this, treat the run as dead even if
+ * started_at is recent (serverless kill mid-flight).
+ */
+export const DISCOVERY_HEARTBEAT_STALE_MS = 90_000
+
+/** Leave this much wall-clock for ingest + finalize after Places stops. */
+export const DISCOVERY_FINALIZE_BUFFER_MS = 50_000
 
 /** Share of query budget reserved for experimental / low-stats queries. */
 export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
@@ -114,12 +124,24 @@ export function getDiscoveryApiCallBudget(): number {
 
 export function getDiscoveryWallClockMs(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_WALL_CLOCK_MS)
-  if (Number.isFinite(n) && n >= 30_000) return Math.min(Math.floor(n), 290_000)
+  if (Number.isFinite(n) && n >= 30_000) return Math.min(Math.floor(n), 280_000)
   return DISCOVERY_WALL_CLOCK_MS
 }
 
 export function getDiscoveryStaleLockMs(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_STALE_LOCK_MS)
-  if (Number.isFinite(n) && n >= 60_000) return Math.min(Math.floor(n), 3_600_000)
+  if (Number.isFinite(n) && n >= 30_000) return Math.min(Math.floor(n), 600_000)
   return DISCOVERY_STALE_LOCK_MS
+}
+
+export function getDiscoveryHeartbeatStaleMs(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_HEARTBEAT_STALE_MS)
+  if (Number.isFinite(n) && n >= 20_000) return Math.min(Math.floor(n), 300_000)
+  return DISCOVERY_HEARTBEAT_STALE_MS
+}
+
+export function getDiscoveryFinalizeBufferMs(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_FINALIZE_BUFFER_MS)
+  if (Number.isFinite(n) && n >= 15_000) return Math.min(Math.floor(n), 90_000)
+  return DISCOVERY_FINALIZE_BUFFER_MS
 }

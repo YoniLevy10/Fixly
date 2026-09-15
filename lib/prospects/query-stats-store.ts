@@ -1,7 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { QueryYieldUpdate } from '@/lib/prospects/query-queue'
 import { computeYieldScore } from '@/lib/prospects/query-queue'
-import { getDiscoveryStaleLockMs } from '@/lib/prospects/config'
+import {
+  getDiscoveryHeartbeatStaleMs,
+  getDiscoveryStaleLockMs,
+} from '@/lib/prospects/config'
 
 export async function upsertQueryStats(
   admin: SupabaseClient,
@@ -64,27 +67,69 @@ export async function loadQueryStats(
   return data ?? []
 }
 
+function heartbeatAtMs(details: unknown): number | null {
+  if (!details || typeof details !== 'object') return null
+  const raw = (details as { heartbeatAt?: unknown }).heartbeatAt
+  if (typeof raw !== 'string' || !raw.trim()) return null
+  const t = Date.parse(raw)
+  return Number.isFinite(t) ? t : null
+}
+
+export function isDiscoveryRunStale(
+  row: { started_at: string; details?: unknown },
+  nowMs: number = Date.now(),
+  opts?: { maxAgeMs?: number; heartbeatStaleMs?: number },
+): boolean {
+  const maxAgeMs = opts?.maxAgeMs ?? getDiscoveryStaleLockMs()
+  const heartbeatStaleMs = opts?.heartbeatStaleMs ?? getDiscoveryHeartbeatStaleMs()
+  const started = Date.parse(row.started_at)
+  if (!Number.isFinite(started)) return true
+  if (nowMs - started >= maxAgeMs) return true
+  const hb = heartbeatAtMs(row.details)
+  if (hb == null) {
+    // No heartbeat yet — allow ~45s for the first progress write, then unlock.
+    return nowMs - started >= Math.min(45_000, heartbeatStaleMs)
+  }
+  return nowMs - hb >= heartbeatStaleMs
+}
+
 /**
  * Mark abandoned `running` rows as failed so a killed serverless invocation
- * cannot block discovery forever.
+ * cannot block discovery forever. Uses started_at AND progress heartbeat.
  */
 export async function releaseStaleDiscoveryRuns(
   admin: SupabaseClient,
   maxAgeMs: number = getDiscoveryStaleLockMs(),
 ): Promise<number> {
-  const cutoff = new Date(Date.now() - maxAgeMs).toISOString()
-  const { data, error } = await admin
+  const { data: running, error } = await admin
+    .from('prospect_discovery_runs')
+    .select('id, started_at, details')
+    .eq('status', 'running')
+  if (error || !running?.length) return 0
+
+  const now = Date.now()
+  const staleIds = running
+    .filter((row) =>
+      isDiscoveryRunStale(row, now, {
+        maxAgeMs,
+        heartbeatStaleMs: getDiscoveryHeartbeatStaleMs(),
+      }),
+    )
+    .map((row) => row.id)
+  if (staleIds.length === 0) return 0
+
+  const { data, error: updErr } = await admin
     .from('prospect_discovery_runs')
     .update({
       status: 'failed',
       error_message:
-        'ריצה נקטעה (timeout / תהליך מת) — הנעילה שוחררה אוטומטית',
+        'הנעילה שוחררה אוטומטית — הריצה הקודמת מתה בלי סיום (תהליך שרת נקטע)',
       finished_at: new Date().toISOString(),
     })
+    .in('id', staleIds)
     .eq('status', 'running')
-    .lt('started_at', cutoff)
     .select('id')
-  if (error) return 0
+  if (updErr) return 0
   return data?.length ?? 0
 }
 
