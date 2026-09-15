@@ -230,7 +230,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
               {request.title ?? request.description}
             </h2>
             <p className="text-sm text-foreground/70 font-medium">{request.location}</p>
-            <div className="mt-3">
+            <div className="mt-3" data-tour="status-progress">
               <p className="text-xs font-bold text-foreground mb-1">{t('improvements.progress')}</p>
               <div className="h-3 bg-muted rounded-full overflow-hidden border border-border">
                 <div
@@ -240,7 +240,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
               </div>
             </div>
             {showLiveMap && liveTracking?.liveTrackingActive && liveTracking.proLat != null && (
-              <div className="mt-4">
+              <div className="mt-4" data-tour="live-map">
                 <p className="text-sm font-bold text-secondary mb-2 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                   {t('tracking.liveTitle')}
@@ -330,7 +330,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
 
         <div>
           {!isCancelled && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5" data-tour="status-timeline">
               <h3 className="font-bold mb-5">{t('requests.statusTitle')}</h3>
               <div className="space-y-4">
                 {steps.map((step, index) => {

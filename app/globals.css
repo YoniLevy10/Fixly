@@ -235,3 +235,28 @@ html[dir='rtl'] .fixly-splash-bar {
     animation: none !important;
   }
 }
+
+/* Investor tour — keep content clear of the narrator card */
+html.fixly-tour-active body {
+  padding-bottom: 12rem;
+}
+
+/* driver.js Hebrew / Fixly branding */
+.fixly-driver-popover.driver-popover {
+  direction: rtl;
+  text-align: right;
+  font-family: var(--font-heebo), Heebo, sans-serif;
+  border-radius: 1rem;
+  max-width: 20rem;
+}
+
+.fixly-driver-popover .driver-popover-title {
+  font-weight: 800;
+  color: #123563;
+}
+
+.fixly-driver-popover .driver-popover-description {
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.5;
+}

@@ -7,6 +7,7 @@ import {
   writeTourRequest,
   clearTourRequest,
 } from '@/lib/demo/tour-session'
+import { narrativeFor } from '@/lib/demo/tour-narrative'
 import { routes } from '@/lib/routes'
 
 export const DEMO_TOUR_STORAGE_KEY = 'fixly-demo-tour-request-id'
@@ -26,7 +27,7 @@ export type DemoTourStep = {
   labelKey: string
 }
 
-/** Ordered investor walkthrough — kept short so it always reaches a clean exit */
+/** Ordered investor walkthrough — narrative beats match lib/demo/tour-narrative.ts */
 export const DEMO_TOUR_STEPS: DemoTourStep[] = [
   { id: 'create', labelKey: 'demo.tourStepCreate' },
   { id: 'pending', labelKey: 'demo.tourStepPending' },
@@ -49,6 +50,8 @@ export type RunInvestorTourOptions = {
   switchRole: (role: 'customer' | 'professional') => void
   navigate: (path: string) => void
   onStep?: (step: DemoTourStepId) => void
+  /** Optional spotlight after a beat lands (driver.js). */
+  onSpotlight?: (step: DemoTourStepId) => Promise<void> | void
   /** Multiplier for delays (tests can use 0) */
   delayScale?: number
   signal?: AbortSignal
@@ -114,18 +117,39 @@ function withStatus(current: MockRequest, status: RequestStatus): MockRequest {
   return next
 }
 
+async function beat(
+  step: DemoTourStepId,
+  options: {
+    wait: (ms: number) => Promise<void>
+    onStep?: (step: DemoTourStepId) => void
+    onSpotlight?: (step: DemoTourStepId) => Promise<void> | void
+    /** Extra settle time after navigation before spotlight */
+    settleMs?: number
+  }
+) {
+  const { wait, onStep, onSpotlight, settleMs = 450 } = options
+  onStep?.(step)
+  await wait(settleMs)
+  await onSpotlight?.(step)
+  const dwell = narrativeFor(step)?.dwellMs ?? 2500
+  await wait(dwell)
+}
+
 /**
  * Creates a demo booking and advances it through the full lifecycle,
- * flipping customer ↔ pro so investors see both sides.
+ * flipping customer ↔ pro so investors see both sides — with calm dwells
+ * and optional spotlights so jumps feel intentional.
  *
- * Always ends with a hard exit: clear tour session, customer role, home.
- * Abort / stop must leave the same clean state (handled by the provider).
+ * Always ends on Yossi's pro dashboard (hard exit, single landing).
  */
 export async function runInvestorDemoTour(
   options: RunInvestorTourOptions
 ): Promise<string> {
-  const { switchRole, navigate, onStep, delayScale = 1, signal } = options
+  const { switchRole, navigate, onStep, onSpotlight, delayScale = 1, signal } =
+    options
   const wait = (ms: number) => delay(ms, delayScale, signal)
+  const play = (step: DemoTourStepId, settleMs?: number) =>
+    beat(step, { wait, onStep, onSpotlight, settleMs })
 
   const pro = getProfessionalById(DEMO_PROFESSIONAL_ID)
   const professionalName = pro?.name ?? 'יוסי כהן'
@@ -154,47 +178,49 @@ export async function runInvestorDemoTour(
     sessionStorage.setItem(DEMO_TOUR_STORAGE_KEY, current.id)
   }
 
-  onStep?.('pending')
-  navigate(`/tracking/${current.id}`)
-  await wait(1800)
+  // Let create story finish before first navigation
+  await wait(narrativeFor('create')?.dwellMs ?? 2200)
 
-  // Pro side: show dashboard, then auto-accept
+  // Customer: pending tracking
+  navigate(`/tracking/${current.id}`)
+  await play('pending', 700)
+
+  // Pro: dashboard + auto-accept flow
   switchRole('professional')
   navigate('/pro/dashboard')
-  await wait(1400)
+  await wait(900)
 
   for (const status of STATUS_FLOW) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     current = await persistTourRequest(withStatus(current, status))
-    onStep?.(status as DemoTourStepId)
-    await wait(status === 'on_the_way' ? 1400 : 1200)
 
     if (status === 'on_the_way') {
+      await play('on_the_way', 500)
       switchRole('customer')
-      onStep?.('customer_map')
       navigate(`/tracking/${current.id}`)
-      // Live map beat — still the highlight, but shorter
-      await wait(4000)
+      await play('customer_map', 900)
       switchRole('professional')
       navigate('/pro/dashboard')
-      await wait(1200)
+      await wait(800)
+      continue
     }
+
+    if (status === 'completed') {
+      // Show completion on the customer tracking screen (payment + timeline)
+      switchRole('customer')
+      navigate(`/tracking/${current.id}`)
+      await play('completed', 800)
+      continue
+    }
+
+    await play(status as DemoTourStepId, 600)
   }
 
-  switchRole('customer')
-  onStep?.('completed')
-  navigate(`/tracking/${current.id}`)
-  await wait(1600)
   onStep?.('done')
-  await wait(900)
+  await wait(narrativeFor('done')?.dwellMs ?? 2200)
 
-  // Hard exit — never leave the UI stuck on the tour job / pro "done" tab
+  // Single hard landing — Yossi's inbox (no home→dashboard flicker)
   finishInvestorDemoTour({ switchRole, navigate })
-
-  // Land on Yossi's live inbox — clear exit from tracking dead-end
-  switchRole('professional')
-  navigate('/pro/dashboard')
-  await wait(800)
 
   return current.id
 }
@@ -208,8 +234,8 @@ export function finishInvestorDemoTour(options: {
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.removeItem(DEMO_TOUR_STORAGE_KEY)
   }
-  options.switchRole('customer')
-  options.navigate(routes.home)
+  options.switchRole('professional')
+  options.navigate(routes.proDashboard)
 }
 
 /** Pure helper for unit tests — status sequence investors see */
