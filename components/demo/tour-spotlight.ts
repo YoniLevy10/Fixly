@@ -1,8 +1,8 @@
 'use client'
 
 /**
- * Thin driver.js wrapper — spotlights for investor tour beats.
- * Loaded only while the tour runs (dynamic import keeps home path light).
+ * Thin driver.js wrapper — stage cutout only (no popover).
+ * Story copy lives in DemoTourNarrator so we never stack two text layers.
  */
 
 export type SpotlightHandle = {
@@ -11,37 +11,35 @@ export type SpotlightHandle = {
 
 export async function showTourSpotlight(
   selector: string,
-  title: string,
-  description: string
+  options?: { overlayOpacity?: number }
 ): Promise<SpotlightHandle | null> {
   if (typeof window === 'undefined') return null
 
   const el = document.querySelector(selector)
   if (!el) return null
 
+  // Never spotlight a full-viewport overlay — that paints a second screen on top.
+  const rect = el.getBoundingClientRect()
+  if (rect.width >= window.innerWidth * 0.95 && rect.height >= window.innerHeight * 0.85) {
+    return null
+  }
+
   const { driver } = await import('driver.js')
   await import('driver.js/dist/driver.css')
 
   const d = driver({
-    popoverClass: 'fixly-driver-popover',
-    stagePadding: 10,
+    popoverClass: 'fixly-driver-popover fixly-driver-popover--hidden',
+    stagePadding: 8,
     stageRadius: 14,
     allowClose: false,
-    overlayOpacity: 0.45,
+    // Keep soft — pro sheet already has its own dim backdrop
+    overlayOpacity: options?.overlayOpacity ?? 0.28,
     smoothScroll: true,
     disableActiveInteraction: true,
   })
 
-  d.highlight({
-    element: selector,
-    popover: {
-      title,
-      description,
-      side: 'bottom',
-      align: 'center',
-      showButtons: [],
-    },
-  })
+  // Stage highlight only — narrator owns the Hebrew story text
+  d.highlight({ element: selector })
 
   return {
     destroy: () => {
