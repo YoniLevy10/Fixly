@@ -586,6 +586,7 @@ export default function ProDashboardScreen() {
 
       {selectedRequest && (
         <div
+          data-tour="pro-job-sheet"
           className="fixed inset-0 z-[70] flex items-end lg:items-center justify-center bg-black/40 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
           onClick={() => setSelectedRequest(null)}
           role="presentation"

@@ -5,22 +5,23 @@ import { useRouter } from 'next/navigation'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useAuth } from '@/lib/auth/auth-provider'
 import type { DemoTourStepId } from '@/lib/demo/investor-tour'
+import { DEMO_TOUR_STEPS } from '@/lib/demo/investor-tour'
+import { narrativeFor } from '@/lib/demo/tour-narrative'
 import { DemoTourContext } from '@/components/demo/demo-tour-context'
+import { translate } from '@/lib/i18n/translate'
+import { useLocale } from '@/lib/i18n/locale-provider'
 
 /**
  * Layout-level tour controller — survives route changes.
  * Critical: /demo must NOT own the AbortController, or navigating to
  * /tracking aborts the walkthrough mid-flight.
  *
- * Lifecycle: start → steps → done → hard exit (clear session, home, idle UI).
- * Stop / abort uses the same hard exit so the pro dashboard never stays stuck.
- *
- * investor-tour is dynamically imported so the home critical path does not
- * pay for the full mock walkthrough graph.
+ * Lifecycle: start → narrative beats + spotlights → hard exit to pro dashboard.
  */
 export function DemoTourProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { switchDemoRole } = useAuth()
+  const { locale } = useLocale()
   const [tourRunning, setTourRunning] = useState(false)
   const [tourStep, setTourStep] = useState<DemoTourStepId | null>(null)
   const [tourError, setTourError] = useState<string | null>(null)
@@ -28,10 +29,19 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
   const runningRef = useRef(false)
   const routerRef = useRef(router)
   const switchRef = useRef(switchDemoRole)
+  const spotlightRef = useRef<{ destroy: () => void } | null>(null)
+  const localeRef = useRef(locale)
   routerRef.current = router
   switchRef.current = switchDemoRole
+  localeRef.current = locale
+
+  const clearSpotlight = useCallback(() => {
+    spotlightRef.current?.destroy()
+    spotlightRef.current = null
+  }, [])
 
   const exitTourUi = useCallback(async () => {
+    clearSpotlight()
     const { finishInvestorDemoTour } = await import('@/lib/demo/investor-tour')
     finishInvestorDemoTour({
       switchRole: (role) => switchRef.current(role),
@@ -40,13 +50,43 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
     runningRef.current = false
     setTourRunning(false)
     setTourStep(null)
-  }, [])
+  }, [clearSpotlight])
 
   const stopTour = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
     void exitTourUi()
   }, [exitTourUi])
+
+  const runSpotlight = useCallback(async (step: DemoTourStepId) => {
+    clearSpotlight()
+    const beat = narrativeFor(step)
+    if (!beat?.spotlight) return
+
+    const { showTourSpotlight, waitForSelector } = await import(
+      '@/components/demo/tour-spotlight'
+    )
+    await waitForSelector(beat.spotlight, 4500)
+
+    const titleKey =
+      DEMO_TOUR_STEPS.find((s) => s.id === step)?.labelKey ?? 'demo.tourRunning'
+    const storyMap: Record<DemoTourStepId, string> = {
+      create: 'demo.tourStoryCreate',
+      pending: 'demo.tourStoryPending',
+      accepted: 'demo.tourStoryAccepted',
+      on_the_way: 'demo.tourStoryOnTheWay',
+      customer_map: 'demo.tourStoryMap',
+      in_progress: 'demo.tourStoryInProgress',
+      completed: 'demo.tourStoryCompleted',
+      done: 'demo.tourStoryDone',
+    }
+    const handle = await showTourSpotlight(
+      beat.spotlight,
+      translate(localeRef.current, titleKey),
+      translate(localeRef.current, storyMap[step])
+    )
+    spotlightRef.current = handle
+  }, [clearSpotlight])
 
   const startTour = useCallback(async () => {
     if (!isDemoDataMode()) return
@@ -68,6 +108,7 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
         switchRole: (role) => switchRef.current(role),
         navigate: (path) => routerRef.current.push(path),
         onStep: setTourStep,
+        onSpotlight: runSpotlight,
         signal: ac.signal,
       })
       // Successful finish already called finishInvestorDemoTour inside the runner
@@ -81,11 +122,13 @@ export function DemoTourProvider({ children }: { children: ReactNode }) {
       setTourError(err instanceof Error ? err.message : 'הסיור נכשל — נסו שוב')
       await exitTourUi()
     } finally {
+      clearSpotlight()
       if (abortRef.current === ac) abortRef.current = null
       runningRef.current = false
       setTourRunning(false)
+      setTourStep(null)
     }
-  }, [exitTourUi])
+  }, [clearSpotlight, exitTourUi, runSpotlight])
 
   const value = useMemo(
     () => ({ tourRunning, tourStep, tourError, startTour, stopTour }),

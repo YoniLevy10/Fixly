@@ -7,6 +7,7 @@ import { DemoTourProvider } from '@/components/demo/DemoTourProvider'
 import AuthBootSplash from '@/components/brand/AuthBootSplash'
 import NativeBootstrap from '@/components/native/NativeBootstrap'
 import DemoModeBanner from '@/components/demo/DemoModeBanner'
+import DemoTourNarrator from '@/components/demo/DemoTourNarrator'
 import PushBootstrap from '@/components/push/PushBootstrap'
 import OfflineBanner from '@/components/shared/OfflineBanner'
 import ReferralCapture from '@/components/shared/ReferralCapture'
@@ -19,6 +20,7 @@ export default function AppProviders({ children }: { children: ReactNode }) {
           <DemoTourProvider>
             <NativeBootstrap />
             <DemoModeBanner />
+            <DemoTourNarrator />
             <PushBootstrap />
             <Suspense fallback={null}>
               <ReferralCapture />

@@ -6,7 +6,6 @@ import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { routes } from '@/lib/routes'
-import { DEMO_TOUR_STEPS } from '@/lib/demo/investor-tour'
 import { useDemoTour } from '@/components/demo/DemoTourProvider'
 
 const BANNER_HEIGHT_VAR = '--fixly-demo-banner-h'
@@ -28,7 +27,7 @@ export default function DemoModeBanner() {
   const { user, switchDemoRole } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const { tourRunning, tourStep, tourError, startTour, stopTour } = useDemoTour()
+  const { tourRunning, tourError, startTour } = useDemoTour()
   const bannerRef = useRef<HTMLDivElement>(null)
 
   const isMarketingSurface =
@@ -38,7 +37,7 @@ export default function DemoModeBanner() {
   // Keep branded login / splash surfaces clean (OpticalCenter / Bamakor style).
   const isLoginSurface = pathname === '/login'
   const visible =
-    isDemoDataMode() && !isMarketingSurface && !isLoginSurface
+    isDemoDataMode() && !isMarketingSurface && !isLoginSurface && !tourRunning
 
   useLayoutEffect(() => {
     if (!visible) {
@@ -68,37 +67,6 @@ export default function DemoModeBanner() {
   if (!visible) return null
 
   const isPro = user.role === 'professional'
-  const stepMeta = tourStep
-    ? DEMO_TOUR_STEPS.find((s) => s.id === tourStep)
-    : null
-
-  // During the walkthrough: one calm status line — no role toggle clutter
-  if (tourRunning) {
-    return (
-      <div
-        ref={bannerRef}
-        className="sticky top-0 z-[60] bg-secondary text-secondary-foreground text-xs font-bold py-1.5 px-3 shadow-sm"
-      >
-        <div className="flex flex-nowrap items-center justify-center gap-x-3 overflow-x-auto scrollbar-hide whitespace-nowrap">
-          <span>
-            {stepMeta ? t(stepMeta.labelKey) : t('demo.tourRunning')}
-          </span>
-          <button
-            type="button"
-            onClick={stopTour}
-            className="underline underline-offset-2 hover:opacity-90 shrink-0"
-          >
-            {t('demo.tourStop')}
-          </button>
-        </div>
-        {tourError ? (
-          <div className="mt-1 text-center font-medium text-red-900 whitespace-normal">
-            {tourError}
-          </div>
-        ) : null}
-      </div>
-    )
-  }
 
   return (
     <div
