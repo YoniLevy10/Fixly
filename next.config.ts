@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
       { source: '/dashboard', destination: '/my-requests', permanent: false },
       { source: '/pro-dashboard', destination: '/pro/dashboard', permanent: false },
       { source: '/tracking', destination: '/my-requests', permanent: false },
+      // Dead marketing stubs → canonical demand campaign landing
+      { source: '/go', destination: '/waitlist', permanent: true },
+      { source: '/go/:path*', destination: '/waitlist', permanent: true },
     ]
   },
 }

@@ -3,16 +3,15 @@ import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
 import { prelaunchCopy } from '@/lib/marketing/prelaunch-copy'
 import {
   DEFAULT_DESCRIPTION_HE,
-  DEFAULT_TITLE_HE,
   SITE_URL,
 } from '@/lib/site-config'
 
 export const metadata: Metadata = {
-  title: DEFAULT_TITLE_HE,
+  title: 'הרשמה מוקדמת | Fixly',
   description: DEFAULT_DESCRIPTION_HE,
   alternates: { canonical: `${SITE_URL}/waitlist` },
   openGraph: {
-    title: DEFAULT_TITLE_HE,
+    title: 'הרשמה מוקדמת | Fixly',
     description: DEFAULT_DESCRIPTION_HE,
     url: `${SITE_URL}/waitlist`,
     siteName: 'Fixly',

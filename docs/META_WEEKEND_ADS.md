@@ -1,6 +1,8 @@
 # Meta Weekend Ads — ₪100 budget (paid only)
 
-Goal: drive waitlist signups on **https://fixly.tech** with a single Meta (Facebook + Instagram) campaign. No organic posting required.
+Goal: drive **customer demand waitlist** signups on **https://fixly.tech/waitlist** with a single Meta (Facebook + Instagram) campaign. No organic posting required.
+
+> URL map: see [`ACQUISITION_URLS.md`](./ACQUISITION_URLS.md). Pros go through `/pro/join` (lead engine), not this campaign.
 
 **Honest expectation:** 100 signups for ₪100 (≈ ₪1 CPL) is a stretch. Typical Israeli waitlist CPL on Meta is often much higher. This run maximizes conversion + post-signup WhatsApp share amplification. Measure CPL after ₪50 and decide whether to continue.
 
@@ -13,7 +15,7 @@ Goal: drive waitlist signups on **https://fixly.tech** with a single Meta (Faceb
    - `NEXT_PUBLIC_META_PIXEL_ID` = your Pixel ID
    - `NEXT_PUBLIC_FF_ANALYTICS=true` (optional but recommended with GA4)
    - Redeploy after saving.
-3. Open https://fixly.tech → Events Manager → Test events → confirm **PageView**.
+3. Open https://fixly.tech/waitlist → Events Manager → Test events → confirm **PageView**.
 4. Submit a test waitlist entry → confirm **CompleteRegistration** (and custom `waitlist_signup_completed`).
 
 Do **not** run ads until PageView + CompleteRegistration appear.
@@ -40,16 +42,18 @@ Do **not** run ads until PageView + CompleteRegistration appear.
 ### Destination URL (copy-paste)
 
 ```
-https://fixly.tech/?utm_source=meta&utm_medium=paid&utm_campaign=weekend_waitlist&utm_content=feed_v1
+https://fixly.tech/waitlist?utm_source=meta&utm_medium=paid&utm_campaign=weekend_waitlist&utm_content=feed_v1
 ```
 
 Use `utm_content=stories_v1` / `reels_v1` if you duplicate the ad for placement-specific creatives.
+
+**Do not** send paid demand traffic to `https://fixly.tech/` — that URL is the product demo while demo mode is on.
 
 ---
 
 ## 2) Creative copy (Hebrew)
 
-**Primary text (option A — customers):**
+**Primary text (customers — 100% of this budget):**
 
 ```
 יש תקלה בבית? די עם עשרות טלפונים.
@@ -59,20 +63,12 @@ Fixly — בקשה אחת, התאמה לבעל מקצוע מאומת, ומעקב
 הצטרפו בחינם להרשמה המוקדמת לפני הפתיחה.
 ```
 
-**Primary text (option B — pros, 30% of budget max):**
-
-```
-בעלי מקצוע: פחות לידים קרים, יותר בקשות רלוונטיות לפי אזור ותחום.
-
-נרשמים לפיילוט של Fixly — עדיפות בכניסה + 3 לידים ראשונים.
-```
+Professional outreach stays on the lead-engine path (`/pro/join`), not this Meta waitlist campaign.
 
 **Headline:** `Fixly — הצטרפו בחינם`  
 **Description:** `הרשמה מוקדמת · בלי כרטיס אשראי`
 
 **Image tip:** Clean photo of a home repair / tools / sink fix — no fake “1,000 joined” badges. Brand mark “Fixly.” visible. Square 1080×1080 + 9:16 crop for Stories/Reels.
-
-Spend split recommendation: **70% customers / 30% pros** (two ads in one ad set, or two ad sets sharing the ₪100).
 
 ---
 

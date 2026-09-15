@@ -10,13 +10,14 @@ The homepage has one job in pre-launch: convert qualified visitors into waitlist
 Fixly is an **execution network** fed first by Bamakor (= BINO) and business demand. Private consumers open only after local density — see [`DIFFERENTIATION.md`](./DIFFERENTIATION.md).
 
 Primary conversion:
-- Customer: completed waitlist signup.
-- Professional: completed waitlist signup with category/city when possible.
+- Customer: completed waitlist signup on **`/waitlist`** (paid demand campaign).
+- Professional: join via **`/pro/join`** (lead engine / outreach) — not the dual form on the landing.
+
+See [`ACQUISITION_URLS.md`](./ACQUISITION_URLS.md) for the canonical URL map.
 
 Secondary signals:
 - Hero CTA click.
 - Signup started.
-- Audience switch.
 - Scroll depth.
 
 ## Core diagnosis of V1

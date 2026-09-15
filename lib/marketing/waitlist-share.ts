@@ -1,8 +1,15 @@
 import { SITE_URL } from '@/lib/site-config'
 
-/** Share link after waitlist signup — amplifies paid Meta traffic. */
+/** Canonical demand-campaign landing (not `/` — that is the product demo). */
+export const WAITLIST_LANDING_PATH = '/waitlist'
+
+/** Canonical pro join from lead-engine / outreach. */
+export const PRO_JOIN_PATH = '/pro/join'
+
+/** Share link after waitlist signup — amplifies paid Meta traffic onto /waitlist. */
 export function buildWaitlistShareUrl(audience: 'customer' | 'professional'): string {
-  const url = new URL(SITE_URL)
+  const path = audience === 'professional' ? PRO_JOIN_PATH : WAITLIST_LANDING_PATH
+  const url = new URL(path, SITE_URL.endsWith('/') ? SITE_URL : `${SITE_URL}/`)
   url.searchParams.set('utm_source', 'share')
   url.searchParams.set('utm_medium', 'whatsapp')
   url.searchParams.set('utm_campaign', 'weekend_waitlist')
