@@ -295,6 +295,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
               placeTypes,
               pureServiceAreaBusiness: sab,
               searchAreaHint: job.area.labelHe,
+              categorySlug: job.categorySlug,
             })
 
             if (assessment.fitClass === 'unsuitable') {
@@ -313,6 +314,7 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
                 placeTypes,
                 pureServiceAreaBusiness: sab,
                 searchAreaHint: job.area.labelHe,
+                categorySlug: job.categorySlug,
               })
             ) {
               stats.rejectedFilter += 1

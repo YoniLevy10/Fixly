@@ -13,7 +13,11 @@ import {
   fitClassLabelHe,
 } from '@/lib/prospects/fit-score'
 import { humanizeDiscoveryErrors } from '@/lib/prospects/humanize-discovery-error'
-import { navigateAfterAsyncClick } from '@/lib/contact/whatsapp-link'
+import {
+  buildWhatsAppLink,
+  openExternalUrl,
+} from '@/lib/contact/whatsapp-link'
+import { buildRecruitWhatsAppMessage } from '@/lib/prospects/message'
 import {
   FIT_CLASSES,
   PROSPECT_STATUSES,
@@ -352,46 +356,47 @@ export default function ProspectsRecruitmentScreen() {
     if (detailId === id) setDetailId(id)
   }
 
-  const openWhatsApp = async (id: string) => {
+  const openWhatsApp = (item: ProspectItem) => {
     setActionMsg(null)
-    // Open synchronously in the click gesture — iOS Safari blocks async window.open
-    const preOpened =
-      typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null
-    try {
-      const res = await fetch(`/api/admin/prospects/${id}/contact`, { method: 'POST' })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        try {
-          preOpened?.close()
-        } catch {
-          /* ignore */
-        }
-        setActionMsg(data.error ?? 'לא ניתן לפתוח WhatsApp')
-        return
-      }
-      const url = typeof data.whatsappUrl === 'string' ? data.whatsappUrl : ''
-      if (!url) {
-        try {
-          preOpened?.close()
-        } catch {
-          /* ignore */
-        }
-        setActionMsg('לא התקבל קישור WhatsApp')
-        return
-      }
-      const { navigateAfterAsyncClick } = await import('@/lib/contact/whatsapp-link')
-      navigateAfterAsyncClick(url, preOpened)
-      setActionMsg('נפתח קישור WhatsApp — עדיין לא סומן כ«נוצר קשר»')
-      await loadList()
-      if (detailId === id) setDetailId(id)
-    } catch {
-      try {
-        preOpened?.close()
-      } catch {
-        /* ignore */
-      }
-      setActionMsg('לא ניתן לפתוח WhatsApp')
+    const phone = item.whatsappPhone || item.phone
+    if (!phone?.trim()) {
+      setActionMsg('חסר מספר טלפון')
+      return
     }
+    // Build wa.me + recruit prompt in the click gesture (no await) so iOS
+    // Safari hands off to WhatsApp with the prefilled message.
+    const message = buildRecruitWhatsAppMessage({
+      name: item.name,
+      category: item.categoryNameHe || item.categoryName || 'השירות שלך',
+      city: item.city,
+    })
+    const url = buildWhatsAppLink(phone, message)
+    if (!url) {
+      setActionMsg('מספר טלפון לא תקין ל-WhatsApp')
+      return
+    }
+    openExternalUrl(url)
+    setActionMsg('נפתח קישור WhatsApp — עדיין לא סומן כ«נוצר קשר»')
+    // Audit / auto-approve in background (keepalive survives iOS handoff).
+    void fetch(`/api/admin/prospects/${item.id}/contact`, {
+      method: 'POST',
+      keepalive: true,
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          setActionMsg(
+            typeof data.error === 'string'
+              ? data.error
+              : 'WhatsApp נפתח, אך עדכון הסטטוס בשרת נכשל',
+          )
+        }
+        await loadList()
+        if (detailId === item.id) setDetailId(item.id)
+      })
+      .catch(() => {
+        /* navigation may abort; open already succeeded */
+      })
   }
 
   const confirmWhatsAppSent = async (id: string) => {
@@ -1133,7 +1138,7 @@ export default function ProspectsRecruitmentScreen() {
                       <button
                         type="button"
                         className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
-                        onClick={() => openWhatsApp(item.id)}
+                        onClick={() => openWhatsApp(item)}
                         title="פותח קישור בלבד — לא מסמן נוצר קשר"
                       >
                         WhatsApp
@@ -1224,7 +1229,7 @@ export default function ProspectsRecruitmentScreen() {
                     <button
                       type="button"
                       className="rounded-lg bg-green-600 text-white px-4 py-2 text-sm font-semibold"
-                      onClick={() => openWhatsApp(detail.prospect.id)}
+                      onClick={() => openWhatsApp(detail.prospect)}
                     >
                       פתח WhatsApp
                     </button>

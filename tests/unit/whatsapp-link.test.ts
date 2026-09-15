@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { buildWhatsAppLink } from '@/lib/contact/whatsapp-link'
+import {
+  buildWhatsAppLink,
+  isAppleMobileBrowser,
+  navigateAfterAsyncClick,
+  openExternalUrl,
+} from '@/lib/contact/whatsapp-link'
+import { buildRecruitWhatsAppMessage } from '@/lib/prospects/message'
 
 describe('buildWhatsAppLink', () => {
   it('normalizes Israeli mobile numbers to wa.me', () => {
@@ -18,5 +24,27 @@ describe('buildWhatsAppLink', () => {
 
   it('returns null for empty phone', () => {
     assert.equal(buildWhatsAppLink('   ', 'x'), null)
+  })
+
+  it('embeds recruit message for outreach', () => {
+    const msg = buildRecruitWhatsAppMessage({
+      name: 'יוסי',
+      category: 'אינסטלציה',
+      city: 'ירושלים',
+    })
+    const url = buildWhatsAppLink('050-123-4567', msg)
+    assert.ok(url)
+    assert.match(url!, /wa\.me\/972501234567\?text=/)
+    const text = decodeURIComponent(url!.split('text=')[1]!)
+    assert.ok(text.includes('Fixly'))
+    assert.ok(text.includes('אינסטלציה'))
+  })
+})
+
+describe('openExternalUrl / navigateAfterAsyncClick', () => {
+  it('exports apple detection helper', () => {
+    assert.equal(typeof isAppleMobileBrowser, 'function')
+    assert.equal(typeof openExternalUrl, 'function')
+    assert.equal(typeof navigateAfterAsyncClick, 'function')
   })
 })
