@@ -252,7 +252,7 @@ describe('discovery config defaults', () => {
     const { getDiscoveryApiCallBudget, DISCOVERY_TOTAL_BUDGET } = await import(
       '@/lib/prospects/config'
     )
-    assert.equal(DISCOVERY_TOTAL_BUDGET, 1200)
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 3000)
     assert.ok(getDiscoveryApiCallBudget() >= 40)
   })
 })
