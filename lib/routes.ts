@@ -2,6 +2,7 @@ export const routes = {
   home: '/',
   professionals: '/professionals',
   professional: (id: string) => `/professional/${id}`,
+  chat: (professionalId: string) => `/chat/${professionalId}`,
   newRequest: '/request/new',
   myRequests: '/my-requests',
   tracking: (id: string) => `/tracking/${id}`,

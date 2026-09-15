@@ -14,6 +14,7 @@ export const he: MessageTree = {
     currency: '₪',
     quoteLabel: 'הצעת מחיר',
     select: 'בחר',
+    chat: 'שיחה',
     profile: 'פרופיל',
     settings: 'הגדרות',
     language: 'שפה',
@@ -262,6 +263,7 @@ export const he: MessageTree = {
     makeup: 'איפור',
     manicure: 'מניקור וציפורניים',
     barber: 'תספורת ועיצוב',
+    home_tutor: 'מורה פרטי',
   },
   app: {
     name: 'Fixly',

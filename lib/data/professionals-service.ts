@@ -42,6 +42,7 @@ function applyListOptions(
       makeup: ['איפור', 'מאפר'],
       manicure: ['מניקור', 'ציפורניים'],
       barber: ['תספורת', 'ספר'],
+      home_tutor: ['מורה', 'שיעור', 'פרטי'],
       plumbing: ['Plumber', 'אינסטל'],
       electricity: ['Electrician', 'חשמל'],
       ac: ['Air Conditioning', 'מיזוג'],
@@ -50,12 +51,13 @@ function applyListOptions(
       gardening: ['גינון'],
       locksmith: ['מנעול'],
       carpentry: ['נגר'],
-      tiling: ['ריצוף', 'קרמיקה', 'ריצוף וקרמיקה'],
+      tiling: ['ריצוף', 'קרמיקה'],
       moving: ['הובל'],
       elevators: ['מעלית', 'מעליות'],
       pest_control: ['הדברה', 'מדביר'],
       furniture: ['ריהוט', 'רהיט'],
       appliance_repair: ['מכשיר', 'כביסה', 'מקרר', 'מדיח'],
+      appliances: ['מכשיר', 'כביסה', 'מקרר'],
       computers: ['מחשב', 'IT'],
       glazing: ['זגג', 'זכוכית', 'חלון'],
       renovations: ['שיפוץ', 'שיפוצים'],
@@ -65,14 +67,18 @@ function applyListOptions(
       solar: ['סולאר', 'שמש', 'קולט'],
       general: ['כללי', 'אחר', 'תיקון'],
     }
-    const names = slugMap[categorySlug] ?? []
-    next = next.filter((p) =>
-      names.some(
-        (n) =>
-          p.category.includes(n) ||
-          p.category.toLowerCase().includes(categorySlug)
-      )
-    )
+    const names = slugMap[categorySlug] ?? [categorySlug]
+    next = next.filter((p) => {
+      const hay = [
+        p.category,
+        p.title ?? '',
+        ...(p.categories ?? []),
+      ]
+        .join(' ')
+        .toLowerCase()
+      if (hay.includes(categorySlug.toLowerCase())) return true
+      return names.some((n) => hay.includes(n.toLowerCase()))
+    })
   }
 
   if (query?.trim()) {

@@ -148,6 +148,25 @@ describe('fit-score quality', () => {
       true,
     )
   })
+
+  it('keeps mobile nail/hair pros for beauty recruit jobs', () => {
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'נועה מניקור עד הבית',
+        phone: '0501112233',
+        categorySlug: 'nails',
+      }),
+      true,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'ספר נייד ירושלים',
+        phone: '0502223344',
+        categorySlug: 'hair',
+      }),
+      true,
+    )
+  })
 })
 
 describe('query queue + geo', () => {

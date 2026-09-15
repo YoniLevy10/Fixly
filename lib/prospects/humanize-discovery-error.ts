@@ -67,6 +67,18 @@ export function humanizeDiscoveryError(raw: string | null | undefined): string |
   if (msg.includes('timeout') || msg.includes('aborted') || msg.includes('abort')) {
     return 'החיפוש ארך יותר מדי ונקטע — נסו שוב'
   }
+  if (
+    msg.includes('website_url') &&
+    (msg.includes('does not exist') || msg.includes('schema cache'))
+  ) {
+    return 'חסרה עמודת website_url במסד — הריצו את המיגרציה 20260909180000_prospect_source_refs_license ואז גילוי מחדש'
+  }
+  if (
+    msg.includes('source_refs') &&
+    (msg.includes('does not exist') || msg.includes('schema cache'))
+  ) {
+    return 'חסרות עמודות גיוס חדשות במסד — הריצו מיגרציית source_refs/license (ראה docs/PRO_OUTREACH.md)'
+  }
   if (msg.includes('source failed') || msg.includes('ingest')) {
     return 'הסריקה מצאה לידים אבל השמירה למסד נכשלה — בדקו מיגרציות / עמודות חדשות'
   }

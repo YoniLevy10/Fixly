@@ -385,6 +385,56 @@ export const DISCOVERY_CATEGORY_MAP: DiscoveryCategoryMapping[] = [
     placesQueryAr: 'تركيب اثاث',
     osmFilters: ['craft=cabinet_maker'],
   },
+  {
+    slug: 'nails',
+    placesQueryHe: 'מניקור עד הבית',
+    placesQueriesHeExtra: [
+      'מניקוריסטית ניידת',
+      'ציפורניים עד הבית',
+      'פדיקור עד הבית',
+      'מניקור ג׳ל ביתי',
+    ],
+    placesQueryEn: 'mobile nail technician',
+    placesQueriesEnExtra: ['manicure at home', 'nail tech home visit'],
+    placesQueryAr: 'مانيكير منزلي',
+    osmFilters: [],
+  },
+  {
+    slug: 'hair',
+    placesQueryHe: 'ספר עד הבית',
+    placesQueriesHeExtra: [
+      'תספורת עד הבית',
+      'ספר נייד',
+      'מעצבת שיער עד הבית',
+      'תספורת גברים בבית',
+    ],
+    placesQueryEn: 'mobile barber',
+    placesQueriesEnExtra: ['hairdresser at home', 'mobile hair stylist'],
+    placesQueryAr: 'حلاق منزلي',
+    osmFilters: ['craft=hairdresser'],
+  },
+  {
+    slug: 'makeup',
+    placesQueryHe: 'מאפרת עד הבית',
+    placesQueriesHeExtra: ['איפור כלות עד הבית', 'מאפרת ניידת', 'איפור לאירוע בבית'],
+    placesQueryEn: 'makeup artist home visit',
+    placesQueryAr: 'مكياج منزلي',
+    osmFilters: [],
+  },
+  {
+    slug: 'home_tutor',
+    placesQueryHe: 'מורה פרטי עד הבית',
+    placesQueriesHeExtra: [
+      'שיעורים פרטיים בבית',
+      'מורה פרטי מתמטיקה',
+      'מורה פרטי אנגלית',
+      'שיעורים פרטיים ירושלים',
+    ],
+    placesQueryEn: 'private tutor at home',
+    placesQueriesEnExtra: ['home tutor', 'math tutor home visit'],
+    placesQueryAr: 'معلم خصوصي منزلي',
+    osmFilters: [],
+  },
 ]
 
 export function placesQueriesFor(mapping: DiscoveryCategoryMapping): string[] {

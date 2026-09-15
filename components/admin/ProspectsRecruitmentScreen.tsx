@@ -211,6 +211,7 @@ export default function ProspectsRecruitmentScreen() {
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const [csvText, setCsvText] = useState('')
   const [creating, setCreating] = useState(false)
+  const [showManualAdd, setShowManualAdd] = useState(false)
   const [discovering, setDiscovering] = useState(false)
   const [discoveryPercent, setDiscoveryPercent] = useState(0)
   const [discoveryProgressLabel, setDiscoveryProgressLabel] = useState('')
@@ -1303,112 +1304,134 @@ export default function ProspectsRecruitmentScreen() {
       )}
 
       <Card>
-        <h2 className="font-bold text-lg mb-3">הוספה ידנית</h2>
-        <form onSubmit={createManual} className="grid md:grid-cols-2 gap-3">
-          <div>
-            <Label>שם</Label>
-            <Input
-              required
-              value={newForm.name}
-              onChange={(e) => setNewForm((f) => ({ ...f, name: e.target.value }))}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>עסק</Label>
-            <Input
-              value={newForm.businessName}
-              onChange={(e) =>
-                setNewForm((f) => ({ ...f, businessName: e.target.value }))
-              }
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>טלפון</Label>
-            <Input
-              required
-              dir="ltr"
-              value={newForm.phone}
-              onChange={(e) => setNewForm((f) => ({ ...f, phone: e.target.value }))}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>עיר</Label>
-            <Input
-              value={newForm.city}
-              onChange={(e) => setNewForm((f) => ({ ...f, city: e.target.value }))}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label>קטגוריה</Label>
-            <select
-              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
-              value={newForm.categoryId}
-              onChange={(e) =>
-                setNewForm((f) => ({ ...f, categoryId: e.target.value }))
-              }
-            >
-              <option value="">—</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nameHe || c.name_he || c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <Label>קישור מקור</Label>
-            <Input
-              dir="ltr"
-              value={newForm.sourceUrl}
-              onChange={(e) =>
-                setNewForm((f) => ({ ...f, sourceUrl: e.target.value }))
-              }
-              className="mt-1"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <Label>הערות</Label>
-            <Input
-              value={newForm.notes}
-              onChange={(e) => setNewForm((f) => ({ ...f, notes: e.target.value }))}
-              className="mt-1"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={creating}
-            className="md:col-span-2 rounded-xl bg-primary text-white py-3 font-bold"
-          >
-            {creating ? 'שומר…' : 'צור ליד'}
-          </button>
-        </form>
-      </Card>
-
-      <Card>
-        <h2 className="font-bold text-lg mb-2">ייבוא CSV ממקור מורשה</h2>
-        <p className="text-sm text-muted-foreground mb-2">
-          עמודות: name, business_name, phone, whatsapp_phone, city, category_slug,
-          source_name, source_url, external_id, notes, verification_status
-        </p>
-        <textarea
-          className="w-full min-h-[120px] rounded-xl border p-3 text-sm font-mono"
-          dir="ltr"
-          value={csvText}
-          onChange={(e) => setCsvText(e.target.value)}
-          placeholder="name,phone,city,category_slug,source_name&#10;יוסי,0501234567,ירושלים,plumbing,open_registry"
-        />
         <button
           type="button"
-          disabled={!csvText.trim()}
-          onClick={importCsv}
-          className="mt-3 rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          onClick={() => setShowManualAdd((v) => !v)}
+          className="w-full flex items-center justify-between gap-2 text-start"
         >
-          ייבוא
+          <span className="font-bold text-lg">+ הוספה ידנית / CSV</span>
+          <span className="text-sm text-muted-foreground">
+            {showManualAdd ? 'הסתר' : 'הצג'}
+          </span>
         </button>
+        {showManualAdd && (
+          <div className="mt-4 space-y-6">
+            <form onSubmit={createManual} className="grid md:grid-cols-2 gap-3">
+              <div>
+                <Label>שם</Label>
+                <Input
+                  required
+                  value={newForm.name}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>עסק</Label>
+                <Input
+                  value={newForm.businessName}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, businessName: e.target.value }))
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>טלפון</Label>
+                <Input
+                  required
+                  dir="ltr"
+                  value={newForm.phone}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, phone: e.target.value }))
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>עיר</Label>
+                <Input
+                  value={newForm.city}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, city: e.target.value }))
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>קטגוריה</Label>
+                <select
+                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm bg-white"
+                  value={newForm.categoryId}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, categoryId: e.target.value }))
+                  }
+                >
+                  <option value="">—</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nameHe || c.name_he || c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label>קישור מקור</Label>
+                <Input
+                  dir="ltr"
+                  value={newForm.sourceUrl}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, sourceUrl: e.target.value }))
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>הערות</Label>
+                <Input
+                  value={newForm.notes}
+                  onChange={(e) =>
+                    setNewForm((f) => ({ ...f, notes: e.target.value }))
+                  }
+                  className="mt-1"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={creating}
+                className="md:col-span-2 rounded-xl bg-primary text-white py-3 font-bold"
+              >
+                {creating ? 'שומר…' : 'צור ליד'}
+              </button>
+            </form>
+
+            <div>
+              <h3 className="font-semibold mb-2">ייבוא CSV</h3>
+              <p className="text-sm text-muted-foreground mb-2">
+                עמודות: name, business_name, phone, whatsapp_phone, city,
+                category_slug, source_name, source_url, external_id, notes,
+                verification_status
+              </p>
+              <textarea
+                className="w-full min-h-[120px] rounded-xl border p-3 text-sm font-mono"
+                dir="ltr"
+                value={csvText}
+                onChange={(e) => setCsvText(e.target.value)}
+                placeholder="name,phone,city,category_slug,source_name&#10;יוסי,0501234567,ירושלים,plumbing,open_registry"
+              />
+              <button
+                type="button"
+                disabled={!csvText.trim()}
+                onClick={importCsv}
+                className="mt-3 rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+              >
+                ייבוא
+              </button>
+            </div>
+          </div>
+        )}
       </Card>
     </main>
   )

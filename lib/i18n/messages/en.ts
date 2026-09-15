@@ -14,6 +14,7 @@ export const en: MessageTree = {
     currency: '₪',
     quoteLabel: 'Quote',
     select: 'Select',
+    chat: 'Chat',
     profile: 'Profile',
     settings: 'Settings',
     language: 'Language',
@@ -262,6 +263,7 @@ export const en: MessageTree = {
     makeup: 'Makeup',
     manicure: 'Manicure',
     barber: 'Barber',
+    home_tutor: 'Private tutor',
   },
   app: {
     name: 'Fixly',

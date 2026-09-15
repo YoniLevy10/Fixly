@@ -74,9 +74,6 @@ export default function InvestorDemoPage() {
           >
             {t('demo.tourStart')}
           </button>
-          <Link href={routes.proDashboard} className="text-primary font-bold text-sm underline">
-            {t('demo.viewYossiDashboard')}
-          </Link>
         </div>
       ) : null}
     </div>
