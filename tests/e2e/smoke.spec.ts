@@ -21,14 +21,23 @@ test.describe('public pages', () => {
     await page.goto('/waitlist')
     await expect(page.getByRole('heading', { name: /יש תקלה בבית/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /אני לקוח/i })).toBeVisible()
-    await expect(page.getByRole('tab', { name: /בעל\/ת מקצוע/i })).toBeVisible()
-    await page.getByRole('tab', { name: /בעל\/ת מקצוע/i }).click()
-    await expect(page.getByLabel(/תחום/i)).toBeVisible()
+    // Customer-only demand landing — pros use /pro/join (no audience tabs).
+    await expect(page.getByRole('tab')).toHaveCount(0)
+    await expect(page.getByRole('link', { name: /הצטרפו כאן/i }).first()).toBeVisible()
     await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.getByLabel(/טלפון/i).fill('0501234567')
     await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(page.getByText(/נרשמתם בהצלחה/i)).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('pro join page is outreach destination', async ({ page }) => {
+    await page.goto('/pro/join')
+    await expect(page.getByRole('heading', { name: /הצטרפות ל-Fixly|Join Fixly/i })).toBeVisible()
+    await expect(page.getByText(/לבעלי מקצוע/i)).toBeVisible()
+    await expect(page.getByRole('button', { name: /הירשם|Sign up/i })).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: /הרשמה מוקדמת ללקוחות/i })
+    ).toBeVisible()
   })
 
   test('robots and sitemap are public', async ({ request }) => {

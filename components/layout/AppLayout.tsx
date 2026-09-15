@@ -51,6 +51,7 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
   const isMarketingRoute =
     pathname.startsWith('/go/') ||
     pathname === '/waitlist' ||
+    pathname === '/pro/join' ||
     isMarketingHome
   // Full-bleed booking / tracking / investor deep-link
   const isImmersiveRoute =

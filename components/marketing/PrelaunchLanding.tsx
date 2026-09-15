@@ -47,7 +47,7 @@ const emptyForm: FormState = {
 }
 
 /** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
-const VARIANT = 'landing_v3'
+const VARIANT = 'landing_v4'
 
 function forceHebrewRtl() {
   document.documentElement.lang = 'he'
@@ -58,7 +58,8 @@ function forceHebrewRtl() {
 }
 
 export default function PrelaunchLanding() {
-  const [audience, setAudience] = useState<WaitlistAudience>('customer')
+  /** Demand campaign landing is customer-only; pros use /pro/join. */
+  const audience: WaitlistAudience = 'customer'
   const [form, setForm] = useState<FormState>(emptyForm)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -123,15 +124,6 @@ export default function PrelaunchLanding() {
     track('waitlist_signup_started', { audience, variant: VARIANT })
   }
 
-  const switchAudience = (next: WaitlistAudience) => {
-    setAudience(next)
-    setDone(false)
-    setError(null)
-    setShareCopied(false)
-    startedRef.current = false
-    track('waitlist_audience_switch', { audience: next, variant: VARIANT })
-  }
-
   const shareWaitlist = async (channel: 'whatsapp' | 'native' | 'copy') => {
     track('waitlist_share_click', { audience, channel, variant: VARIANT })
     const message = buildWaitlistShareMessage(audience)
@@ -175,9 +167,8 @@ export default function PrelaunchLanding() {
           fullName: form.fullName,
           phone: form.phone,
           city: form.city || undefined,
-          category: audience === 'professional' && form.category ? form.category : undefined,
-          audience,
-          source: 'prelaunch_landing_v3',
+          audience: 'customer',
+          source: 'prelaunch_landing_v4',
           ...(referralCode ? { referralCode } : {}),
           ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         }),
@@ -205,13 +196,11 @@ export default function PrelaunchLanding() {
   }
 
   const formProps: WaitlistFormProps = {
-    audience,
     form,
     loading,
     error,
     done,
     shareCopied,
-    onAudience: switchAudience,
     onFormChange: setForm,
     onSubmit: submit,
     onSignupStarted: markSignupStarted,
@@ -417,7 +406,6 @@ export default function PrelaunchLanding() {
               <a
                 href="#waitlist"
                 onClick={() => {
-                  switchAudience('customer')
                   track('waitlist_cta_click', { placement: 'customer_panel', variant: VARIANT })
                 }}
                 className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-black text-[#123563] underline-offset-4 hover:underline"
@@ -430,17 +418,16 @@ export default function PrelaunchLanding() {
               <p className="text-xs font-black text-[#ffd07a]">לבעלי מקצוע</p>
               <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">{copy.proTitle}</h2>
               <p className="mt-3 text-base font-medium leading-7 text-white/90">{copy.proLead}</p>
-              <a
-                href="#waitlist"
+              <Link
+                href="/pro/join"
                 onClick={() => {
-                  switchAudience('professional')
                   track('waitlist_cta_click', { placement: 'pro_panel', variant: VARIANT })
                 }}
                 className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#F59E0B] px-5 text-sm font-black text-[#10233f] transition hover:-translate-y-0.5 hover:brightness-105"
               >
                 {copy.proCta}
                 <ArrowLeft className="h-4 w-4" aria-hidden />
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -537,14 +524,12 @@ export default function PrelaunchLanding() {
 }
 
 type WaitlistFormProps = {
-  audience: WaitlistAudience
   form: FormState
   loading: boolean
   error: string | null
   done: boolean
   shareCopied: boolean
   compact?: boolean
-  onAudience: (a: WaitlistAudience) => void
   onFormChange: (updater: FormState | ((f: FormState) => FormState)) => void
   onSubmit: (e: FormEvent) => void
   onSignupStarted: () => void
@@ -553,14 +538,12 @@ type WaitlistFormProps = {
 }
 
 function WaitlistFormCard({
-  audience,
   form,
   loading,
   error,
   done,
   shareCopied,
   compact,
-  onAudience,
   onFormChange,
   onSubmit,
   onSignupStarted,
@@ -577,57 +560,27 @@ function WaitlistFormCard({
       id="waitlist-panel"
       className="rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:p-6"
     >
-      <h2 className="mb-3 text-center text-sm font-black tracking-wide text-[#123563]">
+      <h2 className="mb-1 text-center text-sm font-black tracking-wide text-[#123563]">
         {copy.formEyebrow}
       </h2>
-
-      <div
-        className="grid grid-cols-2 gap-2 rounded-2xl bg-[#f3f6fa] p-1.5"
-        role="tablist"
-        aria-label="סוג הרשמה"
-      >
-        {(
-          [
-            { id: 'customer' as const, label: 'אני לקוח/ה' },
-            { id: 'professional' as const, label: 'אני בעל/ת מקצוע' },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={audience === tab.id}
-            aria-controls="waitlist-panel"
-            onClick={() => onAudience(tab.id)}
-            className={`min-h-11 rounded-xl px-3 text-sm font-black transition ${
-              audience === tab.id
-                ? 'bg-white text-[#123563] shadow-sm'
-                : 'text-slate-500 hover:text-[#123563]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <p className="mb-4 text-center text-xs font-semibold text-slate-500">{copy.customerHint}</p>
 
       {done ? (
         <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
           <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
           <p className="text-xl font-black text-[#123563]">{copy.successTitle}</p>
-          <p className="max-w-sm text-sm font-medium text-slate-600">
-            {audience === 'professional' ? copy.successPro : copy.successCustomer}
-          </p>
+          <p className="max-w-sm text-sm font-medium text-slate-600">{copy.successCustomer}</p>
           <div className="mt-4 w-full max-w-sm rounded-2xl bg-[#f3f6fa] p-4 text-start">
             <p className="text-sm font-black text-[#123563]">{copy.successShareTitle}</p>
             <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{copy.successShareLead}</p>
             <div className="mt-3 flex flex-col gap-2">
               <a
-                href={buildWaitlistWhatsAppShareUrl(audience)}
+                href={buildWaitlistWhatsAppShareUrl('customer')}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() =>
                   track('waitlist_share_click', {
-                    audience,
+                    audience: 'customer',
                     channel: 'whatsapp',
                     variant: VARIANT,
                   })
@@ -655,10 +608,7 @@ function WaitlistFormCard({
           </button>
         </div>
       ) : (
-        <form className="mt-4 space-y-3.5" onSubmit={onSubmit} onFocus={onSignupStarted}>
-          <p className="text-sm font-semibold text-slate-500">
-            {audience === 'customer' ? copy.customerHint : copy.proHint}
-          </p>
+        <form className="mt-1 space-y-3.5" onSubmit={onSubmit} onFocus={onSignupStarted}>
           <Field
             label="שם מלא"
             name="fullName"
@@ -679,7 +629,7 @@ function WaitlistFormCard({
             value={form.phone}
             onChange={(v) => setField('phone', v)}
           />
-          {!compact || audience === 'professional' ? (
+          {!compact ? (
             <Field
               label="עיר (אופציונלי)"
               name="city"
@@ -689,15 +639,6 @@ function WaitlistFormCard({
               onChange={(v) => onFormChange((f) => ({ ...f, city: v }))}
             />
           ) : null}
-          {audience === 'professional' && (
-            <Field
-              label="תחום"
-              name="category"
-              placeholder="למשל אינסטלציה"
-              value={form.category}
-              onChange={(v) => onFormChange((f) => ({ ...f, category: v }))}
-            />
-          )}
           {error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">
               {error}
@@ -708,16 +649,24 @@ function WaitlistFormCard({
             disabled={loading}
             className="inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F59E0B] px-6 text-base font-black text-[#123563] transition hover:brightness-105 disabled:opacity-60"
           >
-            {loading
-              ? 'שולחים…'
-              : audience === 'professional'
-                ? copy.submitPro
-                : copy.submitCustomer}
+            {loading ? 'שולחים…' : copy.submitCustomer}
             {!loading ? <ArrowLeft className="h-4 w-4" aria-hidden /> : null}
           </button>
           <p className="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-slate-500">
             <Lock className="h-3.5 w-3.5" aria-hidden />
             בלי כרטיס אשראי · אפשר להסיר בכל עת
+          </p>
+          <p className="text-center text-xs font-semibold text-slate-500">
+            בעל/ת מקצוע?{' '}
+            <Link
+              href="/pro/join"
+              className="font-black text-[#123563] underline underline-offset-2"
+              onClick={() =>
+                track('waitlist_cta_click', { placement: 'form_pro_link', variant: VARIANT })
+              }
+            >
+              הצטרפו כאן
+            </Link>
           </p>
         </form>
       )}

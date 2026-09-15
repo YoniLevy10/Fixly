@@ -2,7 +2,7 @@
  * Pre-launch landing copy — swap variants here for future A/B tests
  * without rewriting the page structure.
  *
- * Active variant: landing_v3 (conversion-first: form in hero, less chrome).
+ * Active variant: landing_v4 (customer demand campaign; pros → /pro/join).
  */
 export const prelaunchCopy = {
   brand: 'Fixly',

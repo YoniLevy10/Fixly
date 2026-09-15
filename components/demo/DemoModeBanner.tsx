@@ -32,7 +32,9 @@ export default function DemoModeBanner() {
   const bannerRef = useRef<HTMLDivElement>(null)
 
   const isMarketingSurface =
-    pathname === '/waitlist' || pathname.startsWith('/go/')
+    pathname === '/waitlist' ||
+    pathname === '/pro/join' ||
+    pathname.startsWith('/go/')
   // Keep branded login / splash surfaces clean (OpticalCenter / Bamakor style).
   const isLoginSurface = pathname === '/login'
   const visible =
