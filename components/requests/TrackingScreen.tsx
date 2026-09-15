@@ -216,7 +216,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
 
   return (
     <div className="min-h-screen bg-background max-w-3xl mx-auto lg:max-w-4xl">
-      <div className="bg-card px-4 py-4 lg:px-8 flex items-center gap-3 border-b-2 border-border sticky top-0 z-10 lg:static lg:rounded-t-2xl lg:mt-6 lg:border-2 lg:mx-8 shadow-sm">
+      <div className="bg-card px-4 py-4 lg:px-8 flex items-center gap-3 border-b-2 border-border sticky top-[var(--fixly-tour-narrator-h,0px)] z-10 lg:static lg:rounded-t-2xl lg:mt-6 lg:border-2 lg:mx-8 shadow-sm">
         <BackButton onClick={() => router.back()} />
         <h1 className="font-black text-lg flex-1 lg:text-xl">{t('requests.trackingTitle')}</h1>
         <RequestStatusBadge status={request.status} size="sm" />

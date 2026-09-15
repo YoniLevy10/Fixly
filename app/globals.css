@@ -236,12 +236,27 @@ html[dir='rtl'] .fixly-splash-bar {
   }
 }
 
-/* Investor tour — keep content clear of the narrator card */
-html.fixly-tour-active body {
-  padding-bottom: 12rem;
+/* Investor tour — reserve space under the top narrator bar */
+html.fixly-tour-active {
+  --fixly-tour-narrator-h: 7.5rem;
 }
 
-/* driver.js Hebrew / Fixly branding */
+html.fixly-tour-active body {
+  padding-top: var(--fixly-tour-narrator-h);
+  padding-bottom: 0;
+}
+
+/* Hide driver popover — story lives in the narrator only */
+.fixly-driver-popover--hidden.driver-popover {
+  display: none !important;
+}
+
+/* Soften stacked overlays during tour */
+html.fixly-tour-active .driver-overlay {
+  pointer-events: none;
+}
+
+/* driver.js Hebrew / Fixly branding (if popover ever re-enabled) */
 .fixly-driver-popover.driver-popover {
   direction: rtl;
   text-align: right;
