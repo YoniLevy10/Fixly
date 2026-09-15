@@ -4,7 +4,9 @@
 לא חנויות חומרים, רשתות או מוקדים.
 
 אין הסכם עם מידרג — **אין סקרייפינג ממידרג**.  
-אין איסוף מקבוצות פייסבוק / Messenger.
+אין איסוף מקבוצות פייסבוק / Messenger.  
+אין סקרייפינג מ־B144 / דפי זהב / איזי.  
+**אין מקורות בתשלום** (Brave / D&B / מדריכים מסחריים) — רק API שכבר בשימוש, OSM, ו־open data ממשלתי.
 
 ## ממשק
 
@@ -16,53 +18,49 @@
 | שדה | משמעות |
 |-----|--------|
 | `fit_class` | `suitable` / `needs_review` / `unsuitable` / `unknown` |
-| `fit_confidence` | 0–100 (כיול, לא מדע מדויק) |
+| `fit_confidence` | 0–100 |
 | `fit_reasons` | סיבות קריאות |
-| `contactability` | `mobile` / `landline` / `unknown` / `none` — **לא** קובע התאמה מקצועית |
+| `contactability` | `mobile` / `landline` / `unknown` / `none` |
+| `website_url` | אתר עסקי (לא Maps) |
+| `source_refs` | מקורות מרובים שמוזגו לרשומה אחת |
+| `license` | ראיית רישוי (פיילוט מדבירים) |
 
-- מילים כמו «שירותי / התקנות / מערכות / פתרונות» **אינן** פוסלות אוטומטית.
-- שם ו־businessName זהים לא מקבלים קנס כפול.
-- שמות בעברית, ערבית ואנגלית נתמכים.
-- נייד ≠ WhatsApp מאומת.
+משקלים ב־[`lib/prospects/config.ts`](../lib/prospects/config.ts).
 
-משקלים ב־[`lib/prospects/config.ts`](../lib/prospects/config.ts) (`FIT_WEIGHTS`).
+## מקורות גילוי (חינם / קיים)
 
-## מקורות גילוי
-
-| מקור | Env |
-|------|-----|
-| Google Places API (New) | `GOOGLE_PLACES_API_KEY` |
-| OpenStreetMap Overpass | — |
+| מקור | Env / הערה |
+|------|------------|
+| Google Places API (New) | `GOOGLE_PLACES_API_KEY` — אם כבר מופעל אצלכם |
+| OpenStreetMap Overpass | חינם — מדוד `uniqueToSource` בכרטיס ריצה |
+| מאגר מדבירים מורשים | data.gov.il CKAN (`gov_pest_control`) — open data |
 | ידני / CSV | — |
 
-### Places — מה מופעל
+### מאגר מדבירים (פיילוט רישוי)
 
-- `includePureServiceAreaBusinesses: true`
-- Pagination עם `pageToken` / `nextPageToken` (חובה ב־FieldMask)
-- תקציב **קריאות API**: `FIXLY_DISCOVERY_API_CALL_BUDGET` (ברירת מחדל 80)
-- תקציב תוצאות גולמיות: `FIXLY_DISCOVERY_TOTAL_BUDGET` (1200)
-- תור שאילתות עם רוטציה לפי `prospect_query_stats` (~15% ניסוי)
-- שאילתות HE / AR / EN + שכונות ירושלים; שאילתות פשוטות (לא תמיד «מומלץ/נייד»)
-- FieldMask מינימלי: id, displayName, address, phones, website, maps, types, pureServiceAreaBusiness, nextPageToken  
-  (שדות Enterprise כמו ביקורות/תמונות **לא** נמשכים — עלות גבוהה יותר)
+- Resource id: `4941fd97-9f9f-4e45-b117-9f71735e9845` (חבילת `madbirim`).
+- שדות: LicenseNumber, FirstName, LastName, settlement, Telephone, LicenseType, Status, PermitExpirationDate.
+- סינון ירושלים + יישובי מטרופולין; `license` נשמר על הרשומה.
 
-### גאוגרפיה
+### מיזוג בין מקורות
 
-- פרופיל עיר ב־`getCityGeoProfile` — שינוי `FIXLY_RECRUIT_CITY` (+ אופציונלי `FIXLY_RECRUIT_CITY_LAT/LNG/RADIUS_M`) משנה bbox/bias.
-- `business_address` / `search_city` נשמרים בנפרד; **אין** סימון אוטומטי של אזור שירות מאומת רק כי הופיע בשאילתה.
+סדר dedupe: טלפון → דומיין אתר → source+externalId → שם+קטגוריה+עיר.  
+מיזוג ממלא `source_refs`, `website_url`, `license` חזק יותר, בלי לדרוס סטטוסים מוגנים.
 
 ### גילוי מצטבר
 
 - ברירת מחדל: **ללא מחיקה** (`replacePrevious=false`).
-- כפילות → מיזוג (קטגוריות נוספות, fit, last_seen) בלי לדרוס `rejected` / DNC / contacted+.
 - נעילה אם יש ריצה ב־`status=running`.
+
+## מקורות בתשלום — לא מיושמים
+
+לא קונים Brave / B144 / דפי זהב / איזי / D&B.  
+אם בעתיד ייבחן מקור מסחרי — רק אחרי מדגם 50 בירושלים (חדשים, פעילים, שירות בבית, קשר שימושי).
 
 ## WhatsApp
 
-1. **פתח WhatsApp** → `contact_link_opened` בלבד (לא `contacted`).
+1. **פתח WhatsApp** → `contact_link_opened` בלבד.
 2. **סימנתי שנשלח** → `POST .../contact/confirm` → `contacted`.
-
-אין שליחה אוטומטית.
 
 ## מיגרציות
 
@@ -70,31 +68,21 @@
 2. `20260909120000_prospect_discovery_runs.sql`
 3. `20260909140000_expand_recruit_categories.sql`
 4. `20260909150000_prospect_fit_score.sql`
-5. **`20260909160000_prospect_fit_quality.sql`** — fit_class, contactability, categories junction, sightings, query_stats
+5. `20260909160000_prospect_fit_quality.sql`
+6. **`20260909180000_prospect_source_refs_license.sql`** — website_url, source_refs, license
 
 ## משתני סביבה
 
 | מפתח | תיאור |
 |------|--------|
-| `GOOGLE_PLACES_API_KEY` | חובה לגילוי Places |
+| `GOOGLE_PLACES_API_KEY` | גילוי Places (אופציונלי אם כבר יש) |
 | `ADMIN_EMAILS` | גישת Superadmin |
 | `FIXLY_RECRUIT_CITY` | ברירת מחדל ירושלים |
-| `FIXLY_RECRUIT_CITY_LAT/LNG/RADIUS_M` | גאו לעיר שאינה ירושלים |
 | `FIXLY_DISCOVERY_TOTAL_BUDGET` | תוצאות גולמיות |
-| `FIXLY_DISCOVERY_API_CALL_BUDGET` | קריאות Places לריצה |
-| `FIXLY_DISCOVERY_PER_CATEGORY_CAP` | תקרת שמירה לקטגוריה |
-| `FIXLY_RECRUIT_CATEGORY_SLUGS` | אופציונלי, CSV של slugs |
+| `FIXLY_DISCOVERY_API_CALL_BUDGET` | קריאות Places |
 
-## מדידת לפני/אחרי (מדגם 100)
+## מדידת לפני/אחרי
 
-1. ייצוא CSV לפני השדרוג (או snapshot).
-2. הרצת גילוי מצטבר אחרי דיפלוי + מיגרציה.
-3. ייצוא כולל `fit_class`, `fit_reasons`, `contactability`.
-4. סימון ידני של 100: TP/FP ל־suitable, ודיוק על unsuitable שנדחו.
-5. השוואת: ייחודיים חדשים מתאימים / קריאות API / זמן סינון ידני.
-
-## מה לא אומת מול שירות חי במסגרת הפיתוח
-
-- תגובות אמיתיות של Google Places / Overpass בפרוד
-- עלות חיוב מדויקת בחשבון Google (מוצג רק מספר קריאות / הערכה מסומנת)
-- דיוק השאילתות הערביות מול תוצאות מקומיות
+1. ייצוא CSV + הריצו גילוי אחרי מיגרציה.
+2. השוו `uniqueToSource` ל־OSM / Places / מאגר מדבירים.
+3. מדגם 100 לדיוק fit.

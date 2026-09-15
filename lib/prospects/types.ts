@@ -1,3 +1,10 @@
+import type {
+  ProspectLicense,
+  ProspectSourceRef,
+} from '@/lib/prospects/source-refs'
+
+export type { ProspectLicense, ProspectSourceRef }
+
 export const PROSPECT_STATUSES = [
   'discovered',
   'verified',
@@ -54,6 +61,8 @@ export type ProspectSourceRecord = {
   categorySlugs?: string[] | null
   sourceName: string
   sourceUrl?: string | null
+  /** Real business website (not maps URI) */
+  websiteUrl?: string | null
   externalId?: string | null
   notes?: string | null
   fitScore?: number | null
@@ -67,6 +76,7 @@ export type ProspectSourceRecord = {
   placeTypes?: string[] | null
   pureServiceAreaBusiness?: boolean | null
   verificationStatus?: VerificationStatus
+  license?: ProspectLicense | null
 }
 
 export type ProfessionalProspect = {
@@ -82,6 +92,7 @@ export type ProfessionalProspect = {
   categoryId: string | null
   sourceName: string
   sourceUrl: string | null
+  websiteUrl?: string | null
   externalId: string | null
   status: ProspectStatus
   verificationStatus: VerificationStatus
@@ -97,6 +108,8 @@ export type ProfessionalProspect = {
   serviceAreas?: string[] | null
   services?: string[] | null
   enrichment?: Record<string, unknown> | null
+  sourceRefs?: ProspectSourceRef[] | null
+  license?: ProspectLicense | null
   lastSeenAt?: string | null
   waitlistId: string | null
   professionalId: string | null

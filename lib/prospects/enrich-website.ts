@@ -16,8 +16,12 @@ const SERVICE_KEYWORDS: Array<{ re: RegExp; service: string }> = [
   { re: /ניקיון|clean|تنظيف/i, service: 'cleaning' },
   { re: /צבע|paint|دهان/i, service: 'painting' },
   { re: /שיפוצ|renovat|ترميم/i, service: 'renovations' },
-  { re: /רצף|tiling|بلاط/i, service: 'tiling' },
+  { re: /רצף|tiling|بلاط|קרמיק/i, service: 'tiling' },
   { re: /מנעול|locksmith/i, service: 'locksmith' },
+  { re: /הדבר|מדביר|pest|מכרסמ|חרק/i, service: 'pest_control' },
+  { re: /תריס|shutters?|אלומינ|aluminum/i, service: 'aluminum' },
+  { re: /גבס|drywall|טיח/i, service: 'drywall' },
+  { re: /איטום|waterproof/i, service: 'waterproofing' },
 ]
 
 const RETAIL_KEYWORDS = /חנות|showroom|outlet|חומרי\s*בניין|wholesale|סיטונ/i
@@ -148,5 +152,52 @@ export async function enrichFromWebsite(
   }
 }
 
+const IL_PHONE_RE =
+  /(?:\+972[\s-]?)?(?:0(?:5\d|7\d|2|3|4|8|9))[\s-]?\d{3}[\s-]?\d{4}/g
+
+/** Lightweight contact signals from HTML (phones / title). */
+export function extractContactSignalsFromHtml(html: string): {
+  title: string | null
+  phones: string[]
+  textSample: string
+} {
+  const titleMatch =
+    html.match(/<title[^>]*>([^<]{2,120})<\/title>/i) ??
+    html.match(/property=["']og:site_name["'][^>]*content=["']([^"']+)["']/i) ??
+    html.match(/content=["']([^"']+)["'][^>]*property=["']og:site_name["']/i)
+  const title = titleMatch?.[1]?.replace(/\s+/g, ' ').trim() || null
+  const text = stripHtml(html)
+  const phones = [...new Set((text.match(IL_PHONE_RE) ?? []).map((p) => p.trim()))]
+  return { title, phones, textSample: text.slice(0, 8_000) }
+}
+
+/** Fetch HTML with the same SSRF guards as enrichment. */
+export async function fetchWebsiteHtmlSafe(
+  websiteUrl: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ finalUrl: string; html: string } | null> {
+  if (!websiteUrl?.trim() || isBlockedUrl(websiteUrl)) return null
+  try {
+    const res = await fetchImpl(websiteUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'FixlyProspectBot/1.0 (+https://fixly.tech)',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    })
+    if (!res.ok) return null
+    const finalUrl = res.url || websiteUrl
+    if (isBlockedUrl(finalUrl)) return null
+    const buf = await res.arrayBuffer()
+    if (buf.byteLength > MAX_BYTES) return null
+    const html = new TextDecoder('utf-8', { fatal: false }).decode(buf)
+    return { finalUrl, html }
+  } catch {
+    return null
+  }
+}
+
 /** Exported for unit tests */
-export const __enrichTest = { isBlockedUrl, stripHtml }
+export const __enrichTest = { isBlockedUrl, stripHtml, extractContactSignalsFromHtml }
