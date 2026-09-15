@@ -176,23 +176,37 @@ export default function HomeScreen() {
 
         <div className="mb-5 lg:mb-8">
           <h3 className="fixly-section-title mb-3">{t('home.pickCategory')}</h3>
-          <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-4 xl:grid-cols-5 lg:gap-3">
-            {displayCats.map((cat) => {
-              const accent = getCategoryAccent(cat.slug)
-              return (
-              <Link
-                key={cat.slug}
-                href={`${routes.professionals}?category=${cat.slug}`}
-                className={`bg-card rounded-2xl border-2 p-3 flex flex-col items-center gap-2 shadow-sm transition-all active:scale-95 ${accent.card}`}
-              >
-                <span className={`text-3xl w-12 h-12 flex items-center justify-center rounded-xl ${accent.iconBg}`}>
-                  {cat.icon}
-                </span>
-                <span className="text-xs font-bold text-foreground text-center leading-tight">
-                  {cat.name}
-                </span>
-              </Link>
-            )})}
+          <div className="grid grid-cols-3 gap-2.5 lg:grid-cols-4 xl:grid-cols-5 lg:gap-3 min-h-[17.5rem]">
+            {categories.length === 0
+              ? Array.from({ length: 9 }).map((_, i) => (
+                  <div
+                    key={`cat-skel-${i}`}
+                    className="bg-card rounded-2xl border-2 border-border p-3 flex flex-col items-center gap-2 shadow-sm animate-pulse"
+                    aria-hidden
+                  >
+                    <span className="w-12 h-12 rounded-xl bg-muted" />
+                    <span className="h-3 w-14 rounded bg-muted" />
+                  </div>
+                ))
+              : displayCats.map((cat) => {
+                  const accent = getCategoryAccent(cat.slug)
+                  return (
+                    <Link
+                      key={cat.slug}
+                      href={`${routes.professionals}?category=${cat.slug}`}
+                      className={`bg-card rounded-2xl border-2 p-3 flex flex-col items-center gap-2 shadow-sm transition-all active:scale-95 ${accent.card}`}
+                    >
+                      <span
+                        className={`text-3xl w-12 h-12 flex items-center justify-center rounded-xl ${accent.iconBg}`}
+                      >
+                        {cat.icon}
+                      </span>
+                      <span className="text-xs font-bold text-foreground text-center leading-tight">
+                        {cat.name}
+                      </span>
+                    </Link>
+                  )
+                })}
           </div>
           <button
             type="button"

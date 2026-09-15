@@ -1,6 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
-@import 'leaflet/dist/leaflet.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -31,7 +28,8 @@
     --warning-foreground: 222 47% 11%;
     --info: 199 89% 42%;
     --info-foreground: 0 0% 100%;
-    /* Investor demo bar height — published by DemoModeBanner so fixed chrome clears it */
+    /* Investor demo bar — reserved from first paint to avoid CLS (banner publishes exact height) */
+    /* Investor demo bar — exact height published by DemoModeBanner; layout may seed a reserve */
     --fixly-demo-banner-h: 0px;
   }
 }

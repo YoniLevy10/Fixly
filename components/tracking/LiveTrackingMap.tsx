@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import 'leaflet/dist/leaflet.css'
 import type { LiveTrackingState } from '@/lib/tracking/types'
 import { useLocale } from '@/lib/i18n/locale-provider'
 

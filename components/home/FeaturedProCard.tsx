@@ -46,14 +46,14 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
               </span>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-600 mt-0.5">
             {pro.rating.toFixed(1)} ({pro.reviewCount})
           </p>
           <div
-            className={`mt-2 text-xs font-semibold flex items-center justify-center gap-1 ${pro.isAvailable ? 'text-green-500' : 'text-gray-400'}`}
+            className={`mt-2 text-xs font-semibold flex items-center justify-center gap-1 ${pro.isAvailable ? 'text-green-700' : 'text-gray-600'}`}
           >
             <span
-              className={`w-1.5 h-1.5 rounded-full ${pro.isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}
+              className={`w-1.5 h-1.5 rounded-full ${pro.isAvailable ? 'bg-green-600' : 'bg-gray-500'}`}
             />
             {pro.isAvailable ? t('common.availableNow') : t('common.unavailable')}
           </div>
