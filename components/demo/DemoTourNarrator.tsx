@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { DEMO_TOUR_STEPS } from '@/lib/demo/investor-tour'
 import { narrativeFor, stepIndex, TOUR_NARRATIVE } from '@/lib/demo/tour-narrative'
@@ -13,6 +14,11 @@ import { isDemoDataMode } from '@/lib/data/demo-mode'
 export default function DemoTourNarrator() {
   const { t } = useLocale()
   const { tourRunning, tourStep, tourError, stopTour } = useDemoTour()
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('fixly-tour-active', tourRunning)
+    return () => document.documentElement.classList.remove('fixly-tour-active')
+  }, [tourRunning])
 
   if (!isDemoDataMode() || !tourRunning) return null
 
