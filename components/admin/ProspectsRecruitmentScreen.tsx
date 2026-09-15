@@ -13,6 +13,7 @@ import {
   fitClassLabelHe,
 } from '@/lib/prospects/fit-score'
 import { humanizeDiscoveryErrors } from '@/lib/prospects/humanize-discovery-error'
+import { navigateAfterAsyncClick } from '@/lib/contact/whatsapp-link'
 import {
   FIT_CLASSES,
   PROSPECT_STATUSES,
@@ -353,16 +354,44 @@ export default function ProspectsRecruitmentScreen() {
 
   const openWhatsApp = async (id: string) => {
     setActionMsg(null)
-    const res = await fetch(`/api/admin/prospects/${id}/contact`, { method: 'POST' })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      setActionMsg(data.error ?? 'לא ניתן לפתוח WhatsApp')
-      return
+    // Open synchronously in the click gesture — iOS Safari blocks async window.open
+    const preOpened =
+      typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null
+    try {
+      const res = await fetch(`/api/admin/prospects/${id}/contact`, { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        try {
+          preOpened?.close()
+        } catch {
+          /* ignore */
+        }
+        setActionMsg(data.error ?? 'לא ניתן לפתוח WhatsApp')
+        return
+      }
+      const url = typeof data.whatsappUrl === 'string' ? data.whatsappUrl : ''
+      if (!url) {
+        try {
+          preOpened?.close()
+        } catch {
+          /* ignore */
+        }
+        setActionMsg('לא התקבל קישור WhatsApp')
+        return
+      }
+      const { navigateAfterAsyncClick } = await import('@/lib/contact/whatsapp-link')
+      navigateAfterAsyncClick(url, preOpened)
+      setActionMsg('נפתח קישור WhatsApp — עדיין לא סומן כ«נוצר קשר»')
+      await loadList()
+      if (detailId === id) setDetailId(id)
+    } catch {
+      try {
+        preOpened?.close()
+      } catch {
+        /* ignore */
+      }
+      setActionMsg('לא ניתן לפתוח WhatsApp')
     }
-    window.open(data.whatsappUrl, '_blank', 'noopener,noreferrer')
-    setActionMsg('נפתח קישור WhatsApp — עדיין לא סומן כ«נוצר קשר»')
-    await loadList()
-    if (detailId === id) setDetailId(id)
   }
 
   const confirmWhatsAppSent = async (id: string) => {
