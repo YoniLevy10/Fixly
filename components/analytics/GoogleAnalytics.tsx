@@ -13,6 +13,8 @@ export const GA_MEASUREMENT_ID =
  *
  * Snippet equivalent:
  *   gtag/js?id=G-EK4R8FW52G + gtag('config', 'G-EK4R8FW52G')
+ *
+ * strategy=lazyOnload: defer past LCP/TBT for mobile PageSpeed (vs afterInteractive).
  */
 export default function GoogleAnalytics() {
   if (!featureFlags.analytics || !GA_MEASUREMENT_ID) return null
@@ -20,13 +22,8 @@ export default function GoogleAnalytics() {
   return (
     <>
       <Script
-<<<<<<< HEAD
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-        strategy="lazyOnload"
-=======
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
->>>>>>> origin/main
+        strategy="lazyOnload"
       />
       <Script id="ga4-init" strategy="lazyOnload">
         {`
