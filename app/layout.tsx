@@ -15,7 +15,8 @@ import './globals.css'
 
 const heebo = Heebo({
   subsets: ['hebrew', 'latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  // Fewer weights = less render-blocking font CSS on mobile PageSpeed.
+  weight: ['400', '600', '700'],
   display: 'swap',
   variable: '--font-heebo',
   preload: true,
@@ -117,11 +118,18 @@ export default function RootLayout({
       style={{ ['--fixly-demo-banner-h' as string]: demoBannerReserve }}
     >
       <body className={heebo.className}>
-        {/* First-paint navy only — do NOT mount a React DOM node then .remove() it
-            (that corrupts reconciliation and can duplicate the app tree). */}
+        {/* Critical first-paint CSS: navy boot, hide shell under splash, kill sidebar FOUC
+            before Tailwind utilities apply (mobile CLS ~0.5 from bare <aside>). */}
         <style
           dangerouslySetInnerHTML={{
-            __html: 'html.fixly-booting body{background-color:#123563;}',
+            __html: [
+              'html.fixly-booting body{background-color:#123563;}',
+              'html.fixly-booting .app-shell{visibility:hidden;}',
+              '.fixly-app-splash{position:fixed;inset:0;z-index:100;background:#123563;}',
+              '@media (max-width:1023px){',
+              'aside.fixly-desktop-sidebar,header.fixly-desktop-header{display:none!important;}',
+              '}',
+            ].join(''),
           }}
         />
         <script

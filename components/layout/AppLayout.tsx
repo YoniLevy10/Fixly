@@ -20,6 +20,8 @@ type AppLayoutProps = {
   hideNav?: boolean
 }
 
+const DESKTOP_MQ = '(min-width: 1024px)'
+
 /**
  * Responsive PWA shell.
  * Marketing / pre-launch pages render without product navigation.
@@ -30,9 +32,19 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
   const { switchDemoRole } = useAuth()
   const { t } = useLocale()
   const [host, setHost] = useState('')
+  /** Avoid painting desktop chrome on mobile SSR/first paint (sidebar FOUC → CLS). */
+  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     setHost(window.location.host)
+  }, [])
+
+  useEffect(() => {
+    const mq = window.matchMedia(DESKTOP_MQ)
+    const sync = () => setIsDesktop(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
   }, [])
 
   const isMarketingHome = shouldShowPrelaunchLanding(host) && pathname === '/'
@@ -55,13 +67,14 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     shouldHideChrome || isProConsoleRoute || tourRunning
   const showProDemoExit =
     isDemoDataMode() && isProConsoleRoute && !tourRunning && !shouldHideChrome
+  const showDesktopChrome = !shouldHideChrome && isDesktop
 
   return (
-    <div className="min-h-screen bg-background">
-      {!shouldHideChrome && <DesktopSidebar />}
+    <div className="app-shell min-h-screen bg-background">
+      {showDesktopChrome && <DesktopSidebar />}
 
       <div className={shouldHideChrome ? '' : 'lg:mr-64 native-shell-column'}>
-        {!shouldHideChrome && <DesktopHeader />}
+        {showDesktopChrome && <DesktopHeader />}
 
         <NativeAwareMain hideNav={shouldHideBottomNav && !showProDemoExit}>
           {children}

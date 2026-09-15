@@ -1,10 +1,10 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, ChevronLeft, ChevronRight, ChevronDown, MapPin } from 'lucide-react'
-import FeaturedProCard from '@/components/home/FeaturedProCard'
 import { routes } from '@/lib/routes'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { getCategoryLabel } from '@/lib/i18n/category-label'
@@ -14,8 +14,25 @@ import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import type { Professional } from '@/types/professional'
-import DemoPlatformStats from '@/components/demo/DemoPlatformStats'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
+
+const DemoPlatformStats = dynamic(
+  () => import('@/components/demo/DemoPlatformStats'),
+  { ssr: false, loading: () => null }
+)
+
+const FeaturedProCard = dynamic(
+  () => import('@/components/home/FeaturedProCard'),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex-shrink-0 w-40 min-h-[14.5rem] bg-white rounded-2xl border border-gray-100 animate-pulse"
+        aria-hidden
+      />
+    ),
+  }
+)
 
 export default function HomeScreen() {
   const { user, switchDemoRole } = useAuth()
@@ -108,14 +125,14 @@ export default function HomeScreen() {
           <form onSubmit={handleSearch}>
             <div className="relative">
               <Search
-                className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-500"
                 size={15}
               />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('home.searchPlaceholder')}
-                className="w-full bg-white rounded-xl px-4 ps-9 py-2.5 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                className="w-full bg-white rounded-xl px-4 ps-9 py-2.5 text-sm text-gray-700 outline-none placeholder:text-gray-500"
               />
             </div>
           </form>
@@ -238,7 +255,7 @@ export default function HomeScreen() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex-shrink-0 w-40 h-52 bg-white rounded-2xl border border-gray-100 animate-pulse"
+                  className="flex-shrink-0 w-40 min-h-[14.5rem] bg-white rounded-2xl border border-gray-100 animate-pulse"
                 />
               ))}
             </div>

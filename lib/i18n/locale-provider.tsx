@@ -29,12 +29,6 @@ const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 const LOCALE_SUGGESTED_KEY = 'fixly-locale-suggested'
 
-function detectBrowserLocale(): Locale {
-  if (typeof navigator === 'undefined') return 'he'
-  const lang = navigator.language?.toLowerCase() ?? ''
-  return lang.startsWith('he') ? 'he' : 'en'
-}
-
 function isMarketingPath(pathname: string): boolean {
   if (typeof window === 'undefined') {
     return pathname === '/waitlist' || pathname.startsWith('/go/')
@@ -52,9 +46,10 @@ function readStoredLocale(): Locale {
   if (isMarketingPath(window.location.pathname)) return 'he'
   const stored = localStorage.getItem(LOCALE_STORAGE_KEY)
   if (stored && isLocale(stored)) return stored
+  // Never auto-flip rtl→ltr from browser language on first visit —
+  // that caused large CLS in English Lighthouse runs. Users change via toggle.
   if (!localStorage.getItem(LOCALE_SUGGESTED_KEY)) {
     localStorage.setItem(LOCALE_SUGGESTED_KEY, '1')
-    return detectBrowserLocale()
   }
   return 'he'
 }

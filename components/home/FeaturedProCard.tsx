@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import type { Professional } from '@/types/professional'
 import { routes } from '@/lib/routes'
@@ -14,16 +15,23 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
   const { t } = useLocale()
 
   return (
-    <div className="flex-shrink-0 w-40">
+    <div className="flex-shrink-0 w-40 min-h-[14.5rem]">
       <Link href={routes.professional(pro.id)}>
-        <div className="bg-white rounded-2xl border border-gray-100 p-3 text-center hover:shadow-md transition-all active:scale-95">
-          <div
-            className="w-16 h-16 rounded-full mx-auto mb-2 bg-primary text-white flex items-center justify-center font-bold text-xl bg-cover bg-center border-2 border-gray-50 shadow-sm"
-            style={{
-              backgroundImage: pro.avatarUrl ? `url(${pro.avatarUrl})` : undefined,
-            }}
-          >
-            {!pro.avatarUrl && pro.name.charAt(0)}
+        <div className="bg-white rounded-2xl border border-gray-100 p-3 text-center hover:shadow-md transition-all active:scale-95 min-h-[14.5rem]">
+          <div className="relative w-16 h-16 rounded-full mx-auto mb-2 bg-primary text-white flex items-center justify-center font-bold text-xl border-2 border-gray-50 shadow-sm overflow-hidden">
+            {pro.avatarUrl ? (
+              <Image
+                src={pro.avatarUrl}
+                alt=""
+                width={64}
+                height={64}
+                sizes="64px"
+                className="object-cover"
+                loading="lazy"
+              />
+            ) : (
+              pro.name.charAt(0)
+            )}
           </div>
           <div className="flex flex-col items-center gap-1">
             <p className="font-bold text-sm leading-tight">{pro.name}</p>
