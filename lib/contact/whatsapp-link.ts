@@ -1,22 +1,50 @@
 import { formatPhoneDisplay } from '@/lib/i18n/format-locale'
+import { normalizePhone } from '@/lib/prospects/phone'
 
 /** Build wa.me link for Israeli numbers (972...) */
 export function buildWhatsAppLink(
   phone: string,
   message: string,
 ): string | null {
-  const digits = phone.replace(/\D/g, '')
-  if (!digits) return null
-
-  let normalized = digits
-  if (normalized.startsWith('0')) {
-    normalized = `972${normalized.slice(1)}`
-  } else if (!normalized.startsWith('972')) {
-    normalized = `972${normalized}`
+  const normalized = normalizePhone(phone)
+  if (!normalized) {
+    // Last-resort: strip non-digits (legacy callers)
+    const digits = phone.replace(/\D/g, '')
+    if (digits.length < 9) return null
+    let fallback = digits
+    if (fallback.startsWith('0')) fallback = `972${fallback.slice(1)}`
+    else if (!fallback.startsWith('972')) fallback = `972${fallback}`
+    const text = encodeURIComponent(message)
+    return `https://wa.me/${fallback}?text=${text}`
   }
 
   const text = encodeURIComponent(message)
   return `https://wa.me/${normalized}?text=${text}`
+}
+
+/**
+ * Open an external URL after an async click handler.
+ * iOS Safari blocks `window.open` after `await` — pass a window opened
+ * synchronously in the click handler, or fall back to same-tab navigation
+ * (works well for wa.me → WhatsApp app).
+ */
+export function navigateAfterAsyncClick(
+  url: string,
+  preOpened: Window | null,
+): void {
+  if (preOpened && !preOpened.closed) {
+    try {
+      preOpened.location.href = url
+      return
+    } catch {
+      try {
+        preOpened.close()
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  window.location.assign(url)
 }
 
 export function buildRequestWhatsAppMessage(input: {
