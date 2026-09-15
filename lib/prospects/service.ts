@@ -199,24 +199,41 @@ async function resolveCategoryId(
 async function loadExistingForDedupe(
   admin: SupabaseClient,
 ): Promise<ExistingProspectLite[]> {
-  const { data, error } = await admin
+  const primary = await admin
     .from('professional_prospects')
     .select(
       'id, phone_normalized, source_name, external_id, business_name, category_id, city, website_url, source_url',
     )
-  if (error) throw error
-  return (data ?? []).map((r) => ({
+  type DedupeRow = {
+    id: string
+    phone_normalized: string | null
+    source_name: string
+    external_id: string | null
+    business_name: string | null
+    category_id: string | null
+    city: string | null
+    website_url?: string | null
+    source_url?: string | null
+  }
+  let rows: DedupeRow[] = (primary.data ?? []) as DedupeRow[]
+  if (primary.error) {
+    const retry = await admin
+      .from('professional_prospects')
+      .select(
+        'id, phone_normalized, source_name, external_id, business_name, category_id, city, source_url',
+      )
+    if (retry.error) throw new Error(retry.error.message)
+    rows = (retry.data ?? []) as DedupeRow[]
+  }
+  return rows.map((r) => ({
     id: r.id,
     phoneNormalized: r.phone_normalized,
     sourceName: r.source_name,
     externalId: r.external_id,
     businessName: r.business_name,
     categoryId: r.category_id,
-    city: r.city,
-    websiteHost: normalizeWebsiteHost(
-      (r as { website_url?: string | null }).website_url ??
-        (r as { source_url?: string | null }).source_url,
-    ),
+    city: r.city ?? '',
+    websiteHost: normalizeWebsiteHost(r.website_url ?? r.source_url),
   }))
 }
 
@@ -239,7 +256,10 @@ export async function writeProspectEvent(
     to_status: input.toStatus ?? null,
     payload: input.payload ?? {},
   })
-  if (error) throw error
+  // Best-effort — never abort a discovery ingest for audit-log failure
+  if (error) {
+    console.warn('[prospects] writeProspectEvent failed', error.message)
+  }
 }
 
 export type IngestResult = {
@@ -479,6 +499,44 @@ export async function ingestFromAdapter(
         .maybeSingle()
 
       if (updErr || !upd) {
+        const missingCol =
+          /fit_class|fit_score|contactability|website_url|source_refs|license|last_seen_at/i.test(
+            updErr?.message ?? '',
+          )
+        if (missingCol) {
+          const soft = {
+            updated_by: actorUserId ?? null,
+            fit_score: fitFields.fit_score,
+            ...(record.phone && !current.phone
+              ? { phone: record.phone, phone_normalized: phoneNormalized }
+              : {}),
+          }
+          const retry = await admin
+            .from('professional_prospects')
+            .update(soft)
+            .eq('id', current.id)
+            .select(
+              `id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
+               business_address, category_id, source_name, source_url, external_id, status,
+               verification_status, last_verified_at, contacted_at, consent_at, notes, fit_score,
+               waitlist_id, professional_id, created_by, updated_by, created_at, updated_at,
+               ${PROSPECT_CATEGORY_EMBED}`,
+            )
+            .maybeSingle()
+          if (retry.error || !retry.data) {
+            errors.push({
+              name: record.name,
+              error: retry.error?.message ?? updErr?.message ?? 'merge failed',
+            })
+            continue
+          }
+          skipped.push({
+            reason: dup.reason,
+            existingId: current.id,
+            name: record.name,
+          })
+          continue
+        }
         errors.push({
           name: record.name,
           error: updErr?.message ?? 'merge failed',
@@ -581,12 +639,11 @@ export async function ingestFromAdapter(
 
     if (error || !data) {
       // Graceful fallback if new columns not migrated yet
-      if (
-        error?.message?.includes('fit_class') ||
-        error?.message?.includes('fit_score') ||
-        error?.message?.includes('contactability') ||
-        error?.message?.includes('search_city')
-      ) {
+      const missingCol =
+        /fit_class|fit_score|contactability|search_city|website_url|source_refs|license|last_seen_at|service_areas|enrichment/i.test(
+          error?.message ?? '',
+        )
+      if (missingCol) {
         const legacy = {
           name: insertPayload.name,
           business_name: insertPayload.business_name,
@@ -609,24 +666,17 @@ export async function ingestFromAdapter(
           .from('professional_prospects')
           .insert(legacy)
           .select(
-            PROSPECT_SELECT.replace(
-              /search_city, business_address,\n {2}/,
-              '',
-            )
-              .replace(
-                /fit_class, fit_confidence, fit_reasons, contactability,\n {2}/,
-                '',
-              )
-              .replace(
-                /service_areas, services, enrichment, last_seen_at,\n {2}/,
-                '',
-              ),
+            `id, name, business_name, phone, whatsapp_phone, phone_normalized, city,
+             business_address, category_id, source_name, source_url, external_id, status,
+             verification_status, last_verified_at, contacted_at, consent_at, notes, fit_score,
+             waitlist_id, professional_id, created_by, updated_by, created_at, updated_at,
+             ${PROSPECT_CATEGORY_EMBED}`,
           )
           .single()
         if (retry.error || !retry.data) {
           errors.push({
             name: record.name,
-            error: retry.error?.message ?? error.message ?? 'insert failed',
+            error: retry.error?.message ?? error?.message ?? 'insert failed',
           })
           continue
         }
