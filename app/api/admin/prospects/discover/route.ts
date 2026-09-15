@@ -12,7 +12,8 @@ import {
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+/** Chunked discovery — each invocation is short; client continues. */
+export const maxDuration = 120
 
 const discoverSchema = z.object({
   sources: z
@@ -23,6 +24,8 @@ const discoverSchema = z.object({
   city: z.string().trim().min(1).max(100).optional(),
   /** Opt-in only — default is cumulative merge */
   replacePrevious: z.boolean().optional(),
+  /** Continue a chunked run (from previous `continue` response) */
+  continueRunId: z.string().uuid().optional().nullable(),
 })
 
 export async function GET() {
@@ -47,7 +50,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const limited = await enforceRateLimit(request, 'admin-prospects-discover', 3, 60_000)
+  // Allow many chunks per minute (continue loop).
+  const limited = await enforceRateLimit(request, 'admin-prospects-discover', 40, 60_000)
   if (limited) return limited
 
   const auth = await requireAdminApi()
@@ -62,11 +66,12 @@ export async function POST(request: Request) {
       actorUserId: auth.user.id,
       sources: parsed.data.sources,
       city: parsed.data.city,
-      replacePrevious: parsed.data.replacePrevious === true,
+      replacePrevious:
+        parsed.data.continueRunId ? false : parsed.data.replacePrevious === true,
+      continueRunId: parsed.data.continueRunId ?? null,
     })
 
-    // Auto-clear a dead lock and retry once (common after Vercel kill).
-    if (result.status === 'busy') {
+    if (result.status === 'busy' && !parsed.data.continueRunId) {
       const unlocked = await forceUnlockDiscoveryRuns(auth.admin)
       if (unlocked > 0) {
         result = await runProspectDiscovery(auth.admin, {

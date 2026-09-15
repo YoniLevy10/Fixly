@@ -28,12 +28,21 @@ describe('discovery mapping', () => {
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
   })
 
-  it('defaults discovery budget to 3000 for neighborhood coverage', async () => {
-    const { DISCOVERY_TOTAL_BUDGET, getDiscoveryTotalBudget } = await import(
-      '@/lib/prospects/config'
-    )
-    assert.equal(DISCOVERY_TOTAL_BUDGET, 3000)
-    assert.equal(getDiscoveryTotalBudget(), 3000)
+  it('defaults per-chunk discovery budgets for continue-loop coverage', async () => {
+    const {
+      DISCOVERY_TOTAL_BUDGET,
+      DISCOVERY_API_CALL_BUDGET,
+      DISCOVERY_CHUNK_MAX_JOBS,
+      getDiscoveryTotalBudget,
+      getDiscoveryApiCallBudget,
+      getDiscoveryChunkMaxJobs,
+    } = await import('@/lib/prospects/config')
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 400)
+    assert.equal(DISCOVERY_API_CALL_BUDGET, 40)
+    assert.equal(DISCOVERY_CHUNK_MAX_JOBS, 20)
+    assert.equal(getDiscoveryTotalBudget(), 400)
+    assert.equal(getDiscoveryApiCallBudget(), 40)
+    assert.equal(getDiscoveryChunkMaxJobs(), 20)
   })
 
   it('includes English/Arabic Places queries and Jerusalem neighborhood jobs', () => {
@@ -285,6 +294,108 @@ describe('GooglePlacesProspectAdapter', () => {
     )
     assert.ok(!records.some((r) => r.externalId === 'places/company'))
     assert.ok(adapter.lastStats.searchCalls >= 1)
+  })
+
+  it('supports jobOffset/maxJobs chunking without skipping unrun jobs', async () => {
+    let calls = 0
+    const adapter = new GooglePlacesProspectAdapter({
+      apiKey: 'test-key',
+      categorySlugs: ['plumbing'],
+      apiCallBudget: 5,
+      totalBudget: 50,
+      maxJobs: 2,
+      jobOffset: 0,
+      searchAreas: [
+        {
+          labelHe: 'ירושלים',
+          lat: 31.7683,
+          lng: 35.2137,
+          radiusMeters: 12000,
+        },
+      ],
+      fetchImpl: async () => {
+        calls += 1
+        return new Response(
+          JSON.stringify({
+            places: [
+              {
+                id: `places/chunk-${calls}`,
+                displayName: { text: `אינסטלטור ${calls}` },
+                nationalPhoneNumber: `050-555-100${calls}`,
+                types: ['plumber'],
+              },
+            ],
+          }),
+          { status: 200 },
+        )
+      },
+    })
+    await adapter.fetchRecords()
+    assert.ok(adapter.lastStats.jobsTotal > 2)
+    assert.equal(adapter.lastStats.jobsOffset, 0)
+    assert.equal(adapter.lastStats.jobsProcessed, 2)
+    assert.equal(adapter.lastStats.nextJobOffset, 2)
+    assert.equal(adapter.lastStats.moreJobs, true)
+
+    const next = new GooglePlacesProspectAdapter({
+      apiKey: 'test-key',
+      categorySlugs: ['plumbing'],
+      apiCallBudget: 5,
+      totalBudget: 50,
+      maxJobs: 2,
+      jobOffset: adapter.lastStats.nextJobOffset,
+      searchAreas: [
+        {
+          labelHe: 'ירושלים',
+          lat: 31.7683,
+          lng: 35.2137,
+          radiusMeters: 12000,
+        },
+      ],
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            places: [
+              {
+                id: 'places/chunk-next',
+                displayName: { text: 'אינסטלטור המשך' },
+                nationalPhoneNumber: '050-555-1099',
+                types: ['plumber'],
+              },
+            ],
+          }),
+          { status: 200 },
+        ),
+    })
+    await next.fetchRecords()
+    assert.equal(next.lastStats.jobsOffset, 2)
+    assert.equal(next.lastStats.nextJobOffset, 4)
+  })
+
+  it('does not skip the job slice when deadline hits before any job', async () => {
+    const adapter = new GooglePlacesProspectAdapter({
+      apiKey: 'test-key',
+      categorySlugs: ['plumbing'],
+      maxJobs: 5,
+      jobOffset: 3,
+      deadlineAt: Date.now() - 1,
+      searchAreas: [
+        {
+          labelHe: 'ירושלים',
+          lat: 31.7683,
+          lng: 35.2137,
+          radiusMeters: 12000,
+        },
+      ],
+      fetchImpl: async () => {
+        throw new Error('should not call Places when deadline already passed')
+      },
+    })
+    await adapter.fetchRecords()
+    assert.equal(adapter.lastStats.jobsProcessed, 0)
+    assert.equal(adapter.lastStats.nextJobOffset, 3)
+    assert.equal(adapter.lastStats.moreJobs, true)
+    assert.equal(adapter.lastStats.stopReason, 'wall_clock')
   })
 })
 

@@ -2,21 +2,41 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 describe('discovery stale lock helpers', () => {
-  it('exports wall-clock under Vercel maxDuration and short stale windows', async () => {
+  it('exports chunk wall-clock under Vercel maxDuration; absolute lock above multi-chunk age', async () => {
     const {
       DISCOVERY_WALL_CLOCK_MS,
       DISCOVERY_STALE_LOCK_MS,
       DISCOVERY_HEARTBEAT_STALE_MS,
+      DISCOVERY_CHUNK_MAX_JOBS,
       getDiscoveryWallClockMs,
       getDiscoveryStaleLockMs,
       getDiscoveryHeartbeatStaleMs,
     } = await import('@/lib/prospects/config')
-    assert.ok(DISCOVERY_WALL_CLOCK_MS < 300_000)
-    assert.ok(DISCOVERY_STALE_LOCK_MS <= 180_000)
+    assert.ok(DISCOVERY_WALL_CLOCK_MS < 120_000)
+    assert.ok(DISCOVERY_STALE_LOCK_MS >= 300_000)
     assert.ok(DISCOVERY_HEARTBEAT_STALE_MS <= 120_000)
+    assert.ok(DISCOVERY_CHUNK_MAX_JOBS >= 10)
     assert.equal(getDiscoveryWallClockMs(), DISCOVERY_WALL_CLOCK_MS)
     assert.equal(getDiscoveryStaleLockMs(), DISCOVERY_STALE_LOCK_MS)
     assert.equal(getDiscoveryHeartbeatStaleMs(), DISCOVERY_HEARTBEAT_STALE_MS)
+  })
+
+  it('fresh heartbeat keeps multi-chunk runs alive past started_at age', async () => {
+    const { isDiscoveryRunStale } = await import(
+      '@/lib/prospects/query-stats-store'
+    )
+    const now = Date.now()
+    assert.equal(
+      isDiscoveryRunStale(
+        {
+          started_at: new Date(now - 400_000).toISOString(),
+          details: { heartbeatAt: new Date(now - 8_000).toISOString() },
+        },
+        now,
+        { maxAgeMs: 360_000, heartbeatStaleMs: 90_000 },
+      ),
+      false,
+    )
   })
 
   it('isDiscoveryRunStale uses heartbeat when present', async () => {

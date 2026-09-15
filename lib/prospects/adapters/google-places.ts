@@ -77,6 +77,11 @@ export type GooglePlacesFetchStats = {
   searchErrors: string[]
   stopReason: string | null
   queryYields: QueryYieldUpdate[]
+  jobsTotal: number
+  jobsOffset: number
+  jobsProcessed: number
+  nextJobOffset: number
+  moreJobs: boolean
 }
 
 export type GooglePlacesAdapterOptions = {
@@ -86,6 +91,10 @@ export type GooglePlacesAdapterOptions = {
   totalBudget?: number
   apiCallBudget?: number
   perCategoryLimit?: number
+  /** Start index into the ordered job list (chunked discovery). */
+  jobOffset?: number
+  /** Max jobs to attempt in this chunk. */
+  maxJobs?: number
   searchAreas?: DiscoverySearchArea[]
   queryStats?: QueryStatRow[]
   fetchImpl?: typeof fetch
@@ -113,6 +122,8 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
   private readonly queryStats: QueryStatRow[]
   private readonly fetchImpl: typeof fetch
   private readonly deadlineAt: number | null
+  private readonly jobOffset: number
+  private readonly maxJobs: number
   private readonly onProgress?: GooglePlacesAdapterOptions['onProgress']
   lastStats: GooglePlacesFetchStats = emptyStats()
 
@@ -128,6 +139,8 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
       typeof options.deadlineAt === 'number' && Number.isFinite(options.deadlineAt)
         ? options.deadlineAt
         : null
+    this.jobOffset = Math.max(0, Math.floor(options.jobOffset ?? 0))
+    this.maxJobs = Math.max(1, Math.floor(options.maxJobs ?? 10_000))
     this.onProgress = options.onProgress
     this.mappings = getDiscoveryMappingsForSlugs(
       options.categorySlugs ?? getRecruitCategorySlugs(),
@@ -165,9 +178,18 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
       )
     }
 
-    // Cap jobs by API call budget (each job may paginate — reserve ~2 pages avg)
-    const jobBudget = Math.max(1, Math.floor(this.apiCallBudget * 0.7))
-    const selected = selectJobsForBudget(allJobs, this.queryStats, jobBudget)
+    // Stable ordered list of all jobs; this chunk takes a slice.
+    const ordered = selectJobsForBudget(
+      allJobs,
+      this.queryStats,
+      Math.max(allJobs.length, 1),
+    )
+    const selected = ordered.slice(
+      this.jobOffset,
+      this.jobOffset + this.maxJobs,
+    )
+    stats.jobsTotal = ordered.length
+    stats.jobsOffset = this.jobOffset
     const keptByCategory = new Map<string, number>()
     let jobsDone = 0
 
@@ -175,8 +197,8 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
       if (!this.onProgress) return
       try {
         await this.onProgress({
-          jobsDone,
-          jobsTotal: selected.length,
+          jobsDone: this.jobOffset + jobsDone,
+          jobsTotal: ordered.length,
           searchCalls: stats.searchCalls,
           apiCallBudget: this.apiCallBudget,
         })
@@ -370,11 +392,20 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
       stats.stopReason = 'api_call_budget'
     }
 
+    // Advance only past jobs actually attempted. Never skip a full slice
+    // when the deadline hit before the first job (jobsDone === 0).
+    stats.jobsProcessed = jobsDone
+    stats.jobsOffset = this.jobOffset
+    if (selected.length === 0) {
+      stats.nextJobOffset = ordered.length
+    } else {
+      stats.nextJobOffset = Math.min(this.jobOffset + jobsDone, ordered.length)
+    }
+    stats.moreJobs = stats.nextJobOffset < ordered.length
+
     stats.queryYields = [...yieldMap.values()].map((y) => ({
       ...y,
-      // attach computed score for persistence helpers
     }))
-    // annotate yield score for callers
     for (const y of stats.queryYields) {
       ;(y as QueryYieldUpdate & { yieldScore?: number }).yieldScore =
         computeYieldScore(y)
@@ -453,5 +484,10 @@ function emptyStats(): GooglePlacesFetchStats {
     searchErrors: [],
     stopReason: null,
     queryYields: [],
+    jobsTotal: 0,
+    jobsOffset: 0,
+    jobsProcessed: 0,
+    nextJobOffset: 0,
+    moreJobs: false,
   }
 }

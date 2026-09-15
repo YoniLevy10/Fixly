@@ -248,11 +248,11 @@ describe('humanizeDiscoveryError', () => {
 })
 
 describe('discovery config defaults', () => {
-  it('exposes api call budget', async () => {
+  it('exposes per-chunk api call budget', async () => {
     const { getDiscoveryApiCallBudget, DISCOVERY_TOTAL_BUDGET } = await import(
       '@/lib/prospects/config'
     )
-    assert.equal(DISCOVERY_TOTAL_BUDGET, 3000)
+    assert.equal(DISCOVERY_TOTAL_BUDGET, 400)
     assert.ok(getDiscoveryApiCallBudget() >= 40)
   })
 })
