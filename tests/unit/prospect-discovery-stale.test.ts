@@ -2,23 +2,28 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 describe('discovery stale lock helpers', () => {
-  it('exports chunk wall-clock under Vercel maxDuration; absolute lock above multi-chunk age', async () => {
+  it('exports chunk wall-clock under Vercel maxDuration; heartbeat allows leave-screen resume', async () => {
     const {
       DISCOVERY_WALL_CLOCK_MS,
       DISCOVERY_STALE_LOCK_MS,
       DISCOVERY_HEARTBEAT_STALE_MS,
+      DISCOVERY_SESSION_MAX_MS,
       DISCOVERY_CHUNK_MAX_JOBS,
       getDiscoveryWallClockMs,
       getDiscoveryStaleLockMs,
       getDiscoveryHeartbeatStaleMs,
+      getDiscoverySessionMaxMs,
     } = await import('@/lib/prospects/config')
     assert.ok(DISCOVERY_WALL_CLOCK_MS < 120_000)
+    assert.ok(DISCOVERY_SESSION_MAX_MS <= 110_000)
     assert.ok(DISCOVERY_STALE_LOCK_MS >= 300_000)
-    assert.ok(DISCOVERY_HEARTBEAT_STALE_MS <= 120_000)
+    // Long enough that leaving the UI does not fail the run before cron resumes.
+    assert.ok(DISCOVERY_HEARTBEAT_STALE_MS >= 600_000)
     assert.ok(DISCOVERY_CHUNK_MAX_JOBS >= 10)
     assert.equal(getDiscoveryWallClockMs(), DISCOVERY_WALL_CLOCK_MS)
     assert.equal(getDiscoveryStaleLockMs(), DISCOVERY_STALE_LOCK_MS)
     assert.equal(getDiscoveryHeartbeatStaleMs(), DISCOVERY_HEARTBEAT_STALE_MS)
+    assert.equal(getDiscoverySessionMaxMs(), DISCOVERY_SESSION_MAX_MS)
   })
 
   it('fresh heartbeat keeps multi-chunk runs alive past started_at age', async () => {
@@ -120,7 +125,8 @@ describe('discovery stale lock helpers', () => {
                       id: 'dead',
                       started_at: new Date(now - 60_000).toISOString(),
                       details: {
-                        heartbeatAt: new Date(now - 100_000).toISOString(),
+                        // Older than DISCOVERY_HEARTBEAT_STALE_MS (20 min)
+                        heartbeatAt: new Date(now - 1_300_000).toISOString(),
                       },
                     },
                   ],
@@ -155,7 +161,7 @@ describe('discovery stale lock helpers', () => {
     const { releaseStaleDiscoveryRuns } = await import(
       '@/lib/prospects/query-stats-store'
     )
-    const n = await releaseStaleDiscoveryRuns(admin as never, 120_000)
+    const n = await releaseStaleDiscoveryRuns(admin as never)
     assert.equal(n, 1)
     assert.equal(updates[0]?.status, 'failed')
     assert.match(String(updates[0]?.error_message), /נעילה שוחררה/)

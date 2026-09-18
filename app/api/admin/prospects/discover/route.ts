@@ -1,18 +1,19 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { requireAdminApi } from '@/lib/admin/require-admin-api'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { z } from 'zod'
 import {
+  findRunningDiscoveryRunId,
   forceUnlockDiscoveryRuns,
   listDiscoveryRuns,
-  runProspectDiscovery,
+  runProspectDiscoveryChunks,
   type DiscoveryProgress,
 } from '@/lib/prospects/discover'
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
-/** Chunked discovery — each invocation is short; client continues. */
+/** Multi-chunk discovery session — server owns the loop (leave-screen safe). */
 export const maxDuration = 120
 
 const discoverSchema = z.object({
@@ -50,7 +51,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  // Allow many chunks per minute (continue loop).
+  // Allow several sessions per minute (poll + resume).
   const limited = await enforceRateLimit(request, 'admin-prospects-discover', 40, 60_000)
   if (limited) return limited
 
@@ -61,20 +62,25 @@ export async function POST(request: Request) {
   if (!parsed.success) return parsed.response
 
   try {
-    let result = await runProspectDiscovery(auth.admin, {
+    let continueRunId = parsed.data.continueRunId ?? null
+    if (!continueRunId) {
+      continueRunId = await findRunningDiscoveryRunId(auth.admin)
+    }
+
+    let result = await runProspectDiscoveryChunks(auth.admin, {
       trigger: 'manual',
       actorUserId: auth.user.id,
       sources: parsed.data.sources,
       city: parsed.data.city,
       replacePrevious:
-        parsed.data.continueRunId ? false : parsed.data.replacePrevious === true,
-      continueRunId: parsed.data.continueRunId ?? null,
+        continueRunId ? false : parsed.data.replacePrevious === true,
+      continueRunId,
     })
 
-    if (result.status === 'busy' && !parsed.data.continueRunId) {
+    if (result.status === 'busy' && !continueRunId) {
       const unlocked = await forceUnlockDiscoveryRuns(auth.admin)
       if (unlocked > 0) {
-        result = await runProspectDiscovery(auth.admin, {
+        result = await runProspectDiscoveryChunks(auth.admin, {
           trigger: 'manual',
           actorUserId: auth.user.id,
           sources: parsed.data.sources,
@@ -82,6 +88,25 @@ export async function POST(request: Request) {
           replacePrevious: parsed.data.replacePrevious === true,
         })
       }
+    }
+
+    // If more work remains, keep processing after the response so leaving
+    // the Superadmin screen does not stop discovery.
+    if (result.status === 'continue' && result.continueRunId) {
+      const resumeId = result.continueRunId
+      after(async () => {
+        try {
+          await runProspectDiscoveryChunks(auth.admin, {
+            trigger: 'manual',
+            actorUserId: auth.user.id,
+            continueRunId: resumeId,
+          })
+        } catch (error) {
+          trackError(error, {
+            route: 'POST /api/admin/prospects/discover after',
+          })
+        }
+      })
     }
 
     const statusCode =

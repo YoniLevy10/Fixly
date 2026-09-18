@@ -76,11 +76,25 @@ describe('fit-score quality', () => {
     assert.deepEqual(once.reasons, twice.reasons)
   })
 
-  it('landline does not block professional fit keep', () => {
+  it('rejects landlines (02/077) — mobile-only keep for WhatsApp recruit', () => {
     assert.equal(
       shouldKeepDiscoveredProspect({
         name: 'יוסי כהן אינסטלטור',
         phone: '02-555-1111',
+      }),
+      false,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'דני צבעי',
+        phone: '077-1234567',
+      }),
+      false,
+    )
+    assert.equal(
+      shouldKeepDiscoveredProspect({
+        name: 'יוסי כהן אינסטלטור',
+        phone: '050-555-1111',
       }),
       true,
     )

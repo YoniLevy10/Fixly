@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron/discover-prospects",
-      "schedule": "0 7 * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/keepalive",

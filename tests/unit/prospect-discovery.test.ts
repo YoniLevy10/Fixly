@@ -434,7 +434,7 @@ describe('person-score solo filter', () => {
         name: 'דני אינסטלטור',
         phone: '02-555-1111',
       }),
-      true,
+      false,
     )
   })
 })

@@ -61,25 +61,36 @@ export const DISCOVERY_CHUNK_MAX_JOBS = 20
 
 /**
  * Soft wall-clock for one discovery chunk (ms).
- * Must stay well under Vercel `maxDuration` (300s).
+ * Must stay well under Vercel `maxDuration` (120s) so a session can
+ * run several chunks before the function times out.
  */
-export const DISCOVERY_WALL_CLOCK_MS = 55_000
+export const DISCOVERY_WALL_CLOCK_MS = 45_000
 
 /**
  * Absolute max age of a `running` row by started_at (ms).
- * Must be ABOVE Vercel maxDuration so a healthy long continue-chain
- * is never age-killed while heartbeats are fresh.
+ * Only used as a last-resort when no heartbeat exists.
+ * Healthy multi-chunk / cron-resume chains rely on heartbeat instead.
  */
-export const DISCOVERY_STALE_LOCK_MS = 360_000
+export const DISCOVERY_STALE_LOCK_MS = 7_200_000
 
 /**
  * If progress heartbeat is older than this, treat the run as dead.
- * Primary unlock signal (not started_at).
+ * Kept long enough that leaving the Superadmin screen (client stop)
+ * does not fail the run — cron / next POST resumes the same cursor.
  */
-export const DISCOVERY_HEARTBEAT_STALE_MS = 90_000
+export const DISCOVERY_HEARTBEAT_STALE_MS = 1_200_000
+
+/**
+ * Soft budget for one HTTP invocation that loops several chunks.
+ * Stay under Vercel route `maxDuration` (120s).
+ */
+export const DISCOVERY_SESSION_MAX_MS = 100_000
+
+/** Max chunks per HTTP session (admin POST or cron). */
+export const DISCOVERY_SESSION_MAX_CHUNKS = 8
 
 /** Leave this much wall-clock for ingest + DB finalize inside a chunk. */
-export const DISCOVERY_FINALIZE_BUFFER_MS = 12_000
+export const DISCOVERY_FINALIZE_BUFFER_MS = 10_000
 
 /** Share of query budget reserved for experimental / low-stats queries. */
 export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
@@ -152,13 +163,13 @@ export function getDiscoveryWallClockMs(): number {
 
 export function getDiscoveryStaleLockMs(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_STALE_LOCK_MS)
-  if (Number.isFinite(n) && n >= 60_000) return Math.min(Math.floor(n), 3_600_000)
+  if (Number.isFinite(n) && n >= 60_000) return Math.min(Math.floor(n), 86_400_000)
   return DISCOVERY_STALE_LOCK_MS
 }
 
 export function getDiscoveryHeartbeatStaleMs(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_HEARTBEAT_STALE_MS)
-  if (Number.isFinite(n) && n >= 20_000) return Math.min(Math.floor(n), 300_000)
+  if (Number.isFinite(n) && n >= 20_000) return Math.min(Math.floor(n), 3_600_000)
   return DISCOVERY_HEARTBEAT_STALE_MS
 }
 
@@ -166,4 +177,16 @@ export function getDiscoveryFinalizeBufferMs(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_FINALIZE_BUFFER_MS)
   if (Number.isFinite(n) && n >= 5_000) return Math.min(Math.floor(n), 40_000)
   return DISCOVERY_FINALIZE_BUFFER_MS
+}
+
+export function getDiscoverySessionMaxMs(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_SESSION_MAX_MS)
+  if (Number.isFinite(n) && n >= 30_000) return Math.min(Math.floor(n), 110_000)
+  return DISCOVERY_SESSION_MAX_MS
+}
+
+export function getDiscoverySessionMaxChunks(): number {
+  const n = Number(process.env.FIXLY_DISCOVERY_SESSION_MAX_CHUNKS)
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 24)
+  return DISCOVERY_SESSION_MAX_CHUNKS
 }

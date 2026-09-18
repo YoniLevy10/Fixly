@@ -21,7 +21,7 @@ export {
   mapProspectRow,
   clearReplaceableAutoProspects,
 } from '@/lib/prospects/service'
-export { runProspectDiscovery, listDiscoveryRuns, forceUnlockDiscoveryRuns, releaseStaleDiscoveryRuns } from '@/lib/prospects/discover'
+export { runProspectDiscovery, runProspectDiscoveryChunks, listDiscoveryRuns, findRunningDiscoveryRunId, forceUnlockDiscoveryRuns, releaseStaleDiscoveryRuns } from '@/lib/prospects/discover'
 export {
   DISCOVERY_CATEGORY_MAP,
   isAllowedDiscoverySource,
