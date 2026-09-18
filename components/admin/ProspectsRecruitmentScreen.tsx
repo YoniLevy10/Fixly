@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
@@ -216,6 +216,7 @@ export default function ProspectsRecruitmentScreen() {
   const [discoveryPercent, setDiscoveryPercent] = useState(0)
   const [discoveryProgressLabel, setDiscoveryProgressLabel] = useState('')
   const [runs, setRuns] = useState<DiscoveryRun[]>([])
+  const discoveryPollActive = useRef(false)
   const [newForm, setNewForm] = useState({
     name: '',
     businessName: '',
@@ -269,11 +270,16 @@ export default function ProspectsRecruitmentScreen() {
   const loadRuns = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/prospects/discover')
-      if (!res.ok) return
+      if (!res.ok) return null
       const data = await res.json()
       setRuns(data.runs ?? [])
+      return data as {
+        runs?: DiscoveryRun[]
+        progress?: { percent?: number; labelHe?: string } | null
+        runningRunId?: string | null
+      }
     } catch {
-      /* ignore */
+      return null
     }
   }, [])
 
@@ -287,6 +293,9 @@ export default function ProspectsRecruitmentScreen() {
         return
       }
       setRuns(data.runs ?? [])
+      setDiscovering(false)
+      setDiscoveryPercent(0)
+      setDiscoveryProgressLabel('')
       setActionMsg(
         data.unlocked > 0
           ? `שוחררו ${data.unlocked} נעילות תקועות — אפשר להריץ גילוי שוב`
@@ -297,13 +306,99 @@ export default function ProspectsRecruitmentScreen() {
     }
   }, [])
 
+  /** Poll GET until the server-owned run finishes (safe to leave the screen). */
+  const attachDiscoveryPoll = useCallback(
+    (opts?: { untilDone?: boolean }) => {
+      if (discoveryPollActive.current) return Promise.resolve()
+      discoveryPollActive.current = true
+      setDiscovering(true)
+      const startedAt = Date.now()
+      const maxMs = 12 * 60_000
+
+      const tick = async (): Promise<'running' | 'done' | 'failed'> => {
+        const data = await loadRuns()
+        if (!data) return 'running'
+        const p = data.progress
+        if (p && typeof p.percent === 'number') {
+          setDiscoveryPercent(Math.max(1, Math.min(99, Math.round(p.percent))))
+          if (p.labelHe) setDiscoveryProgressLabel(p.labelHe)
+        }
+        if (data.runningRunId) return 'running'
+        const latest = Array.isArray(data.runs) ? data.runs[0] : null
+        if (latest?.status === 'failed') return 'failed'
+        if (latest?.status === 'completed') return 'done'
+        return 'done'
+      }
+
+      return (async () => {
+        try {
+          while (Date.now() - startedAt < maxMs) {
+            const state = await tick()
+            if (state === 'running') {
+              await new Promise((r) => setTimeout(r, 1500))
+              continue
+            }
+            if (state === 'failed') {
+              const latest = (await loadRuns())?.runs?.[0]
+              setActionMsg(latest?.error_message ?? 'גילוי נכשל')
+              setDiscoveryProgressLabel('הגילוי נכשל')
+              return
+            }
+            setDiscoveryPercent(100)
+            setDiscoveryProgressLabel('הגילוי הסתיים')
+            const latest = (await loadRuns())?.runs?.[0]
+            if (latest) {
+              setActionMsg(
+                `גילוי מצטבר: חדשים ${latest.created_count ?? 0} · דולגו ${latest.skipped_count ?? 0} · נסרקו ${latest.found_count ?? 0}`,
+              )
+            }
+            await loadList()
+            return
+          }
+          if (opts?.untilDone) {
+            setActionMsg(
+              'הגילוי ממשיך ברקע (שרת/cron) — אפשר לעזוב את המסך; התקדמות תתעדכן בחזרה',
+            )
+            setDiscoveryProgressLabel('רץ ברקע…')
+          }
+        } finally {
+          discoveryPollActive.current = false
+          const still = await loadRuns()
+          if (!still?.runningRunId) {
+            setDiscovering(false)
+            setTimeout(() => {
+              setDiscoveryPercent(0)
+              setDiscoveryProgressLabel('')
+            }, 2500)
+          } else {
+            setDiscovering(true)
+          }
+        }
+      })()
+    },
+    [loadList, loadRuns],
+  )
+
   useEffect(() => {
     loadList()
   }, [loadList])
 
   useEffect(() => {
-    loadRuns()
-  }, [loadRuns])
+    let cancelled = false
+    void (async () => {
+      const data = await loadRuns()
+      if (cancelled) return
+      if (data?.runningRunId) {
+        setActionMsg('גילוי פעיל ברקע — עוקב אחרי התקדמות')
+        void attachDiscoveryPoll({ untilDone: true })
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // Attach once on mount if a server run is already in progress.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only
+  }, [])
 
   useEffect(() => {
     fetch('/api/categories')
@@ -554,71 +649,16 @@ export default function ProspectsRecruitmentScreen() {
   const runDiscovery = async () => {
     setDiscovering(true)
     setDiscoveryPercent(1)
-    setDiscoveryProgressLabel('מתחיל גילוי…')
+    setDiscoveryProgressLabel('מתחיל גילוי בשרת…')
     setActionMsg(null)
 
-    const poll = window.setInterval(async () => {
-      try {
-        const res = await fetch('/api/admin/prospects/discover')
-        if (!res.ok) return
-        const data = await res.json()
-        const p = data.progress as
-          | { percent?: number; labelHe?: string }
-          | null
-          | undefined
-        if (p && typeof p.percent === 'number') {
-          setDiscoveryPercent(Math.max(1, Math.min(99, Math.round(p.percent))))
-          if (p.labelHe) setDiscoveryProgressLabel(p.labelHe)
-        }
-        if (Array.isArray(data.runs)) setRuns(data.runs)
-      } catch {
-        /* ignore poll errors */
-      }
-    }, 800)
-
     try {
-      const postDiscover = async (continueRunId?: string | null) => {
-        const res = await fetch('/api/admin/prospects/discover', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            replacePrevious: continueRunId ? false : replacePrevious,
-            continueRunId: continueRunId || undefined,
-          }),
-        })
-        const data = await res.json().catch(() => ({}))
-        return { res, data }
-      }
-
-      // Resume an in-progress chunked run instead of fighting the lock.
-      let resumeId: string | null = null
-      try {
-        const statusRes = await fetch('/api/admin/prospects/discover')
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          if (typeof statusData.runningRunId === 'string') {
-            resumeId = statusData.runningRunId
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-
-      let { res, data } = await postDiscover(resumeId)
-      let continueRunId: string | null =
-        typeof data.continueRunId === 'string'
-          ? data.continueRunId
-          : resumeId
-
-      // Truly stuck lock (no resumable run): unlock and start fresh once.
-      if ((res.status === 409 || data.status === 'busy') && !resumeId) {
-        await fetch('/api/admin/prospects/discover', { method: 'DELETE' }).catch(
-          () => null,
-        )
-        ;({ res, data } = await postDiscover(null))
-        continueRunId =
-          typeof data.continueRunId === 'string' ? data.continueRunId : null
-      }
+      const res = await fetch('/api/admin/prospects/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replacePrevious }),
+      })
+      const data = await res.json().catch(() => ({}))
 
       if (res.status === 409 || data.status === 'busy') {
         setActionMsg(
@@ -626,70 +666,44 @@ export default function ProspectsRecruitmentScreen() {
             'ריצת גילוי תקועה — לחצו «שחרר נעילה» ואז הריצו שוב',
         )
         await loadRuns()
+        setDiscovering(false)
         return
       }
+
       if (!res.ok && data.status !== 'completed' && data.status !== 'continue') {
         setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
+        setDiscovering(false)
         return
       }
 
-      // Chunked discovery: keep posting until completed/failed.
-      let guard = 0
-      while (data.status === 'continue' && continueRunId && guard < 80) {
-        guard += 1
-        const chunk = data.chunk as
-          | { phase?: string; placesJobOffset?: number; placesJobsTotal?: number }
-          | undefined
-        if (chunk?.placesJobsTotal && chunk.placesJobOffset != null) {
-          const pct = Math.round(
-            (chunk.placesJobOffset / Math.max(1, chunk.placesJobsTotal)) * 90,
-          )
-          setDiscoveryPercent(Math.max(5, Math.min(95, pct)))
-          setDiscoveryProgressLabel(
-            `ממשיך גילוי… ${chunk.placesJobOffset}/${chunk.placesJobsTotal} · חדשים ${data.created ?? 0}`,
-          )
-        } else {
-          setDiscoveryProgressLabel(
-            `ממשיך גילוי (${chunk?.phase ?? '…'}) · חדשים ${data.created ?? 0}`,
-          )
-        }
-        ;({ res, data } = await postDiscover(continueRunId))
-        continueRunId =
-          typeof data.continueRunId === 'string' ? data.continueRunId : null
-        if (!res.ok && data.status !== 'continue' && data.status !== 'completed') {
-          setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל באמצע')
-          await loadRuns()
-          return
-        }
-      }
-
-      if (data.status === 'continue') {
-        setDiscoveryPercent(90)
-        setDiscoveryProgressLabel('הגילוי עדיין רץ ברקע — הריצו שוב להמשך')
+      if (data.status === 'completed') {
+        setDiscoveryPercent(100)
+        setDiscoveryProgressLabel('הגילוי הסתיים')
         setActionMsg(
-          `גילוי חלקי (המשך נדרש): חדשים ${data.created ?? 0} · נסרקו ${data.found ?? 0} · לחצו שוב על גילוי להמשך אותו ריצה`,
+          `גילוי מצטבר: חדשים ${data.created ?? 0} · עודכנו ${data.updated ?? 0} · דולגו ${data.skipped ?? 0} · נסרקו ${data.found ?? 0}`,
         )
         await Promise.all([loadList(), loadRuns()])
+        setDiscovering(false)
+        setTimeout(() => {
+          setDiscoveryPercent(0)
+          setDiscoveryProgressLabel('')
+        }, 2500)
         return
       }
 
-      if (data.status === 'failed') {
-        setActionMsg(data.error ?? data.errorMessage ?? 'גילוי נכשל')
-        await loadRuns()
-        return
-      }
-
-      setDiscoveryPercent(100)
-      setDiscoveryProgressLabel('הגילוי הסתיים')
+      // Server owns the continue loop (`after` + cron). UI only polls.
       setActionMsg(
-        `גילוי מצטבר: חדשים ${data.created ?? 0} · עודכנו ${data.updated ?? 0} · דולגו ${data.skipped ?? 0} · נסרקו ${data.found ?? 0} · קריאות API ${data.bySource?.google_places?.stats?.searchCalls ?? data.chunk?.placesJobOffset ?? '—'}`,
+        'הגילוי רץ בשרת — אפשר לעזוב את המסך; ההתקדמות תמשיך ברקע',
       )
-      await Promise.all([loadList(), loadRuns()])
-    } finally {
-      window.clearInterval(poll)
+      if (typeof data.created === 'number') {
+        setDiscoveryProgressLabel(
+          `רץ ברקע… חדשים ${data.created} · נסרקו ${data.found ?? 0}`,
+        )
+      }
+      void attachDiscoveryPoll({ untilDone: true })
+    } catch {
+      setActionMsg('גילוי נכשל')
       setDiscovering(false)
-      setDiscoveryPercent(0)
-      setDiscoveryProgressLabel('')
     }
   }
 

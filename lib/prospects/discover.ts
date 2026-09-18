@@ -14,6 +14,8 @@ import {
   getDiscoveryChunkMaxJobs,
   getDiscoveryFinalizeBufferMs,
   getDiscoveryPerCategoryCap,
+  getDiscoverySessionMaxChunks,
+  getDiscoverySessionMaxMs,
   getDiscoveryTotalBudget,
   getDiscoveryWallClockMs,
   getRecruitCategorySlugs,
@@ -200,7 +202,8 @@ async function writeRunProgress(
 
 /**
  * Process ONE discovery chunk (Places slice / OSM / gov).
- * Client should loop while status === 'continue'.
+ * Prefer `runProspectDiscoveryChunks` for admin/cron so progress
+ * continues server-side without a browser continue loop.
  */
 export async function runProspectDiscovery(
   admin: SupabaseClient,
@@ -839,6 +842,72 @@ export async function runProspectDiscovery(
       bySource,
     }
   }
+}
+
+/**
+ * Loop several discovery chunks in one HTTP invocation until done,
+ * failed, busy, or the session wall-clock / chunk budget is hit.
+ * Survives leaving the Superadmin screen because the server owns the loop;
+ * incomplete runs stay `running` for cron resume.
+ */
+export async function runProspectDiscoveryChunks(
+  admin: SupabaseClient,
+  options: {
+    trigger: DiscoveryTrigger
+    actorUserId?: string | null
+    sources?: DiscoveryAutoSource[]
+    categorySlugs?: string[]
+    city?: string
+    replacePrevious?: boolean
+    continueRunId?: string | null
+    maxSessionMs?: number
+    maxChunks?: number
+  },
+): Promise<DiscoveryRunResult & { chunks: number }> {
+  const maxSessionMs = options.maxSessionMs ?? getDiscoverySessionMaxMs()
+  const maxChunks = options.maxChunks ?? getDiscoverySessionMaxChunks()
+  const sessionDeadline = Date.now() + maxSessionMs
+
+  let result = await runProspectDiscovery(admin, {
+    trigger: options.trigger,
+    actorUserId: options.actorUserId,
+    sources: options.sources,
+    categorySlugs: options.categorySlugs,
+    city: options.city,
+    replacePrevious: options.replacePrevious,
+    continueRunId: options.continueRunId,
+  })
+  let chunks = 1
+
+  while (
+    result.status === 'continue' &&
+    result.continueRunId &&
+    chunks < maxChunks &&
+    Date.now() + getDiscoveryWallClockMs() * 0.35 < sessionDeadline
+  ) {
+    chunks += 1
+    result = await runProspectDiscovery(admin, {
+      trigger: options.trigger,
+      actorUserId: options.actorUserId,
+      continueRunId: result.continueRunId,
+    })
+  }
+
+  return { ...result, chunks }
+}
+
+export async function findRunningDiscoveryRunId(
+  admin: SupabaseClient,
+): Promise<string | null> {
+  await releaseStaleDiscoveryRuns(admin).catch(() => 0)
+  const { data } = await admin
+    .from('prospect_discovery_runs')
+    .select('id')
+    .eq('status', 'running')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return data?.id ?? null
 }
 
 export async function listDiscoveryRuns(admin: SupabaseClient, limit = 10) {

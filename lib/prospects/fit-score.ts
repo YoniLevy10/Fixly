@@ -7,6 +7,7 @@
 import { FIT_WEIGHTS } from '@/lib/prospects/config'
 import {
   classifyPhoneKind,
+  isIsraeliMobilePhone,
   type PhoneKind,
 } from '@/lib/prospects/phone'
 
@@ -563,9 +564,9 @@ export function shouldKeepAsSoloProspect(
 }
 
 /**
- * Discovery keep gate: store suitable + needs_review (+ unknown with phone).
- * Unsuitable clear retail/chains are dropped (logged via sightings).
- * Landline does NOT block keep — contactability is separate.
+ * Discovery keep gate: store suitable + needs_review with Israeli mobile.
+ * Unsuitable retail/chains are dropped. Landlines (02/03/…/077) and
+ * missing phones are rejected — WhatsApp outreach needs 05x mobiles.
  */
 export function shouldKeepDiscoveredProspect(input: {
   name: string
@@ -582,6 +583,8 @@ export function shouldKeepDiscoveredProspect(input: {
   if (a.fitClass === 'unsuitable') return false
   // Require some identity signal to avoid empty junk rows
   if (!input.name?.trim()) return false
+  // Mobile-only: drop 02 / 077 / other landlines and empty phones
+  if (!isIsraeliMobilePhone(input.phone)) return false
   return true
 }
 
