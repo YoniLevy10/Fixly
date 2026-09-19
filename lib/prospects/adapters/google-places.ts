@@ -45,12 +45,13 @@ type PlacesTextSearchResult = {
 const PLACES_PAGE_MAX = 20
 
 /**
- * Field mask cost note (Places API New):
- * - id, displayName, formattedAddress, nationalPhoneNumber, internationalPhoneNumber,
- *   websiteUri, googleMapsUri → typically Text Essentials / Pro contact fields
- * - types, pureServiceAreaBusiness → modest extras for classification
- * - nextPageToken → required for pagination (must be listed or token is omitted)
- * Avoid requesting reviews/photos/atmosphere (Enterprise) unless enrichment justifies cost.
+ * Field mask cost note (Places API New — official SKU billing):
+ * Billing uses the HIGHEST SKU among requested fields.
+ * - Pro: displayName, formattedAddress, types, pureServiceAreaBusiness, googleMapsUri, …
+ * - Enterprise: nationalPhoneNumber, internationalPhoneNumber, websiteUri, rating, …
+ * This mask requests phone + website → every searchText call is billed as
+ * "Places API Text Search Enterprise" (~$35 / 1k after 1k free/month).
+ * Do not enable without FIXLY_GOOGLE_PLACES_ENABLED=true (free-only default).
  */
 const PLACES_FIELD_MASK = [
   'places.id',
@@ -128,6 +129,12 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
   lastStats: GooglePlacesFetchStats = emptyStats()
 
   constructor(options: GooglePlacesAdapterOptions = {}) {
+    // Opt-in flag first (free-only default). Key presence alone must never enable billing.
+    if (process.env.FIXLY_GOOGLE_PLACES_ENABLED?.trim() !== 'true') {
+      throw new Error(
+        'Google Places is disabled (FIXLY_GOOGLE_PLACES_ENABLED≠true). Free-only discovery uses OSM / gov sources.',
+      )
+    }
     const key = options.apiKey ?? process.env.GOOGLE_PLACES_API_KEY?.trim()
     if (!key) {
       throw new Error('GOOGLE_PLACES_API_KEY is missing')
@@ -166,6 +173,11 @@ export class GooglePlacesProspectAdapter implements ProspectSourceAdapter {
   }
 
   async fetchRecords(): Promise<ProspectSourceRecord[]> {
+    if (process.env.FIXLY_GOOGLE_PLACES_ENABLED?.trim() !== 'true') {
+      throw new Error(
+        'Google Places is disabled (FIXLY_GOOGLE_PLACES_ENABLED≠true). Refusing paid Places calls.',
+      )
+    }
     const out: ProspectSourceRecord[] = []
     const seen = new Set<string>()
     const stats = emptyStats()

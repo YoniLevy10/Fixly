@@ -16,6 +16,27 @@ import {
   humanizeDiscoveryError,
   humanizeDiscoveryErrors,
 } from '@/lib/prospects/humanize-discovery-error'
+import {
+  buildDiscoveryCursor,
+  sanitizeDiscoveryCursor,
+} from '@/lib/prospects/discover'
+
+function withPlacesEnabled(fn: () => void | Promise<void>) {
+  return async () => {
+    const prevEnabled = process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    const prevKey = process.env.GOOGLE_PLACES_API_KEY
+    process.env.FIXLY_GOOGLE_PLACES_ENABLED = 'true'
+    process.env.GOOGLE_PLACES_API_KEY = prevKey || 'test-key-for-unit'
+    try {
+      await fn()
+    } finally {
+      if (prevEnabled === undefined) delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+      else process.env.FIXLY_GOOGLE_PLACES_ENABLED = prevEnabled
+      if (prevKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY
+      else process.env.GOOGLE_PLACES_API_KEY = prevKey
+    }
+  }
+}
 
 describe('discovery mapping', () => {
   it('covers expanded recruit categories including home-visit beauty and tutors', () => {
@@ -247,15 +268,106 @@ describe('prospect category embed', () => {
   })
 })
 
-describe('GooglePlacesProspectAdapter', () => {
-  it('requires API key', () => {
-    const prev = process.env.GOOGLE_PLACES_API_KEY
-    delete process.env.GOOGLE_PLACES_API_KEY
-    assert.throws(() => new GooglePlacesProspectAdapter({ apiKey: '' }), /GOOGLE_PLACES_API_KEY/)
-    process.env.GOOGLE_PLACES_API_KEY = prev
+describe('free-only discovery defaults', () => {
+  it('defaults to OSM + gov and keeps Google off without explicit opt-in', async () => {
+    const {
+      getDefaultDiscoverySources,
+      isGooglePlacesEnabled,
+      filterDiscoverySources,
+    } = await import('@/lib/prospects/config')
+    const prevEnabled = process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    const prevKey = process.env.GOOGLE_PLACES_API_KEY
+    process.env.GOOGLE_PLACES_API_KEY = 'fake-key-must-not-enable'
+    delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    try {
+      assert.equal(isGooglePlacesEnabled(), false)
+      assert.deepEqual(getDefaultDiscoverySources(), ['osm', 'gov_pest_control'])
+      assert.deepEqual(
+        filterDiscoverySources(['google_places', 'osm', 'gov_pest_control']),
+        ['osm', 'gov_pest_control'],
+      )
+      const cursor = buildDiscoveryCursor()
+      assert.equal(cursor.phase, 'osm')
+      assert.ok(!cursor.sourcesWanted.includes('google_places'))
+    } finally {
+      if (prevEnabled === undefined) delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+      else process.env.FIXLY_GOOGLE_PLACES_ENABLED = prevEnabled
+      if (prevKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY
+      else process.env.GOOGLE_PLACES_API_KEY = prevKey
+    }
   })
 
-  it('maps Places results with phone to prospect records', async () => {
+  it('skips stuck places phase when Google is disabled', () => {
+    const prevEnabled = process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    try {
+      const sanitized = sanitizeDiscoveryCursor({
+        phase: 'places',
+        placesJobOffset: 40,
+        placesJobsTotal: 800,
+        sourcesWanted: ['google_places', 'osm', 'gov_pest_control'],
+        cumulative: {
+          found: 0,
+          created: 0,
+          updated: 0,
+          skipped: 0,
+          errors: 0,
+          apiCalls: 12,
+        },
+      })
+      assert.equal(sanitized.phase, 'osm')
+      assert.deepEqual(sanitized.sourcesWanted, ['osm', 'gov_pest_control'])
+    } finally {
+      if (prevEnabled === undefined) delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+      else process.env.FIXLY_GOOGLE_PLACES_ENABLED = prevEnabled
+    }
+  })
+
+  it('refuses Google adapter construction when kill switch is off even with API key', () => {
+    const prevEnabled = process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    const prevKey = process.env.GOOGLE_PLACES_API_KEY
+    process.env.GOOGLE_PLACES_API_KEY = 'present-but-disabled'
+    delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    let fetchCalls = 0
+    try {
+      assert.throws(
+        () =>
+          new GooglePlacesProspectAdapter({
+            apiKey: 'present-but-disabled',
+            fetchImpl: async () => {
+              fetchCalls += 1
+              return new Response('{}', { status: 200 })
+            },
+          }),
+        /disabled|FIXLY_GOOGLE_PLACES_ENABLED/,
+      )
+      assert.equal(fetchCalls, 0)
+    } finally {
+      if (prevEnabled === undefined) delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+      else process.env.FIXLY_GOOGLE_PLACES_ENABLED = prevEnabled
+      if (prevKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY
+      else process.env.GOOGLE_PLACES_API_KEY = prevKey
+    }
+  })
+})
+
+describe('GooglePlacesProspectAdapter', () => {
+  it(
+    'requires API key when Places is explicitly enabled',
+    withPlacesEnabled(() => {
+      const prev = process.env.GOOGLE_PLACES_API_KEY
+      delete process.env.GOOGLE_PLACES_API_KEY
+      assert.throws(
+        () => new GooglePlacesProspectAdapter({ apiKey: '' }),
+        /GOOGLE_PLACES_API_KEY/,
+      )
+      process.env.GOOGLE_PLACES_API_KEY = prev
+    }),
+  )
+
+  it(
+    'maps Places results with phone to prospect records',
+    withPlacesEnabled(async () => {
     const adapter = new GooglePlacesProspectAdapter({
       apiKey: 'test-key',
       categorySlugs: ['plumbing'],
@@ -305,9 +417,12 @@ describe('GooglePlacesProspectAdapter', () => {
     )
     assert.ok(!records.some((r) => r.externalId === 'places/company'))
     assert.ok(adapter.lastStats.searchCalls >= 1)
-  })
+  }),
+  )
 
-  it('supports jobOffset/maxJobs chunking without skipping unrun jobs', async () => {
+  it(
+    'supports jobOffset/maxJobs chunking without skipping unrun jobs',
+    withPlacesEnabled(async () => {
     let calls = 0
     const adapter = new GooglePlacesProspectAdapter({
       apiKey: 'test-key',
@@ -381,9 +496,12 @@ describe('GooglePlacesProspectAdapter', () => {
     await next.fetchRecords()
     assert.equal(next.lastStats.jobsOffset, 2)
     assert.equal(next.lastStats.nextJobOffset, 4)
-  })
+  }),
+  )
 
-  it('does not skip the job slice when deadline hits before any job', async () => {
+  it(
+    'does not skip the job slice when deadline hits before any job',
+    withPlacesEnabled(async () => {
     const adapter = new GooglePlacesProspectAdapter({
       apiKey: 'test-key',
       categorySlugs: ['plumbing'],
@@ -407,7 +525,8 @@ describe('GooglePlacesProspectAdapter', () => {
     assert.equal(adapter.lastStats.nextJobOffset, 3)
     assert.equal(adapter.lastStats.moreJobs, true)
     assert.equal(adapter.lastStats.stopReason, 'wall_clock')
-  })
+  }),
+  )
 })
 
 describe('person-score solo filter', () => {
