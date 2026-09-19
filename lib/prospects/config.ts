@@ -190,3 +190,39 @@ export function getDiscoverySessionMaxChunks(): number {
   if (Number.isFinite(n) && n > 0) return Math.min(Math.floor(n), 24)
   return DISCOVERY_SESSION_MAX_CHUNKS
 }
+
+/**
+ * Free-only default: OSM + government open data.
+ * Google Places is paid (Text Search Enterprise when requesting phone/website)
+ * and must never run unless explicitly opted in.
+ */
+export const DEFAULT_FREE_DISCOVERY_SOURCES = [
+  'osm',
+  'gov_pest_control',
+] as const
+
+/**
+ * Hard kill switch for Google Places.
+ * Requires BOTH FIXLY_GOOGLE_PLACES_ENABLED=true AND a non-empty API key.
+ * Default is off — presence of GOOGLE_PLACES_API_KEY alone must not bill.
+ */
+export function isGooglePlacesEnabled(): boolean {
+  if (process.env.FIXLY_GOOGLE_PLACES_ENABLED?.trim() !== 'true') return false
+  return Boolean(process.env.GOOGLE_PLACES_API_KEY?.trim())
+}
+
+export function getDefaultDiscoverySources(): Array<
+  'osm' | 'gov_pest_control' | 'google_places'
+> {
+  return [...DEFAULT_FREE_DISCOVERY_SOURCES]
+}
+
+/** Drop google_places unless the paid opt-in kill switch is on. */
+export function filterDiscoverySources<T extends string>(
+  sources: readonly T[],
+): T[] {
+  return sources.filter((s) => {
+    if (s === 'google_places') return isGooglePlacesEnabled()
+    return true
+  })
+}

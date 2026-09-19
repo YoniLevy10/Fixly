@@ -30,6 +30,8 @@ export async function GET(request: Request) {
     const continueRunId = await findRunningDiscoveryRunId(admin)
     const result = await runProspectDiscoveryChunks(admin, {
       trigger: 'cron',
+      // Free-only: never start Google Places from cron (even if API key exists).
+      sources: continueRunId ? undefined : ['osm', 'gov_pest_control'],
       continueRunId,
     })
     return NextResponse.json(result, {

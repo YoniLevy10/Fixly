@@ -1,8 +1,10 @@
 # AUDIT — Google Places billing in Fixly lead engine
 
 **Date:** 2026-09-19  
-**Scope:** Read-only code audit. No architecture changes in this PR.  
-**Goal:** ZERO SURPRISE BILLING — explain ₪246.77 Places charges (1–18 Sep 2026) and what must stop.
+**Status (enforced):** **FREE-ONLY** — Google Places is kill-switched off (`FIXLY_GOOGLE_PLACES_ENABLED` defaults false). Discovery uses OSM + gov open data only. Even with `GOOGLE_PLACES_API_KEY` set, Places is not called.
+
+**Scope of original audit:** Read-only code audit explaining ₪246.77 Places charges (1–18 Sep 2026).  
+**Follow-up:** Hard disable implemented in code (see config `isGooglePlacesEnabled`, discover defaults, cron free sources).
 
 Official pricing source: [Google Maps Platform pricing](https://developers.google.com/maps/billing-and-pricing/pricing) (updated 2026-09-17).  
 SKU field triggers: [SKU details — Text Search Enterprise](https://developers.google.com/maps/billing-and-pricing/sku-details).
@@ -11,12 +13,14 @@ SKU field triggers: [SKU details — Text Search Enterprise](https://developers.
 
 ## Executive verdict
 
-The Fixly prospect discovery engine calls **Places API (New) Text Search** at  
+The Fixly prospect discovery engine **previously** called **Places API (New) Text Search** at  
 `POST https://places.googleapis.com/v1/places:searchText` with a field mask that includes **`nationalPhoneNumber`**, **`internationalPhoneNumber`**, and **`websiteUri`**.
 
-Per Google docs, **any one of those fields bills the whole request as “Places API Text Search Enterprise”** (~**$35 / 1,000** after a **1,000 free** monthly cap). The in-code cost comment that classifies phone/website as “Essentials / Pro” is **wrong**.
+Per Google docs, **any one of those fields bills the whole request as “Places API Text Search Enterprise”** (~**$35 / 1,000** after a **1,000 free** monthly cap). The in-code cost comment that classified phone/website as “Essentials / Pro” was **wrong** (now corrected).
 
-Billing is amplified by:
+**Current enforcement:** free-only path — no Places calls unless both `FIXLY_GOOGLE_PLACES_ENABLED=true` and an API key are set.
+
+Historical amplifiers that caused the Sep 2026 bill:
 
 1. **~801 search jobs** per Jerusalem full pass (23 categories × multi-query × 10 areas).
 2. **Up to 3 pages** per job → theoretical **~2,403** HTTP calls per full matrix.

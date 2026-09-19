@@ -27,14 +27,16 @@
 
 משקלים ב־[`lib/prospects/config.ts`](../lib/prospects/config.ts).
 
-## מקורות גילוי (חינם / קיים)
+## מקורות גילוי (חינם בלבד — ברירת מחדל)
 
 | מקור | Env / הערה |
 |------|------------|
-| Google Places API (New) | `GOOGLE_PLACES_API_KEY` — אם כבר מופעל אצלכם |
-| OpenStreetMap Overpass | חינם — מדוד `uniqueToSource` בכרטיס ריצה |
+| OpenStreetMap Overpass | **ברירת מחדל** — חינם |
 | מאגר מדבירים מורשים | data.gov.il CKAN (`gov_pest_control`) — open data |
 | ידני / CSV | — |
+| Google Places API (New) | **כבוי**. דורש `FIXLY_GOOGLE_PLACES_ENABLED=true` + מפתח. Text Search עם טלפון/אתר = SKU Enterprise בתשלום — לא להפעיל בלי אישור מפורש |
+
+Cron (`/api/cron/discover-prospects`) מריץ רק `osm` + `gov_pest_control`.
 
 ### מאגר מדבירים (פיילוט רישוי)
 
@@ -89,11 +91,12 @@
 
 | מפתח | תיאור |
 |------|--------|
-| `GOOGLE_PLACES_API_KEY` | גילוי Places (אופציונלי אם כבר יש) |
+| `FIXLY_GOOGLE_PLACES_ENABLED` | חייב `true` כדי לאפשר Places — **ברירת מחדל כבוי** |
+| `GOOGLE_PLACES_API_KEY` | נדרש רק אם Places מופעל במפורש (בתשלום) |
 | `ADMIN_EMAILS` | גישת Superadmin |
 | `FIXLY_RECRUIT_CITY` | ברירת מחדל ירושלים |
 | `FIXLY_DISCOVERY_TOTAL_BUDGET` | תוצאות גולמיות |
-| `FIXLY_DISCOVERY_API_CALL_BUDGET` | קריאות Places |
+| `FIXLY_DISCOVERY_API_CALL_BUDGET` | קריאות Places (רק אם Places מופעל) |
 
 ## מדידת לפני/אחרי
 
