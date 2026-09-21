@@ -231,6 +231,11 @@ describe('query queue + geo', () => {
 
 describe('Places pagination + budget', () => {
   it('paginates with pageToken and stops on api call budget without dupes', async () => {
+    const prevEnabled = process.env.FIXLY_GOOGLE_PLACES_ENABLED
+    const prevKey = process.env.GOOGLE_PLACES_API_KEY
+    process.env.FIXLY_GOOGLE_PLACES_ENABLED = 'true'
+    process.env.GOOGLE_PLACES_API_KEY = 'test'
+    try {
     let calls = 0
     const adapter = new GooglePlacesProspectAdapter({
       apiKey: 'test',
@@ -296,6 +301,12 @@ describe('Places pagination + budget', () => {
     const ids = records.map((r) => r.externalId)
     assert.equal(new Set(ids).size, ids.length)
     assert.ok(records.some((r) => r.externalId === 'places/a'))
+    } finally {
+      if (prevEnabled === undefined) delete process.env.FIXLY_GOOGLE_PLACES_ENABLED
+      else process.env.FIXLY_GOOGLE_PLACES_ENABLED = prevEnabled
+      if (prevKey === undefined) delete process.env.GOOGLE_PLACES_API_KEY
+      else process.env.GOOGLE_PLACES_API_KEY = prevKey
+    }
   })
 })
 

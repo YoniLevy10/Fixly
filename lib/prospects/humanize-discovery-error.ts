@@ -55,7 +55,7 @@ export function humanizeDiscoveryError(raw: string | null | undefined): string |
     msg.includes('502') ||
     msg.includes('503')
   ) {
-    return 'OpenStreetMap (Overpass) לא הגיב במלואו — רוב הלידים מגיעים מ-Google Places'
+    return 'OpenStreetMap (Overpass) לא הגיב במלואו — נסו שוב או הריצו גילוי מאוחר יותר'
   }
   if (
     msg.includes('נעילה שוחררה') ||

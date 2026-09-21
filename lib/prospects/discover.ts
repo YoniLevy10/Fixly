@@ -10,6 +10,8 @@ import {
 } from '@/lib/prospects/service'
 import { getDiscoveryCity } from '@/lib/prospects/discovery-mapping'
 import {
+  filterDiscoverySources,
+  getDefaultDiscoverySources,
   getDiscoveryApiCallBudget,
   getDiscoveryChunkMaxJobs,
   getDiscoveryFinalizeBufferMs,
@@ -19,6 +21,7 @@ import {
   getDiscoveryTotalBudget,
   getDiscoveryWallClockMs,
   getRecruitCategorySlugs,
+  isGooglePlacesEnabled,
 } from '@/lib/prospects/config'
 import { assessProspectFit } from '@/lib/prospects/fit-score'
 import {
@@ -131,19 +134,51 @@ function emptyCumulative(): DiscoveryCursor['cumulative'] {
   return { found: 0, created: 0, updated: 0, skipped: 0, errors: 0, apiCalls: 0 }
 }
 
+function resolveWantedSources(
+  sources?: DiscoveryAutoSource[] | null,
+): DiscoveryAutoSource[] {
+  const raw =
+    sources && sources.length > 0
+      ? sources
+      : (getDefaultDiscoverySources() as DiscoveryAutoSource[])
+  return filterDiscoverySources(raw)
+}
+
+function phaseForSources(
+  wanted: DiscoveryAutoSource[],
+): DiscoveryCursor['phase'] {
+  // Google Places only when explicitly enabled (paid). Free path starts at OSM.
+  if (wanted.includes('google_places') && isGooglePlacesEnabled()) return 'places'
+  if (wanted.includes('osm')) return 'osm'
+  if (wanted.includes('gov_pest_control')) return 'gov'
+  return 'done'
+}
+
+/** @internal exported for unit tests */
+export function buildDiscoveryCursor(
+  sources?: DiscoveryAutoSource[] | null,
+): DiscoveryCursor {
+  return initialCursor(sources ? [...sources] : [])
+}
+
+/**
+ * Strip Google from an in-flight cursor when the kill switch is off so a
+ * stuck/resumed run cannot keep billing Places.
+ * @internal exported for unit tests
+ */
+export function sanitizeDiscoveryCursor(cursor: DiscoveryCursor): DiscoveryCursor {
+  const sourcesWanted = filterDiscoverySources(cursor.sourcesWanted)
+  let phase = cursor.phase
+  if (phase === 'places' && !isGooglePlacesEnabled()) {
+    phase = phaseForSources(sourcesWanted)
+  }
+  return { ...cursor, sourcesWanted, phase }
+}
+
 function initialCursor(sources: DiscoveryAutoSource[]): DiscoveryCursor {
-  const wanted = sources.length
-    ? sources
-    : (['google_places', 'osm', 'gov_pest_control'] as DiscoveryAutoSource[])
-  const phase: DiscoveryCursor['phase'] = wanted.includes('google_places')
-    ? 'places'
-    : wanted.includes('osm')
-      ? 'osm'
-      : wanted.includes('gov_pest_control')
-        ? 'gov'
-        : 'done'
+  const wanted = resolveWantedSources(sources)
   return {
-    phase,
+    phase: phaseForSources(wanted),
     placesJobOffset: 0,
     placesJobsTotal: 0,
     sourcesWanted: wanted,
@@ -282,7 +317,9 @@ export async function runProspectDiscovery(
       existing.details && typeof existing.details === 'object'
         ? (existing.details as RunDetails)
         : {}
-    cursor = details.cursor ?? initialCursor(options.sources ?? [])
+    cursor = sanitizeDiscoveryCursor(
+      details.cursor ?? initialCursor(options.sources ?? []),
+    )
     deletedPrevious = Number(details.deletedPrevious ?? 0)
     if (details.bySource && typeof details.bySource === 'object') {
       Object.assign(bySource, details.bySource)
@@ -312,10 +349,7 @@ export async function runProspectDiscovery(
     }
 
     cursor = initialCursor(options.sources ?? [])
-    const sourceNames = cursor.sourcesWanted.filter((s) => {
-      if (s === 'google_places') return Boolean(process.env.GOOGLE_PLACES_API_KEY?.trim())
-      return true
-    })
+    const sourceNames = cursor.sourcesWanted
 
     if (sourceNames.length === 0) {
       return {
@@ -332,7 +366,7 @@ export async function runProspectDiscovery(
         budget,
         apiCallBudget,
         errorMessage:
-          'אין מקורות זמינים — הגדר GOOGLE_PLACES_API_KEY או הפעל OSM / מאגר מדבירים',
+          'אין מקורות זמינים — הפעילו OSM / מאגר מדבירים (Google Places כבוי כברירת מחדל)',
         bySource: {},
       }
     }
@@ -422,11 +456,12 @@ export async function runProspectDiscovery(
       { cursor },
     )
 
-    if (cursor.phase === 'places' && cursor.sourcesWanted.includes('google_places')) {
-      if (!process.env.GOOGLE_PLACES_API_KEY?.trim()) {
-        cursor.phase = nextPhaseAfter(cursor)
-      } else {
-        const adapter = new GooglePlacesProspectAdapter({
+    if (
+      cursor.phase === 'places' &&
+      cursor.sourcesWanted.includes('google_places') &&
+      isGooglePlacesEnabled()
+    ) {
+      const adapter = new GooglePlacesProspectAdapter({
           categorySlugs,
           city,
           totalBudget: budget,
@@ -556,7 +591,12 @@ export async function runProspectDiscovery(
         if (stopReason !== 'ingest_failed' && !s.moreJobs) {
           cursor.phase = nextPhaseAfter(cursor)
         }
-      }
+    } else if (cursor.phase === 'places') {
+      // Kill switch off or Google stripped — never call Places; advance.
+      cursor.phase = nextPhaseAfter({
+        ...cursor,
+        sourcesWanted: filterDiscoverySources(cursor.sourcesWanted),
+      })
     } else if (cursor.phase === 'osm' && cursor.sourcesWanted.includes('osm')) {
       const adapter = new OsmOverpassProspectAdapter({
         categorySlugs,

@@ -726,7 +726,7 @@ export default function ProspectsRecruitmentScreen() {
             גיוס אנשי מקצוע
           </h1>
           <p className="text-sm text-muted-foreground mt-1 break-words">
-            גילוי פרטיים + נייד · יעד {targetTotal} בירושלים
+            גילוי חינמי בלבד (OSM + מאגר מדבירים) · יעד {targetTotal} בירושלים
           </p>
           {!authLoading && (
             <p className="text-xs mt-2 break-all" dir="ltr">
@@ -1061,11 +1061,13 @@ export default function ProspectsRecruitmentScreen() {
             aria-label="מקור"
           >
             <option value="">מקור: הכל</option>
-            <option value="google_places">google_places</option>
-            <option value="osm">osm</option>
-            <option value="gov_pest_control">gov_pest_control</option>
+            <option value="osm">osm (חינם)</option>
+            <option value="gov_pest_control">gov_pest_control (חינם)</option>
             <option value="manual">manual</option>
             <option value="csv_import">csv_import</option>
+            <option value="google_places" disabled>
+              google_places (בתשלום — כבוי)
+            </option>
           </select>
         </div>
       </div>

@@ -8,8 +8,10 @@ import {
   forceUnlockDiscoveryRuns,
   listDiscoveryRuns,
   runProspectDiscoveryChunks,
+  type DiscoveryAutoSource,
   type DiscoveryProgress,
 } from '@/lib/prospects/discover'
+import { filterDiscoverySources } from '@/lib/prospects/config'
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
@@ -67,10 +69,15 @@ export async function POST(request: Request) {
       continueRunId = await findRunningDiscoveryRunId(auth.admin)
     }
 
+    // Strip google_places unless FIXLY_GOOGLE_PLACES_ENABLED=true (free-only default).
+    const sources = parsed.data.sources
+      ? (filterDiscoverySources(parsed.data.sources) as DiscoveryAutoSource[])
+      : undefined
+
     let result = await runProspectDiscoveryChunks(auth.admin, {
       trigger: 'manual',
       actorUserId: auth.user.id,
-      sources: parsed.data.sources,
+      sources,
       city: parsed.data.city,
       replacePrevious:
         continueRunId ? false : parsed.data.replacePrevious === true,
@@ -83,7 +90,7 @@ export async function POST(request: Request) {
         result = await runProspectDiscoveryChunks(auth.admin, {
           trigger: 'manual',
           actorUserId: auth.user.id,
-          sources: parsed.data.sources,
+          sources,
           city: parsed.data.city,
           replacePrevious: parsed.data.replacePrevious === true,
         })
