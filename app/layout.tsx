@@ -67,6 +67,11 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
+  other: {
+    'geo.region': 'IL',
+    'geo.placename': 'Israel',
+    'geo.country': 'Israel',
+  },
   verification: googleVerification
     ? { google: googleVerification }
     : undefined,

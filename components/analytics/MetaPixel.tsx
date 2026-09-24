@@ -1,14 +1,31 @@
 'use client'
 
 import Script from 'next/script'
+import { useEffect, useState } from 'react'
+import { GEO_COOKIE_BLOCKED, GEO_COOKIE_NAME } from '@/lib/geo/israel-access'
+
+function readGeoCookie(): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${GEO_COOKIE_NAME}=`))
+  return match ? decodeURIComponent(match.slice(GEO_COOKIE_NAME.length + 1)) : null
+}
 
 /**
  * Loads Meta (Facebook) Pixel when NEXT_PUBLIC_META_PIXEL_ID is set.
- * Conversions are sent via lib/analytics/track.ts → window.fbq.
+ * Skips geo-blocked (non-Israel) visitors.
  */
 export default function MetaPixel() {
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()
-  if (!pixelId) return null
+  const [allowed, setAllowed] = useState(false)
+
+  useEffect(() => {
+    setAllowed(readGeoCookie() !== GEO_COOKIE_BLOCKED)
+  }, [])
+
+  if (!pixelId || !allowed) return null
 
   return (
     <>
