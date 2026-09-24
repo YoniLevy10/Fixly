@@ -28,11 +28,15 @@ export async function GET(request: Request) {
 
   try {
     const continueRunId = await findRunningDiscoveryRunId(admin)
+    // Keep cron sessions short so Vercel does not 504 at maxDuration (120s).
+    // Incomplete runs stay `running` and resume on the next cron tick.
     const result = await runProspectDiscoveryChunks(admin, {
       trigger: 'cron',
       // Free-only: never start Google Places from cron (even if API key exists).
       sources: continueRunId ? undefined : ['osm', 'gov_pest_control'],
       continueRunId,
+      maxSessionMs: 70_000,
+      maxChunks: 2,
     })
     return NextResponse.json(result, {
       status:

@@ -26,8 +26,15 @@ export function validateProductionEnv(): EnvValidationResult {
     errors.push('NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required')
   }
 
-  if (!process.env.NEXT_PUBLIC_APP_URL) {
-    errors.push('NEXT_PUBLIC_APP_URL is required for OAuth and payment redirects')
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
+  if (!appUrl) {
+    // Code defaults to https://fixly.tech — warn so ops still sets it explicitly,
+    // but do not treat as a hard error (was flooding cold-start logs).
+    warnings.push(
+      'NEXT_PUBLIC_APP_URL unset — defaulting to https://fixly.tech for redirects',
+    )
+  } else if (!/^https:\/\//i.test(appUrl)) {
+    errors.push('NEXT_PUBLIC_APP_URL must be an https:// URL')
   }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
