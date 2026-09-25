@@ -10,7 +10,7 @@ Fixly is an **execution network**, not “Uber for trades” and not another ope
 Demand starts from real work:
 
 1. **Bamakor (= BINO)** — building-ops tickets that internal maintenance did not close
-2. **Business customers** — commercial / property demand routed into the same network
+2. **Business customers** — commercial / property / multi-branch retail demand routed into the same network (pilot: Optical Center — see [`B2B_MULTI_BRANCH_MVP.md`](./B2B_MULTI_BRANCH_MVP.md))
 
 Unresolved internal-maintenance issues escalate into Fixly. Fixly matches verified professionals by **domain, area, availability, price, and objective past performance**.
 
