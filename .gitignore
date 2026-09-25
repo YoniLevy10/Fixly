@@ -43,3 +43,7 @@ ios/DerivedData/
 brag-output/composition/snapshots/
 brag-output/composition/.hyperframes/
 brag-output/*.poster.mp4
+
+# Appshot Remotion
+appshot-video/node_modules/
+appshot-video/.remotion/
