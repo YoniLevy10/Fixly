@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "extractedAt": "2026-09-25T12:56:00.000Z",
+  "app": {
+    "name": "Fixly",
+    "tagline": "רשת ביצוע לתחזוקה ובעלי מקצוע בישראל",
+    "icon": "public/brand/fixly-mark.png",
+    "platform": "web",
+    "framework": "nextjs",
+    "url": "fixly.tech"
+  },
+  "brand": {
+    "primary": "#112e5f",
+    "primaryLight": "#dbe7f5",
+    "background": "#f2f4f7",
+    "surface": "#ffffff",
+    "textPrimary": "#0f1729",
+    "textSecondary": "#414c62",
+    "success": "#1ea465",
+    "danger": "#dc2626",
+    "accent": "#f97d10"
+  },
+  "category": "SaaS",
+  "theme": "light",
+  "themeDefault": "light",
+  "navigation": {
+    "type": "tabs+stack",
+    "tabs": [
+      { "label": "בית", "iconDescription": "home", "isDefault": true },
+      { "label": "בקשות", "iconDescription": "list", "isDefault": false },
+      { "label": "פרופיל", "iconDescription": "user", "isDefault": false }
+    ],
+    "headerStyle": "inline",
+    "statusBarStyle": "dark"
+  },
+  "screens": [],
+  "pages": [
+    { "route": "/", "name": "Home", "description": "Hebrew home with categories and featured pros", "layout": "app" },
+    { "route": "/request/quick", "name": "Quick request", "description": "Fast job request form", "layout": "app" },
+    { "route": "/professionals", "name": "Professionals", "description": "Browse matched pros", "layout": "app" },
+    { "route": "/dashboard", "name": "Customer dashboard", "description": "Customer jobs overview", "layout": "app" },
+    { "route": "/pro/dashboard", "name": "Pro dashboard", "description": "Professional inbox and jobs", "layout": "app" },
+    { "route": "/tracking/:id", "name": "Live tracking", "description": "Live map tracking like delivery apps", "layout": "app" }
+  ],
+  "landingPage": {
+    "heroHeadline": "יש תקלה בבית? שולחים פעם אחת ב-Fixly",
+    "heroSubheadline": "התאמה לבעל מקצוע לפי תחום ואזור ומעקב עד סיום",
+    "cta": "הרשמה מוקדמת",
+    "featureSections": ["התאמה לפי ביצועים", "מעקב חי", "Bamakor/BINO demand", "אחריות Fixly"]
+  },
+  "uiPatterns": {
+    "borderRadius": { "button": "12-16px", "card": "16px", "input": "12px" },
+    "spacing": { "horizontal": "16px", "sectionGap": "24px" },
+    "typography": { "fontFamily": "Heebo", "headingWeight": 900, "bodySize": "14-16px", "capsHeaders": false },
+    "buttonStyle": "rounded-xl filled primary/secondary",
+    "cardStyle": "white surface, 16px radius, light border, soft shadow",
+    "iconLibrary": "Lucide",
+    "specialElements": ["orange secondary CTA", "navy primary", "RTL Hebrew", "category accent chips", "demo banner"]
+  },
+  "features": [
+    "בקשה מהירה",
+    "התאמה לפי תחום אזור זמינות מחיר וביצועים",
+    "דשבורד לקוח ו-Pro",
+    "מעקב חי",
+    "Partner API ל-Bamakor",
+    "אחריות Fixly"
+  ],
+  "coreAction": "שליחת בקשת תיקון → התאמה לבעל מקצוע → מעקב עד סיום",
+  "valueProps": [
+    "לא marketplace פתוח — רשת ביצוע",
+    "ביקוש אמיתי מ-Bamakor ומלקוחות עסקיים",
+    "התאמה לפי ביצועים אובייקטיביים",
+    "עברית קודם"
+  ],
+  "keywords": ["Fixly", "תיקונים", "בעלי מקצוע", "אינסטלטור", "חשמלאי", "התאמת בעלי מקצוע", "מעקב חי", "ישראל"],
+  "screenshots": [],
+  "storeDescription": null,
+  "sources": {
+    "name": "package.json / README.md",
+    "colors": "app/globals.css",
+    "keywords": "lib/site-config.ts"
+  }
+}
