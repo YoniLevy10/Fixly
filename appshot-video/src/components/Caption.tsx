@@ -20,12 +20,23 @@ export const Caption: React.FC<{
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 z-50 flex justify-center pb-40"
-      style={{ opacity: containerEnter, transform: `translateY(${(1 - containerEnter) * 15}px)` }}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        display: "flex",
+        justifyContent: "center",
+        paddingBottom: 160,
+        opacity: containerEnter,
+        transform: `translateY(${(1 - containerEnter) * 15}px)`,
+      }}
     >
       <div
-        className="rounded-2xl px-10 py-5"
         style={{
+          borderRadius: 16,
+          padding: "20px 40px",
           background: "rgba(45, 45, 45, 0.85)",
           backdropFilter: "blur(16px)",
           border: "1px solid rgba(255,255,255,0.1)",
@@ -33,8 +44,16 @@ export const Caption: React.FC<{
         }}
       >
         <p
-          className="text-center font-semibold leading-tight text-white"
-          style={{ fontSize }}
+          style={{
+            textAlign: "center",
+            fontWeight: 600,
+            lineHeight: 1.25,
+            color: "#FFFFFF",
+            fontSize,
+            fontFamily: "Heebo, system-ui, sans-serif",
+            margin: 0,
+            direction: "rtl",
+          }}
         >
           {words.map((word, i) => {
             const wordEnter = spring({
@@ -47,11 +66,11 @@ export const Caption: React.FC<{
             return (
               <span
                 key={i}
-                className="inline-block"
                 style={{
+                  display: "inline-block",
                   opacity: wordEnter,
                   transform: `translateY(${(1 - wordEnter) * 8}px)`,
-                  marginRight: "0.3em",
+                  marginInline: "0.15em",
                 }}
               >
                 {word}

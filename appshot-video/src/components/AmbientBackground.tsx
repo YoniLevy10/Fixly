@@ -71,7 +71,13 @@ export const AmbientBackground: React.FC<{
   const config = buildConfig(brand, variant);
 
   return (
-    <div className="absolute inset-0" style={{ background: config.gradient }}>
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: config.gradient,
+      }}
+    >
       {config.orbs.map((orb, i) => {
         const offsetX = Math.sin(frame * orb.speed * 0.02) * 40;
         const offsetY = Math.cos(frame * orb.speed * 0.025) * 30;
@@ -84,8 +90,9 @@ export const AmbientBackground: React.FC<{
         return (
           <div
             key={i}
-            className="absolute rounded-full"
             style={{
+              position: "absolute",
+              borderRadius: "9999px",
               width: orb.size,
               height: orb.size,
               left: `${orb.x}%`,
@@ -99,8 +106,9 @@ export const AmbientBackground: React.FC<{
       })}
 
       <div
-        className="absolute inset-0"
         style={{
+          position: "absolute",
+          inset: 0,
           backgroundImage: `radial-gradient(circle at 1px 1px, ${config.dotColor} 1px, transparent 0)`,
           backgroundSize: "40px 40px",
         }}

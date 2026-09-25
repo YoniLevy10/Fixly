@@ -1,4 +1,4 @@
-import { Img, staticFile } from "remotion";
+import { AbsoluteFill, Img, staticFile } from "remotion";
 import {
   AmbientBackground,
   AnimatedCursor,
@@ -14,14 +14,26 @@ export const S2_Home: React.FC = () => {
   const { brand } = appConfig;
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
       <AmbientBackground brand={brand} variant="light" />
-      <div className="relative z-10">
+      <div style={{ position: "relative", zIndex: 10 }}>
         <BrowserFrame url="fixly.tech" delay={4} scale={0.82} variant="light">
           <div style={{ width: VIEW_W, height: VIEW_H, overflow: "hidden" }}>
             <Img
               src={staticFile("screenshots/home.png")}
-              style={{ width: VIEW_W, height: VIEW_H, objectFit: "cover", objectPosition: "top" }}
+              style={{
+                width: VIEW_W,
+                height: VIEW_H,
+                objectFit: "cover",
+                objectPosition: "top",
+              }}
             />
           </div>
         </BrowserFrame>
@@ -40,6 +52,6 @@ export const S2_Home: React.FC = () => {
         maxWidth={1200}
         fontSize={40}
       />
-    </div>
+    </AbsoluteFill>
   );
 };

@@ -55,56 +55,78 @@ export const BrowserFrame: React.FC<{
       }}
     >
       <div
-        className="overflow-hidden"
         style={{
+          overflow: "hidden",
           borderRadius: 12,
           boxShadow:
             "0 20px 60px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.08)",
           border: v.outerBorder,
         }}
       >
-        {/* Title bar */}
         <div
-          className="flex items-center gap-2 px-4 py-2.5"
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 16px",
             background: v.titleBarBg,
             borderBottom: `1px solid ${v.titleBarBorder}`,
           }}
         >
-          {/* macOS traffic lights */}
-          <div className="flex" style={{ gap: 6 }}>
+          <div style={{ display: "flex", gap: 6 }}>
             <div
-              className="rounded-full"
-              style={{ width: 12, height: 12, background: "#FF5F57" }}
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 999,
+                background: "#FF5F57",
+              }}
             />
             <div
-              className="rounded-full"
-              style={{ width: 12, height: 12, background: "#FEBC2E" }}
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 999,
+                background: "#FEBC2E",
+              }}
             />
             <div
-              className="rounded-full"
-              style={{ width: 12, height: 12, background: "#28C840" }}
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: 999,
+                background: "#28C840",
+              }}
             />
           </div>
 
-          {/* Address bar */}
           <div
-            className="ml-3 flex-1 rounded-md px-3 py-1"
-            style={{ background: v.addressBarBg }}
+            style={{
+              marginLeft: 12,
+              flex: 1,
+              borderRadius: 6,
+              padding: "4px 12px",
+              background: v.addressBarBg,
+            }}
           >
             <span
-              className="font-mono"
-              style={{ fontSize: 13, color: v.urlColor }}
+              style={{
+                fontSize: 13,
+                color: v.urlColor,
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              }}
             >
               {url}
             </span>
           </div>
         </div>
 
-        {/* Content */}
         <div
-          className="relative overflow-hidden"
-          style={{ background: v.contentBg }}
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            background: v.contentBg,
+          }}
         >
           {children}
         </div>

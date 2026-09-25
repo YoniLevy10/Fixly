@@ -1,4 +1,10 @@
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { AmbientBackground, AppIcon, Caption } from "../components";
 import { appConfig } from "../app-config";
 
@@ -16,16 +22,40 @@ export const S6_CTA: React.FC = () => {
   const pulse = interpolate(Math.sin(frame * 0.08), [-1, 1], [0.96, 1.04]);
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
       <AmbientBackground brand={brand} variant="dark" />
-      <div className="relative z-10 flex flex-col items-center gap-7">
+      <div
+        style={{
+          position: "relative",
+          zIndex: 10,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 28,
+        }}
+      >
         <AppIcon
           src={appConfig.app.icon}
           size={88}
           glow
           glowColor={`${brand.accent ?? brand.primary}55`}
         />
-        <div style={{ fontSize: 56, fontWeight: 900, color: "#FFFFFF" }}>
+        <div
+          style={{
+            fontSize: 56,
+            fontWeight: 900,
+            color: "#FFFFFF",
+            fontFamily: "Heebo, system-ui, sans-serif",
+          }}
+        >
           Fixly
           <span style={{ color: brand.accent ?? "#f97d10" }}>.</span>
         </div>
@@ -39,11 +69,19 @@ export const S6_CTA: React.FC = () => {
             fontSize: 24,
             fontWeight: 800,
             color: "#FFFFFF",
+            fontFamily: "Heebo, system-ui, sans-serif",
           }}
         >
           התחילו בחינם
         </div>
-        <div style={{ fontSize: 22, color: "rgba(255,255,255,0.65)", fontWeight: 600 }}>
+        <div
+          style={{
+            fontSize: 22,
+            color: "rgba(255,255,255,0.65)",
+            fontWeight: 600,
+            fontFamily: "Heebo, system-ui, sans-serif",
+          }}
+        >
           {appConfig.app.url}
         </div>
       </div>
@@ -53,6 +91,6 @@ export const S6_CTA: React.FC = () => {
         maxWidth={1200}
         fontSize={40}
       />
-    </div>
+    </AbsoluteFill>
   );
 };

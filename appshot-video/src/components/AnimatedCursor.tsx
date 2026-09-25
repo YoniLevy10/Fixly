@@ -48,12 +48,13 @@ export const AnimatedCursor: React.FC<{
 
   return (
     <div
-      className="pointer-events-none absolute z-50"
       style={{
+        pointerEvents: "none",
+        position: "absolute",
+        zIndex: 50,
         left: x,
         top: y,
         transform: `scale(${scale})`,
-        transition: "transform 0.05s",
       }}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -67,13 +68,15 @@ export const AnimatedCursor: React.FC<{
       </svg>
       {clicking && (
         <div
-          className="absolute left-2 top-2 rounded-full"
           style={{
+            position: "absolute",
+            left: 8,
+            top: 8,
             width: 20,
             height: 20,
+            borderRadius: 999,
             background: "rgba(33, 150, 243, 0.4)",
             transform: "translate(-50%, -50%)",
-            animation: "ping 0.3s ease-out",
           }}
         />
       )}

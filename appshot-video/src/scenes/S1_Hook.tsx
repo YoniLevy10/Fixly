@@ -1,4 +1,4 @@
-import { spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { AmbientBackground, AppIcon, Caption, FadeIn } from "../components";
 import { appConfig } from "../app-config";
 
@@ -14,11 +14,23 @@ export const S1_Hook: React.FC = () => {
   });
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
       <AmbientBackground brand={brand} variant="dark" />
       <div
-        className="relative z-10 flex flex-col items-center gap-6"
         style={{
+          position: "relative",
+          zIndex: 10,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 24,
           opacity: entrance,
           transform: `translateY(${(1 - entrance) * 24}px)`,
         }}
@@ -36,6 +48,7 @@ export const S1_Hook: React.FC = () => {
               fontWeight: 900,
               color: "#FFFFFF",
               letterSpacing: "-0.02em",
+              fontFamily: "Heebo, system-ui, sans-serif",
             }}
           >
             Fixly
@@ -47,19 +60,14 @@ export const S1_Hook: React.FC = () => {
               fontSize: 28,
               fontWeight: 600,
               color: "rgba(255,255,255,0.78)",
+              fontFamily: "Heebo, system-ui, sans-serif",
             }}
           >
             {appConfig.app.tagline}
           </div>
         </div>
         <FadeIn delay={18} direction="up">
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              marginTop: 8,
-            }}
-          >
+          <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
             {["Bamakor → Fixly", "התאמה לפי ביצועים", "מעקב עד סיום"].map(
               (label) => (
                 <div
@@ -72,6 +80,7 @@ export const S1_Hook: React.FC = () => {
                     color: "#fff",
                     fontSize: 18,
                     fontWeight: 700,
+                    fontFamily: "Heebo, system-ui, sans-serif",
                   }}
                 >
                   {label}
@@ -87,6 +96,6 @@ export const S1_Hook: React.FC = () => {
         maxWidth={1200}
         fontSize={40}
       />
-    </div>
+    </AbsoluteFill>
   );
 };
