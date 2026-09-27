@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MockRequest, CreateRequestInput } from '@/mock/requests'
 import type { RequestStatus } from '@/shared/constants/request-status'
 
@@ -9,17 +9,22 @@ const PAGE_SIZE = 20
 export function useRequestsList(params?: { scope?: 'mine' | 'pro' }) {
   const [requests, setRequests] = useState<MockRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
   const [offset, setOffset] = useState(0)
+  const hasLoadedRef = useRef(false)
+  const scope = params?.scope
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  const refresh = useCallback(async (opts?: { soft?: boolean }) => {
+    const soft = opts?.soft ?? hasLoadedRef.current
+    if (soft) setRefreshing(true)
+    else setLoading(true)
     setError(null)
     setOffset(0)
     try {
       const query = new URLSearchParams()
-      if (params?.scope) query.set('scope', params.scope)
+      if (scope) query.set('scope', scope)
       query.set('limit', String(PAGE_SIZE))
       query.set('offset', '0')
       const res = await fetch(`/api/requests?${query}`)
@@ -33,17 +38,19 @@ export function useRequestsList(params?: { scope?: 'mine' | 'pro' }) {
         setHasMore(Boolean(data.hasMore))
         setOffset(PAGE_SIZE)
       }
+      hasLoadedRef.current = true
     } catch (e) {
       setError(e instanceof Error ? e.message : 'שגיאה')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
-  }, [params?.scope])
+  }, [scope])
 
   const loadMore = useCallback(async () => {
     if (!hasMore) return
     const query = new URLSearchParams()
-    if (params?.scope) query.set('scope', params.scope)
+    if (scope) query.set('scope', scope)
     query.set('limit', String(PAGE_SIZE))
     query.set('offset', String(offset))
     const res = await fetch(`/api/requests?${query}`)
@@ -53,13 +60,14 @@ export function useRequestsList(params?: { scope?: 'mine' | 'pro' }) {
     setRequests((prev) => [...prev, ...(data.items ?? [])])
     setHasMore(Boolean(data.hasMore))
     setOffset((o) => o + PAGE_SIZE)
-  }, [hasMore, offset, params?.scope])
+  }, [hasMore, offset, scope])
 
   useEffect(() => {
-    refresh()
+    hasLoadedRef.current = false
+    void refresh({ soft: false })
   }, [refresh])
 
-  return { requests, loading, error, refresh, hasMore, loadMore }
+  return { requests, loading, refreshing, error, refresh, hasMore, loadMore }
 }
 
 export class RegionClosedError extends Error {
@@ -82,11 +90,16 @@ export async function createRequestApi(
     referralCode?: string
     categorySlug?: string
     city?: string
+    idempotencyKey?: string
   },
 ): Promise<MockRequest> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (input.idempotencyKey) {
+    headers['Idempotency-Key'] = input.idempotencyKey
+  }
   const res = await fetch('/api/requests', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(input),
   })
   if (!res.ok) {

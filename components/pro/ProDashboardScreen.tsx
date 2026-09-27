@@ -61,10 +61,12 @@ export default function ProDashboardScreen() {
   const { user, claimProfessionalProfile, switchDemoRole } = useAuth()
   const { locale, t } = useLocale()
   const { tourRunning } = useDemoTour()
-  const { requests: apiRequests, loading, refresh } = useRequestsList({
+  const { requests: apiRequests, loading, refreshing, refresh } = useRequestsList({
     scope: user.role === 'professional' ? 'pro' : undefined,
   })
   const settingsRef = useRef<HTMLDivElement>(null)
+  const [actionBusy, setActionBusy] = useState(false)
+  const actionLockRef = useRef(false)
 
   // Merge investor-tour snapshot only while the tour is actively running
   const [tourRequest, setTourRequest] = useState<MockRequest | null>(null)
@@ -96,13 +98,14 @@ export default function ProDashboardScreen() {
     return [tourRequest, ...others]
   }, [apiRequests, tourRequest, tourRunning])
 
-  useRequestsListRealtime(refresh, {
+  useRequestsListRealtime(() => void refresh({ soft: true }), {
     professionalId: user.professionalId,
     enabled: user.role === 'professional',
   })
-  const pull = usePullToRefresh(refresh)
+  const pull = usePullToRefresh(() => refresh({ soft: true }))
   const [selectedRequest, setSelectedRequest] = useState<MockRequest | null>(null)
   const [cancellationReason, setCancellationReason] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<TabKey>('pending')
 
   // Auto-focus the live tour job only while the walkthrough is running
@@ -217,21 +220,38 @@ export default function ProDashboardScreen() {
   const keepSheetOpen = isDemoDataMode()
 
   const acceptInvite = async (reqId: string) => {
-    const res = await fetch(`/api/requests/${reqId}/accept-invite`, { method: 'POST' })
-    const json = (await res.json().catch(() => null)) as
-      | (MockRequest & { error?: string })
-      | null
-    if (!res.ok) {
-      alert(json?.error ?? 'Failed')
-      return
-    }
-    track('pro_accepted', { requestId: reqId, invite: true })
-    await refresh()
-    if (keepSheetOpen && json && 'id' in json) {
-      setSelectedRequest(json)
-      if (json.id === readTourRequest()?.id) writeTourRequest(json)
-    } else {
-      setSelectedRequest(null)
+    if (actionLockRef.current) return
+    actionLockRef.current = true
+    setActionBusy(true)
+    setActionError(null)
+    // Optimistic: move off pending immediately for tap feedback
+    setSelectedRequest((prev) =>
+      prev && prev.id === reqId ? { ...prev, status: 'accepted' as RequestStatus } : prev,
+    )
+    try {
+      const res = await fetch(`/api/requests/${reqId}/accept-invite`, { method: 'POST' })
+      const json = (await res.json().catch(() => null)) as
+        | (MockRequest & { error?: string })
+        | null
+      if (!res.ok) {
+        setActionError(json?.error ?? t('pro.actionFailed'))
+        await refresh({ soft: true })
+        return
+      }
+      track('pro_accepted', { requestId: reqId, invite: true })
+      await refresh({ soft: true })
+      if (keepSheetOpen && json && 'id' in json) {
+        setSelectedRequest(json)
+        if (json.id === readTourRequest()?.id) writeTourRequest(json)
+      } else {
+        setSelectedRequest(null)
+      }
+    } catch {
+      setActionError(t('pro.actionFailed'))
+      await refresh({ soft: true })
+    } finally {
+      actionLockRef.current = false
+      setActionBusy(false)
     }
   }
 
@@ -240,32 +260,48 @@ export default function ProDashboardScreen() {
     newStatus: RequestStatus,
     extra?: { cancellationReason?: string; quotedAmount?: number }
   ) => {
-    const result = await updateRequestStatusApi(reqId, newStatus, extra)
-    if (newStatus === 'accepted') track('pro_accepted', { requestId: reqId })
-    if (newStatus === 'completed') track('request_completed', { requestId: reqId })
-    const billing = (result as MockRequest & { billing?: { leadCharged?: boolean; amountAgorot?: number } })
-      .billing
-    if (billing?.leadCharged && billing.amountAgorot) {
-      alert(
-        t('monetization.leadCharged', {
-          amount: agorotToIls(billing.amountAgorot),
-        })
-      )
-    }
-    await refresh()
-    if (keepSheetOpen) {
-      setSelectedRequest(result)
-      const tour = readTourRequest()
-      if (tour?.id === result.id) writeTourRequest(result)
-      if (newStatus === 'pending') setActiveTab('pending')
-      else if (ACTIVE_REQUEST_STATUSES.includes(newStatus)) setActiveTab('active')
-      else if (newStatus === 'completed' || newStatus === 'cancelled') {
-        setActiveTab('done')
+    if (actionLockRef.current) return
+    actionLockRef.current = true
+    setActionBusy(true)
+    setActionError(null)
+    setSelectedRequest((prev) =>
+      prev && prev.id === reqId ? { ...prev, status: newStatus, ...extra } : prev,
+    )
+    try {
+      const result = await updateRequestStatusApi(reqId, newStatus, extra)
+      if (newStatus === 'accepted') track('pro_accepted', { requestId: reqId })
+      if (newStatus === 'completed') track('request_completed', { requestId: reqId })
+      const billing = (result as MockRequest & {
+        billing?: { leadCharged?: boolean; amountAgorot?: number }
+      }).billing
+      if (billing?.leadCharged && billing.amountAgorot) {
+        setActionError(
+          t('monetization.leadCharged', {
+            amount: agorotToIls(billing.amountAgorot),
+          }),
+        )
       }
-    } else {
-      setSelectedRequest(null)
+      await refresh({ soft: true })
+      if (keepSheetOpen) {
+        setSelectedRequest(result)
+        const tour = readTourRequest()
+        if (tour?.id === result.id) writeTourRequest(result)
+        if (newStatus === 'pending') setActiveTab('pending')
+        else if (ACTIVE_REQUEST_STATUSES.includes(newStatus)) setActiveTab('active')
+        else if (newStatus === 'completed' || newStatus === 'cancelled') {
+          setActiveTab('done')
+        }
+      } else {
+        setSelectedRequest(null)
+      }
+      setCancellationReason('')
+    } catch {
+      setActionError(t('pro.actionFailed'))
+      await refresh({ soft: true })
+    } finally {
+      actionLockRef.current = false
+      setActionBusy(false)
     }
-    setCancellationReason('')
   }
 
   const completeWithAmount = async (reqId: string) => {
@@ -549,17 +585,27 @@ export default function ProDashboardScreen() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <p className="text-4xl mb-3">📋</p>
           <p className="font-semibold">{t('pro.noRequestsHere')}</p>
         </div>
       ) : (
-        <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+        <div className="relative space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+          {refreshing && (
+            <div
+              className="absolute inset-x-0 -top-1 z-10 flex justify-center pointer-events-none"
+              aria-hidden
+            >
+              <div className="w-5 h-5 border-2 border-muted border-t-primary rounded-full animate-spin bg-card" />
+            </div>
+          )}
           {filtered.map((req) => (
             <button
               key={req.id}
               type="button"
-              className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all"
-              onClick={() => setSelectedRequest(req)}
+              className="w-full text-start bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all active:scale-[0.99]"
+              onClick={() => {
+                setActionError(null)
+                setSelectedRequest(req)
+              }}
             >
               <div className="flex items-center justify-between mb-2">
                 <RequestStatusBadge status={req.status} size="sm" />
@@ -637,23 +683,35 @@ export default function ProDashboardScreen() {
                 )}
             </div>
 
+            {actionError && (
+              <div role="alert" className="bg-amber-50 text-amber-900 rounded-xl p-3 text-sm">
+                {actionError}
+              </div>
+            )}
+
             {selectedRequest.status === 'pending' && (
               <div className="space-y-2">
                 {selectedRequest.matchMode === 'multi' && !selectedRequest.professionalId ? (
                   <button
                     type="button"
+                    disabled={actionBusy}
+                    aria-busy={actionBusy}
                     onClick={() => acceptInvite(selectedRequest.id)}
-                    className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success"
+                    className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success disabled:opacity-60 active:scale-[0.98]"
                   >
-                    <CheckCircle size={16} /> {t('matching.acceptInvite')}
+                    <CheckCircle size={16} />{' '}
+                    {actionBusy ? t('common.sending') : t('matching.acceptInvite')}
                   </button>
                 ) : (
                   <button
                     type="button"
+                    disabled={actionBusy}
+                    aria-busy={actionBusy}
                     onClick={() => updateStatus(selectedRequest.id, 'accepted')}
-                    className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success"
+                    className="w-full bg-success text-success-foreground py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md border-2 border-success disabled:opacity-60 active:scale-[0.98]"
                   >
-                    <CheckCircle size={16} /> {t('pro.approve')}
+                    <CheckCircle size={16} />{' '}
+                    {actionBusy ? t('common.sending') : t('pro.approve')}
                   </button>
                 )}
                 {featureFlags.proTemplates && (
@@ -665,8 +723,9 @@ export default function ProDashboardScreen() {
                       <button
                         key={key}
                         type="button"
+                        disabled={actionBusy}
                         onClick={() => setCancellationReason(t(key))}
-                        className="text-xs px-2 py-1 rounded-lg bg-muted"
+                        className="text-xs px-2 py-1 rounded-lg bg-muted disabled:opacity-50"
                       >
                         {t(key).slice(0, 28)}…
                       </button>
@@ -678,15 +737,17 @@ export default function ProDashboardScreen() {
                   onChange={(e) => setCancellationReason(e.target.value)}
                   placeholder={t('pro.rejectReason')}
                   className="h-16"
+                  disabled={actionBusy}
                 />
                 <button
                   type="button"
+                  disabled={actionBusy}
                   onClick={() =>
                     updateStatus(selectedRequest.id, 'cancelled', {
                       cancellationReason,
                     })
                   }
-                  className="w-full bg-red-50 border-2 border-destructive text-destructive py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="w-full bg-red-50 border-2 border-destructive text-destructive py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98]"
                 >
                   <XCircle size={16} /> {t('pro.reject')}
                 </button>
@@ -695,10 +756,12 @@ export default function ProDashboardScreen() {
             {selectedRequest.status === 'accepted' && (
               <button
                 type="button"
+                disabled={actionBusy}
+                aria-busy={actionBusy}
                 onClick={() => updateStatus(selectedRequest.id, 'on_the_way')}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md border-2 border-indigo-700 flex items-center justify-center gap-2"
+                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md border-2 border-indigo-700 flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98]"
               >
-                {t('tracking.proOnTheWay')}
+                {actionBusy ? t('common.sending') : t('tracking.proOnTheWay')}
               </button>
             )}
             {selectedRequest.status === 'on_the_way' && (
@@ -709,10 +772,12 @@ export default function ProDashboardScreen() {
                 />
                 <button
                   type="button"
+                  disabled={actionBusy}
+                  aria-busy={actionBusy}
                   onClick={() => updateStatus(selectedRequest.id, 'in_progress')}
-                  className="w-full bg-info text-info-foreground py-3 rounded-xl font-bold shadow-md border-2 border-info"
+                  className="w-full bg-info text-info-foreground py-3 rounded-xl font-bold shadow-md border-2 border-info disabled:opacity-60 active:scale-[0.98]"
                 >
-                  {t('pro.startWork')}
+                  {actionBusy ? t('common.sending') : t('pro.startWork')}
                 </button>
               </>
             )}
@@ -724,10 +789,13 @@ export default function ProDashboardScreen() {
                 />
                 <button
                   type="button"
+                  disabled={actionBusy}
+                  aria-busy={actionBusy}
                   onClick={() => completeWithAmount(selectedRequest.id)}
-                  className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2"
+                  className="w-full bg-success text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-60 active:scale-[0.98]"
                 >
-                  <CheckCircle size={16} /> {t('pro.markCompleted')}
+                  <CheckCircle size={16} />{' '}
+                  {actionBusy ? t('common.sending') : t('pro.markCompleted')}
                 </button>
               </>
             )}

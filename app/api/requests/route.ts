@@ -19,6 +19,10 @@ import { createRequestSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
 import { recordReferralRedemption } from '@/lib/referrals/record-redemption'
 import { assertConsumerRegionOpen } from '@/lib/regions/consumer-access'
+import {
+  getIdempotentResponse,
+  setIdempotentResponse,
+} from '@/lib/api/idempotency'
 
 async function resolveProfessionalIdFromAuth(): Promise<string | undefined> {
   const supabase = await createServerSupabaseClient()
@@ -109,7 +113,18 @@ export async function POST(request: Request) {
   try {
     const parsed = await parseJsonBody(request, createRequestSchema)
     if (!parsed.success) return parsed.response
-    const body = parsed.data as CreateRequestInput
+    const body = parsed.data as CreateRequestInput & { idempotencyKey?: string }
+    const idempotencyKey =
+      body.idempotencyKey ||
+      request.headers.get('idempotency-key')?.trim() ||
+      undefined
+
+    if (idempotencyKey) {
+      const cached = getIdempotentResponse(`requests:${idempotencyKey}`)
+      if (cached) {
+        return NextResponse.json(cached.body, { status: cached.status })
+      }
+    }
 
     const cityHint =
       body.city ||
@@ -131,9 +146,10 @@ export async function POST(request: Request) {
     }
 
     const backend = resolveDataBackend()
+    const { idempotencyKey: _omit, ...createBody } = body
 
     if (backend === 'supabase') {
-      const fromSupabase = await supabaseCreateRequest(body)
+      const fromSupabase = await supabaseCreateRequest(createBody)
       if (fromSupabase) {
         if (body.referralCode) {
           const supabase = await createServerSupabaseClient()
@@ -148,6 +164,9 @@ export async function POST(request: Request) {
             })
           }
         }
+        if (idempotencyKey) {
+          setIdempotentResponse(`requests:${idempotencyKey}`, fromSupabase, 201)
+        }
         return NextResponse.json(fromSupabase, { status: 201 })
       }
       return NextResponse.json({ error: 'יש להתחבר כדי לשלוח בקשה' }, { status: 401 })
@@ -155,10 +174,13 @@ export async function POST(request: Request) {
 
     if (backend === 'mock') {
       const created = createRequest({
-        ...body,
-        customerId: body.customerId || 'guest@fixly.app',
-        customerName: body.customerName || 'אורח',
+        ...createBody,
+        customerId: createBody.customerId || 'guest@fixly.app',
+        customerName: createBody.customerName || 'אורח',
       })
+      if (idempotencyKey) {
+        setIdempotentResponse(`requests:${idempotencyKey}`, created, 201)
+      }
       return NextResponse.json(created, { status: 201 })
     }
 

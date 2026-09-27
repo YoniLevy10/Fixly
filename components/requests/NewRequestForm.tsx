@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { MapPin, Camera, X } from 'lucide-react'
 import BackButton from '@/components/shared/BackButton'
@@ -25,8 +25,15 @@ import { coordsFromLocationText } from '@/lib/tracking/geo'
 import { formatPrice } from '@/lib/i18n/format-locale'
 import { getStoredReferral } from '@/components/shared/ReferralCapture'
 import { track } from '@/lib/analytics/track'
+import {
+  newIdempotencyKey,
+  prefetchGeolocation,
+  resolveDestinationCoords,
+  type PrefetchedCoords,
+} from '@/lib/ux/submit-guards'
 
 type ImagePreview = { preview: string; file: File }
+type SubmitPhase = 'idle' | 'uploading' | 'locating' | 'sending'
 
 export default function NewRequestForm() {
   const router = useRouter()
@@ -45,14 +52,25 @@ export default function NewRequestForm() {
     customerPhone: user.phone ?? '',
   })
   const [images, setImages] = useState<ImagePreview[]>([])
-  const [loading, setLoading] = useState(false)
+  const [phase, setPhase] = useState<SubmitPhase>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [prefetchedCoords, setPrefetchedCoords] = useState<PrefetchedCoords | null>(
+    null,
+  )
+  const submittingRef = useRef(false)
+  const idempotencyKeyRef = useRef<string | null>(null)
+
+  const loading = phase !== 'idle'
 
   useEffect(() => {
     if (proId) {
       fetchProfessional(proId).then((p) => setPro(p ?? null))
     }
   }, [proId])
+
+  useEffect(() => {
+    return prefetchGeolocation(setPrefetchedCoords)
+  }, [])
 
   useEffect(() => {
     if (!featureFlags.requestDrafts) return
@@ -96,12 +114,21 @@ export default function NewRequestForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submittingRef.current) return
     if (!pro && !proId) {
       setError(t('requests.mustSelectPro'))
       return
     }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setError(t('improvements.offline'))
+      return
+    }
 
-    setLoading(true)
+    submittingRef.current = true
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = newIdempotencyKey()
+    }
+    setPhase(images.length ? 'uploading' : 'locating')
     setError(null)
 
     try {
@@ -110,35 +137,20 @@ export default function NewRequestForm() {
         const url = await uploadRequestImage(img.file)
         if (!url) {
           setError(t('requests.imageUploadFailed'))
-          setLoading(false)
           return
         }
         imageUrls.push(url)
       }
 
-      let destinationLat: number | undefined
-      let destinationLng: number | undefined
-      if (typeof navigator !== 'undefined' && navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              timeout: 8000,
-              maximumAge: 60000,
-            })
-          })
-          destinationLat = pos.coords.latitude
-          destinationLng = pos.coords.longitude
-        } catch {
-          const fallback = coordsFromLocationText(form.location)
-          destinationLat = fallback.lat
-          destinationLng = fallback.lng
-        }
-      } else {
-        const fallback = coordsFromLocationText(form.location)
-        destinationLat = fallback.lat
-        destinationLng = fallback.lng
-      }
+      setPhase('locating')
+      const coords = await resolveDestinationCoords({
+        prefetched: prefetchedCoords,
+        locationText: form.location,
+        timeoutMs: 1200,
+        coordsFromLocationText,
+      })
 
+      setPhase('sending')
       const created = await createRequestApi({
         customerName: user.fullName,
         customerPhone: form.customerPhone,
@@ -149,27 +161,47 @@ export default function NewRequestForm() {
         description: form.description,
         location: form.location,
         city: form.location.split(',').map((p) => p.trim()).at(-1),
-        destinationLat,
-        destinationLng,
+        destinationLat: coords.lat,
+        destinationLng: coords.lng,
         preferredDate: form.preferredDate || undefined,
         preferredTime: form.preferredTime || undefined,
         images: imageUrls.length ? imageUrls : undefined,
         referralCode: getStoredReferral() ?? undefined,
+        idempotencyKey: idempotencyKeyRef.current,
       })
 
       clearRequestDraft()
       track('request_created', { professionalId: pro?.id ?? proId ?? '' })
+      idempotencyKeyRef.current = null
       router.push(routes.tracking(created.id))
     } catch (err) {
       if (err instanceof RegionClosedError) {
         router.push(err.waitlistPath)
         return
       }
-      setError(err instanceof Error ? err.message : t('requests.submitError'))
+      const message =
+        err instanceof TypeError
+          ? t('improvements.offline')
+          : err instanceof Error
+            ? err.message
+            : t('requests.submitError')
+      setError(message)
+      // Keep the same idempotency key so a retry after a flaky network
+      // cannot create a second request if the first POST actually landed.
     } finally {
-      setLoading(false)
+      submittingRef.current = false
+      setPhase('idle')
     }
   }
+
+  const submitLabel =
+    phase === 'uploading'
+      ? t('requests.uploadingImages')
+      : phase === 'locating'
+        ? t('requests.locating')
+        : phase === 'sending'
+          ? t('common.sending')
+          : `${t('requests.submit')} →`
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 lg:px-8">
@@ -216,7 +248,9 @@ export default function NewRequestForm() {
       )}
 
       {error && (
-        <div className="bg-red-50 text-red-700 rounded-xl p-3 mb-4 text-sm">{error}</div>
+        <div role="alert" className="bg-red-50 text-red-700 rounded-xl p-3 mb-4 text-sm">
+          {error}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
@@ -229,6 +263,7 @@ export default function NewRequestForm() {
               placeholder={t('requests.titlePlaceholder')}
               className="mt-1.5"
               required
+              disabled={loading}
             />
           </div>
           <div>
@@ -239,6 +274,7 @@ export default function NewRequestForm() {
               placeholder={t('requests.descriptionPlaceholder')}
               className="mt-1.5 h-28"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -258,8 +294,9 @@ export default function NewRequestForm() {
                 />
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-                  className="absolute -top-1.5 -end-1.5 w-5 h-5 bg-destructive rounded-full text-white flex items-center justify-center"
+                  className="absolute -top-1.5 -end-1.5 w-5 h-5 bg-destructive rounded-full text-white flex items-center justify-center disabled:opacity-50"
                 >
                   <X size={10} />
                 </button>
@@ -273,6 +310,7 @@ export default function NewRequestForm() {
                   accept="image/*"
                   multiple
                   className="hidden"
+                  disabled={loading}
                   onChange={handleImageAdd}
                 />
               </label>
@@ -287,6 +325,7 @@ export default function NewRequestForm() {
             value={form.preferredDate}
             onChange={(e) => setForm((f) => ({ ...f, preferredDate: e.target.value }))}
             className="mt-1.5"
+            disabled={loading}
           />
         </div>
         <div>
@@ -296,6 +335,7 @@ export default function NewRequestForm() {
             value={form.preferredTime}
             onChange={(e) => setForm((f) => ({ ...f, preferredTime: e.target.value }))}
             className="mt-1.5"
+            disabled={loading}
           />
         </div>
 
@@ -308,6 +348,7 @@ export default function NewRequestForm() {
             onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
             placeholder={t('requests.locationPlaceholder')}
             className="mt-1.5"
+            disabled={loading}
           />
         </div>
         <div>
@@ -319,6 +360,7 @@ export default function NewRequestForm() {
             placeholder={t('requests.phonePlaceholder')}
             className="mt-1.5"
             dir="ltr"
+            disabled={loading}
           />
         </div>
 
@@ -326,9 +368,10 @@ export default function NewRequestForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-secondary text-white font-bold py-3 text-base rounded-xl hover:opacity-90 disabled:opacity-60 transition-opacity"
+            aria-busy={loading}
+            className="w-full bg-secondary text-white font-bold py-3 text-base rounded-xl hover:opacity-90 disabled:opacity-60 transition-opacity active:scale-[0.98]"
           >
-            {loading ? t('common.sending') : `${t('requests.submit')} →`}
+            {submitLabel}
           </button>
         </div>
       </form>

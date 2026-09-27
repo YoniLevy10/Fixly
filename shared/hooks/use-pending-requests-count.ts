@@ -15,22 +15,39 @@ export function usePendingRequestsCount() {
       return
     }
 
+    let cancelled = false
     const load = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return
+      }
       const url = demoPro
-        ? '/api/requests?scope=pro&professionalId=1'
-        : '/api/requests?scope=pro'
+        ? '/api/requests?scope=pro&professionalId=1&limit=20'
+        : '/api/requests?scope=pro&limit=20'
       fetch(url)
         .then((r) => r.json())
         .then((data) => {
-          if (!Array.isArray(data)) return setCount(0)
-          setCount(data.filter((r: { status: string }) => r.status === 'pending').length)
+          if (cancelled) return
+          const items = Array.isArray(data) ? data : data.items ?? []
+          setCount(
+            items.filter((r: { status: string }) => r.status === 'pending').length,
+          )
         })
-        .catch(() => setCount(0))
+        .catch(() => {
+          if (!cancelled) setCount(0)
+        })
     }
 
     load()
     const id = setInterval(load, 60_000)
-    return () => clearInterval(id)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
   }, [user.role, user.professionalId])
 
   return count

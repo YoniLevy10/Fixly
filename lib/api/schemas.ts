@@ -21,6 +21,8 @@ export const createRequestSchema = z
     destinationLng: z.number().finite().optional(),
     matchMode: z.boolean().optional(),
     referralCode: z.string().trim().max(50).optional(),
+    /** Client-generated key so double-taps do not create duplicate requests. */
+    idempotencyKey: z.string().trim().min(8).max(128).optional(),
   })
   .refine((d) => Boolean(d.professionalId) || d.matchMode === true, {
     message: 'נדרש professionalId או matchMode',
