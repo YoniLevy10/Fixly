@@ -1,7 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { withCuratedProfessionals } from '../../lib/data/professionals-service'
-import { BEAUTY_PROFESSIONALS } from '../../mock/beauty-professionals'
 import type { Professional } from '../../types/professional'
 
 const sampleDbPro: Professional = {
@@ -18,28 +17,16 @@ const sampleDbPro: Professional = {
 }
 
 describe('withCuratedProfessionals', () => {
-  it('layers beauty pros onto an empty DB list', () => {
+  it('returns empty list unchanged (no beauty overlay)', () => {
     const merged = withCuratedProfessionals([])
-    assert.equal(merged.length, BEAUTY_PROFESSIONALS.length)
-    assert.ok(merged.some((p) => p.category.includes('מניקור')))
-    assert.ok(merged.some((p) => p.category.includes('תספורת') || p.category.includes('איפור')))
+    assert.equal(merged.length, 0)
   })
 
-  it('prepends beauty pros without duplicating DB ids', () => {
-    const overlap = { ...BEAUTY_PROFESSIONALS[0]! }
-    const merged = withCuratedProfessionals([sampleDbPro, overlap])
-    const beautyIds = merged.filter((p) => p.id.startsWith('b')).map((p) => p.id)
-    assert.equal(new Set(beautyIds).size, beautyIds.length)
-    assert.ok(merged.some((p) => p.id === sampleDbPro.id))
-    assert.equal(
-      merged.filter((p) => p.id === overlap.id).length,
-      1,
-      'overlapping curated id should appear once'
-    )
-  })
-
-  it('keeps DB-only list length when beauty already present', () => {
-    const merged = withCuratedProfessionals([...BEAUTY_PROFESSIONALS])
-    assert.equal(merged.length, BEAUTY_PROFESSIONALS.length)
+  it('passes through DB professionals without injecting extras', () => {
+    const input = [sampleDbPro]
+    const merged = withCuratedProfessionals(input)
+    assert.equal(merged.length, 1)
+    assert.equal(merged[0]?.id, sampleDbPro.id)
+    assert.equal(merged, input)
   })
 })

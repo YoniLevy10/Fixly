@@ -163,22 +163,22 @@ describe('fit-score quality', () => {
     )
   })
 
-  it('keeps mobile nail/hair pros for beauty recruit jobs', () => {
+  it('rejects beauty/salon names as off-trade for home trades', () => {
     assert.equal(
       shouldKeepDiscoveredProspect({
         name: 'נועה מניקור עד הבית',
         phone: '0501112233',
-        categorySlug: 'nails',
+        categorySlug: 'plumbing',
       }),
-      true,
+      false,
     )
     assert.equal(
       shouldKeepDiscoveredProspect({
         name: 'ספר נייד ירושלים',
         phone: '0502223344',
-        categorySlug: 'hair',
+        categorySlug: 'handyman',
       }),
-      true,
+      false,
     )
   })
 })

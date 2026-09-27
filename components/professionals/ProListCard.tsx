@@ -19,7 +19,7 @@ export default function ProListCard({ professional: pro }: ProListCardProps) {
   const rating = Math.min(5, Math.max(0, Number(pro.rating) || 0))
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-4 hover:border-primary/40 transition-colors">
+    <div className="ios27-surface p-4 hover:border-primary/40 transition-colors duration-[var(--dur-1)]">
       <div className="flex items-start gap-3">
         <div
           className="w-12 h-12 rounded-full flex-shrink-0 bg-primary text-white bg-cover bg-center flex items-center justify-center font-bold"

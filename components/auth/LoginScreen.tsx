@@ -7,34 +7,37 @@ import { routes } from '@/lib/routes'
 import { useLocale } from '@/lib/i18n/locale-provider'
 
 /**
- * Dedicated login surface — OpticalCenter / Moked pattern:
- * brand mark first, then auth form. Full-bleed product chrome hidden via AppLayout immersive routes.
+ * Dedicated login surface — iOS 27 glass + Fixly navy/orange brand.
  */
 export default function LoginScreen() {
   const { t } = useLocale()
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center bg-[#f7f9fc] px-4 py-10 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center ios27-atmosphere px-4 py-10 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute -right-24 -top-16 h-72 w-72 rounded-full bg-[#ffd98e]/40 blur-3xl" />
-        <div className="absolute -left-28 bottom-10 h-64 w-64 rounded-full bg-[#bfd6f0]/50 blur-3xl" />
+        <div className="absolute -right-24 -top-16 h-72 w-72 rounded-full bg-secondary/25 blur-3xl" />
+        <div className="absolute -left-28 bottom-10 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-[400px]">
+      <div className="relative w-full max-w-[400px] animate-ios-scale-in">
         <div className="mb-8 flex flex-col items-center text-center">
-          <FixlyMark size={72} priority className="mb-4 rounded-2xl shadow-md" />
-          <h1 className="text-2xl font-black tracking-tight text-[#123563]" dir="ltr">
-            Fixly<span className="text-[#F59E0B]">.</span>
+          <FixlyMark size={72} priority className="mb-4 rounded-[var(--radius-lg)] shadow-lg shadow-primary/20" />
+          <h1 className="text-2xl font-black tracking-tight text-primary" dir="ltr">
+            Fixly<span className="text-secondary">.</span>
           </h1>
           <p className="mt-1 text-sm font-medium text-muted-foreground">
             {t('auth.signInPromptTitle')}
           </p>
         </div>
 
-        <AuthPanel />
+        <div className="apple-glass-strong rounded-[var(--radius-xl)] p-1">
+          <div className="rounded-[calc(var(--radius-xl)-4px)] bg-card/90 p-4 sm:p-5">
+            <AuthPanel />
+          </div>
+        </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           <Link

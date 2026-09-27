@@ -16,8 +16,8 @@ export function getCategoryLabel(locale: Locale, slug: string, fallback?: string
 
   if (fallback) {
     return locale === 'he'
-      ? resolveCategoryNameHe(slug, fallback, fallback)
-      : resolveCategoryNameEn(slug, fallback, fallback)
+      ? resolveCategoryNameHe(slug, fallback)
+      : resolveCategoryNameEn(slug, fallback)
   }
 
   return slug

@@ -24,10 +24,10 @@ function NavLink({
     <Link
       href={path}
       className={cn(
-        'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+        'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors duration-[var(--dur-1)]',
         isActive
-          ? 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+          : 'text-muted-foreground hover:bg-primary/8 hover:text-foreground'
       )}
     >
       <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
@@ -41,10 +41,10 @@ export default function DesktopSidebar() {
   const { t } = useLocale()
 
   return (
-    <aside className="fixly-desktop-sidebar native-hide-desktop hidden lg:flex flex-col fixed top-[var(--fixly-demo-banner-h,0px)] right-0 h-[calc(100dvh-var(--fixly-demo-banner-h,0px))] w-64 border-l border-border bg-card z-40">
-      <div className="p-5 border-b border-border">
+    <aside className="fixly-desktop-sidebar native-hide-desktop hidden lg:flex flex-col fixed top-[var(--fixly-demo-banner-h,0px)] right-0 h-[calc(100dvh-var(--fixly-demo-banner-h,0px))] w-64 border-l border-border/40 apple-glass z-40">
+      <div className="p-5 border-b border-border/40">
         <Link href={routes.home} className="flex items-center gap-3">
-          <FixlyMark size={40} className="rounded-xl" />
+          <FixlyMark size={40} className="rounded-2xl shadow-md shadow-primary/15" />
           <div>
             <p className="font-black text-lg leading-tight">{t('app.name')}</p>
             <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>

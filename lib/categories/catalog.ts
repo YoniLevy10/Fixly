@@ -1,4 +1,4 @@
-/** Canonical category presentation — Hebrew-first for IL market */
+/** Canonical category presentation — Hebrew-first for IL market (Midrag-aligned) */
 
 export type CategoryCatalogEntry = {
   emoji: string
@@ -23,20 +23,16 @@ export const CATEGORY_CATALOG: Record<string, CategoryCatalogEntry> = {
   furniture: { emoji: '🛋️', nameHe: 'ריהוט', nameEn: 'Furniture' },
   appliance_repair: { emoji: '🔌', nameHe: 'תיקון מכשירים', nameEn: 'Appliance repair' },
   appliances: { emoji: '🔌', nameHe: 'תיקון מכשירים', nameEn: 'Appliance repair' },
-  computers: { emoji: '💻', nameHe: 'מחשבים', nameEn: 'Computers' },
+  phone_repair: { emoji: '📱', nameHe: 'תיקון סמארטפון', nameEn: 'Phone repair' },
   glazing: { emoji: '🪟', nameHe: 'זגגות', nameEn: 'Glazing' },
   glass: { emoji: '🪟', nameHe: 'זגגות', nameEn: 'Glazing' },
   renovations: { emoji: '🏗️', nameHe: 'שיפוצים', nameEn: 'Renovations' },
   renovation: { emoji: '🏗️', nameHe: 'שיפוצים', nameEn: 'Renovations' },
+  handyman: { emoji: '🔧', nameHe: 'שיפוצים קטנים', nameEn: 'Handyman' },
   waterproofing: { emoji: '🛡️', nameHe: 'איטום', nameEn: 'Waterproofing' },
   aluminum: { emoji: '🪟', nameHe: 'אלומיניום', nameEn: 'Aluminum' },
   drywall: { emoji: '🧱', nameHe: 'גבס וטיח', nameEn: 'Drywall' },
-  solar: { emoji: '☀️', nameHe: 'סולאר ואנרגיה', nameEn: 'Solar' },
-  nails: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Nails' },
-  hair: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Hair' },
-  makeup: { emoji: '💄', nameHe: 'איפור', nameEn: 'Makeup' },
-  manicure: { emoji: '💅', nameHe: 'מניקור וציפורניים', nameEn: 'Manicure' },
-  barber: { emoji: '✂️', nameHe: 'תספורת ועיצוב', nameEn: 'Barber' },
+  solar: { emoji: '☀️', nameHe: 'דודי שמש וחשמל', nameEn: 'Solar water heaters' },
 }
 
 /** Lucide / legacy icon keys stored in DB → emoji */
@@ -54,17 +50,20 @@ const LEGACY_ICON_KEYS: Record<string, string> = {
   sofa: '🛋️',
   laptop: '💻',
   elevator: '🛗',
+  phone: '📱',
 }
 
 const ENGLISH_NAME_TO_SLUG: Record<string, string> = {
   furniture: 'furniture',
   'appliance repair': 'appliance_repair',
   appliances: 'appliances',
-  computers: 'computers',
+  'phone repair': 'phone_repair',
+  smartphone: 'phone_repair',
   glazing: 'glazing',
   glass: 'glass',
   renovations: 'renovations',
   renovation: 'renovation',
+  handyman: 'handyman',
   elevators: 'elevators',
   'pest control': 'pest_control',
   general: 'general',
@@ -80,11 +79,6 @@ const ENGLISH_NAME_TO_SLUG: Record<string, string> = {
   gardening: 'gardening',
   locksmith: 'locksmith',
   tiling: 'tiling',
-  nails: 'nails',
-  manicure: 'nails',
-  hair: 'hair',
-  barber: 'hair',
-  makeup: 'makeup',
 }
 
 function isMostlyLatin(text: string): boolean {
@@ -123,23 +117,24 @@ export function resolveCategoryEmoji(
 
 export function resolveCategoryNameHe(
   slug: string,
-  nameHe?: string | null,
-  nameEn?: string | null,
+  fallback?: string | null,
 ): string {
-  const catalog = CATEGORY_CATALOG[slug]
-  if (catalog) return catalog.nameHe
-  if (nameHe && !isMostlyLatin(nameHe)) return nameHe
-  if (nameEn && !isMostlyLatin(nameEn)) return nameEn
-  return nameHe || nameEn || slug
+  return CATEGORY_CATALOG[slug]?.nameHe ?? fallback ?? slug
 }
 
 export function resolveCategoryNameEn(
   slug: string,
-  nameEn?: string | null,
-  nameHe?: string | null,
+  fallback?: string | null,
 ): string {
-  const catalog = CATEGORY_CATALOG[slug]
-  if (catalog) return catalog.nameEn
-  if (nameEn && isMostlyLatin(nameEn)) return nameEn
-  return nameEn || nameHe || slug
+  return CATEGORY_CATALOG[slug]?.nameEn ?? fallback ?? slug
+}
+
+export function categoryDisplayName(
+  slug: string,
+  locale: 'he' | 'en',
+  fallback?: string | null,
+): string {
+  if (locale === 'en') return resolveCategoryNameEn(slug, fallback)
+  if (fallback && !isMostlyLatin(fallback)) return fallback
+  return resolveCategoryNameHe(slug, fallback)
 }

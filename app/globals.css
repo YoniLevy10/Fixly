@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Fixly brand — navy / orange (unchanged) */
     --background: 220 25% 96%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -21,16 +22,34 @@
     --border: 220 18% 82%;
     --input: 220 18% 82%;
     --ring: 218 70% 22%;
-    --radius: 0.75rem;
+    --radius: 1rem;
     --success: 152 69% 38%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 222 47% 11%;
     --info: 199 89% 42%;
     --info-foreground: 0 0% 100%;
-    /* Investor demo bar — reserved from first paint to avoid CLS (banner publishes exact height) */
-    /* Investor demo bar — exact height published by DemoModeBanner; layout may seed a reserve */
     --fixly-demo-banner-h: 0px;
+
+    /* iOS 27 Liquid Glass — materials (brand hues stay primary/secondary) */
+    --glass-bg: color-mix(in srgb, hsl(var(--card)) 72%, transparent);
+    --glass-bg-strong: color-mix(in srgb, hsl(var(--card)) 88%, transparent);
+    --glass-blur: 28px;
+    --glass-saturate: 1.7;
+    --glass-edge: color-mix(in srgb, hsl(var(--foreground)) 12%, transparent);
+    --glass-specular: color-mix(in srgb, white 78%, transparent);
+    --glass-shadow: 0 10px 30px color-mix(in srgb, hsl(var(--foreground)) 8%, transparent);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --dur-1: 150ms;
+    --dur-2: 280ms;
+    --dur-3: 400ms;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --bottomnav-h: 64px;
+    --tap: 44px;
   }
 }
 
@@ -80,8 +99,70 @@
   }
 
   .fixly-link-card {
-    @apply block rounded-2xl border-2 border-border bg-card px-4 py-3 font-semibold text-foreground shadow-sm
-      hover:border-primary hover:bg-primary/5 transition-colors;
+    @apply block rounded-[var(--radius-lg)] border border-border/60 bg-card/80 px-4 py-3 font-semibold text-foreground shadow-sm
+      hover:border-primary/40 hover:bg-primary/5 transition-colors;
+  }
+
+  /* Liquid Glass chrome — frosted nav/headers/sheets; content panels stay readable */
+  .apple-glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow:
+      inset 0 0.5px 0 var(--glass-specular),
+      inset 0 0 0 0.5px var(--glass-edge),
+      var(--glass-shadow);
+  }
+
+  .apple-glass-strong {
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(var(--glass-saturate));
+    box-shadow:
+      inset 0 0.5px 0 var(--glass-specular),
+      inset 0 0 0 0.5px var(--glass-edge),
+      0 12px 36px color-mix(in srgb, hsl(var(--foreground)) 10%, transparent);
+  }
+
+  .apple-glass-pill {
+    background: color-mix(in srgb, hsl(var(--card)) 70%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    backdrop-filter: blur(20px) saturate(1.5);
+    box-shadow:
+      inset 0 0.5px 0 var(--glass-specular),
+      inset 0 0 0 0.5px var(--glass-edge);
+  }
+
+  .nav-pill-active {
+    position: relative;
+    color: hsl(var(--primary));
+  }
+
+  .nav-pill-active::before {
+    content: '';
+    position: absolute;
+    inset: 2px 4px;
+    border-radius: 16px;
+    background: color-mix(in srgb, hsl(var(--primary)) 12%, hsl(var(--card)));
+    z-index: 0;
+  }
+
+  .nav-pill-active > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .ios27-surface {
+    @apply rounded-[var(--radius-lg)] border border-border/50 bg-card;
+    box-shadow: 0 1px 2px color-mix(in srgb, hsl(var(--foreground)) 4%, transparent),
+      0 4px 16px color-mix(in srgb, hsl(var(--foreground)) 5%, transparent);
+  }
+
+  .ios27-atmosphere {
+    background:
+      radial-gradient(ellipse 80% 50% at 10% -10%, color-mix(in srgb, hsl(var(--primary)) 8%, transparent), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 90% 0%, color-mix(in srgb, hsl(var(--secondary)) 10%, transparent), transparent 50%),
+      hsl(var(--background));
   }
 }
 
@@ -226,12 +307,85 @@ html[dir='rtl'] .fixly-splash-bar {
   }
 }
 
+@keyframes ios27-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ios27-slide-up {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes ios27-scale-in {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-ios-fade {
+  animation: ios27-fade-in var(--dur-2) var(--ease);
+}
+
+.animate-ios-slide-up {
+  animation: ios27-slide-up var(--dur-2) var(--ease) both;
+}
+
+.animate-ios-scale-in {
+  animation: ios27-scale-in var(--dur-2) var(--ease) both;
+}
+
+.stagger-ios > * {
+  animation: ios27-slide-up var(--dur-2) var(--ease) both;
+}
+
+.stagger-ios > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger-ios > *:nth-child(2) {
+  animation-delay: 40ms;
+}
+.stagger-ios > *:nth-child(3) {
+  animation-delay: 80ms;
+}
+.stagger-ios > *:nth-child(4) {
+  animation-delay: 120ms;
+}
+.stagger-ios > *:nth-child(5) {
+  animation-delay: 160ms;
+}
+.stagger-ios > *:nth-child(6) {
+  animation-delay: 200ms;
+}
+.stagger-ios > *:nth-child(n + 7) {
+  animation-delay: 240ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .prelaunch-float,
   .prelaunch-progress,
   .prelaunch-drift,
   .fixly-splash-bar,
-  .fixly-splash-mark-pop {
+  .fixly-splash-mark-pop,
+  .animate-ios-fade,
+  .animate-ios-slide-up,
+  .animate-ios-scale-in,
+  .stagger-ios > * {
     animation: none !important;
   }
 }

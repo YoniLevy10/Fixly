@@ -72,7 +72,7 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
   const showDesktopChrome = !shouldHideChrome && isDesktop
 
   return (
-    <div className="app-shell min-h-screen bg-background">
+    <div className="app-shell min-h-screen ios27-atmosphere">
       {showDesktopChrome && <DesktopSidebar />}
 
       <div className={shouldHideChrome ? '' : 'lg:mr-64 native-shell-column'}>

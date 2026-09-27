@@ -31,7 +31,7 @@ export default function SurfaceCard({
   return (
     <div
       className={cn(
-        'bg-card rounded-2xl border-2 border-border shadow-md',
+        'ios27-surface',
         accentBar[accent],
         paddingMap[padding],
         className
