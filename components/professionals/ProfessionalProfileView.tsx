@@ -120,8 +120,14 @@ export default function ProfessionalProfileView({ pro }: ProfessionalProfileView
               {t('common.currency')}
             </p>
             <Link
+              href={`${routes.newRequest}?professional=${pro.id}`}
+              className="block w-full bg-secondary text-white text-center py-3.5 rounded-2xl font-bold mb-2 active:scale-[0.98]"
+            >
+              {t('professionals.sendRequest')}
+            </Link>
+            <Link
               href={routes.chat(pro.id)}
-              className="block w-full bg-primary text-white text-center py-3.5 rounded-2xl font-bold"
+              className="block w-full bg-primary text-white text-center py-3.5 rounded-2xl font-bold active:scale-[0.98]"
             >
               {t('common.chat')}
             </Link>

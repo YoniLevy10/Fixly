@@ -25,6 +25,7 @@ export default function ProfessionalsScreen() {
   const [showSort, setShowSort] = useState(false)
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const tmr = window.setTimeout(() => setDebouncedQuery(query.trim()), 250)
@@ -53,12 +54,32 @@ export default function ProfessionalsScreen() {
       scroll: false,
     })
 
+    const controller = new AbortController()
     setLoading(true)
-    fetch(`/api/professionals?${params}`)
-      .then((res) => res.json())
-      .then((data) => setProfessionals(Array.isArray(data) ? data : []))
-      .finally(() => setLoading(false))
-  }, [debouncedQuery, selectedCategory, sortBy, router])
+    setError(null)
+    fetch(`/api/professionals?${params}`, { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error('load-failed')
+        return res.json()
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setProfessionals(Array.isArray(data) ? data : [])
+        }
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return
+        setError(t('professionals.loadError'))
+        if (!(err instanceof DOMException && err.name === 'AbortError')) {
+          /* keep previous list for soft failure */
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [debouncedQuery, selectedCategory, sortBy, router, t])
 
   const chips = useMemo(() => PROFESSIONALS_FILTER_CATEGORIES, [])
 
@@ -78,6 +99,7 @@ export default function ProfessionalsScreen() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('professionals.searchPlaceholder')}
           className="w-full bg-white border border-gray-200 rounded-2xl pe-10 ps-4 py-3 text-sm outline-none focus:border-primary/40"
+          aria-busy={loading}
         />
       </div>
 
@@ -86,7 +108,7 @@ export default function ProfessionalsScreen() {
           type="button"
           onClick={() => setSelectedCategory('')}
           className={cn(
-            'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors',
+            'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors active:scale-[0.97]',
             !selectedCategory
               ? 'bg-primary text-white border-primary'
               : 'bg-white border-gray-200 text-gray-600',
@@ -102,7 +124,7 @@ export default function ProfessionalsScreen() {
               setSelectedCategory(selectedCategory === cat.slug ? '' : cat.slug)
             }
             className={cn(
-              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1',
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1 active:scale-[0.97]',
               selectedCategory === cat.slug
                 ? 'bg-primary text-white border-primary'
                 : 'bg-white border-gray-200 text-gray-600',
@@ -118,13 +140,15 @@ export default function ProfessionalsScreen() {
         <button
           type="button"
           onClick={() => setShowSort((v) => !v)}
-          className="flex items-center gap-1 text-sm text-gray-600"
+          className="flex items-center gap-1 text-sm text-gray-600 active:scale-[0.97]"
         >
           <SlidersHorizontal size={16} />
           {t('professionals.sort')}
         </button>
         <span className="text-sm text-gray-500">
-          {loading ? '…' : `${professionals.length} ${t('common.results')}`}
+          {loading && professionals.length === 0
+            ? '…'
+            : `${professionals.length} ${t('common.results')}`}
         </span>
       </div>
 
@@ -145,7 +169,7 @@ export default function ProfessionalsScreen() {
                 setShowSort(false)
               }}
               className={cn(
-                'flex-1 py-2 rounded-xl text-xs font-medium',
+                'flex-1 py-2 rounded-xl text-xs font-medium active:scale-[0.97]',
                 sortBy === key ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600',
               )}
             >
@@ -155,7 +179,23 @@ export default function ProfessionalsScreen() {
         </div>
       )}
 
-      <div className="space-y-3 pb-24">
+      {error && (
+        <div role="alert" className="bg-red-50 text-red-700 rounded-xl p-3 mb-3 text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className={cn('space-y-3 pb-24', loading && professionals.length > 0 && 'opacity-70')}>
+        {loading && professionals.length === 0 && (
+          <div className="space-y-3" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-28 rounded-2xl bg-white border border-gray-100 animate-pulse"
+              />
+            ))}
+          </div>
+        )}
         {!loading && professionals.length === 0 && (
           <div className="text-center py-8 space-y-1">
             <p className="text-sm font-medium">{t('professionals.emptyTitle')}</p>

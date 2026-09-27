@@ -27,9 +27,9 @@ export default function MyRequestsScreen() {
   })
   const Chevron = dir === 'rtl' ? ChevronLeft : ChevronRight
 
-  useRequestsListRealtime(refresh, { customerId: user.id })
+  useRequestsListRealtime(() => void refresh({ soft: true }), { customerId: user.id })
 
-  const pull = usePullToRefresh(refresh)
+  const pull = usePullToRefresh(() => refresh({ soft: true }))
 
   return (
     <div

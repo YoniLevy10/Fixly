@@ -109,6 +109,7 @@ export default function HomeScreen() {
       </div>
 
       <div
+        data-testid="home-hero"
         className="mx-4 mt-3 mb-5 rounded-2xl bg-primary overflow-hidden relative lg:mx-8 lg:mt-6 lg:min-h-[180px]"
         style={{ minHeight: 145 }}
       >
