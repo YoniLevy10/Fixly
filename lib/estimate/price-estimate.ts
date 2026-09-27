@@ -9,9 +9,8 @@ const BASE_BY_SLUG: Record<string, [number, number]> = {
   gardening: [150, 400],
   tiling: [250, 700],
   moving: [400, 1200],
-  nails: [110, 280],
-  hair: [90, 350],
-  makeup: [220, 700],
+  handyman: [150, 400],
+  phone_repair: [120, 450],
 }
 
 export function estimatePriceRange(categorySlug: string): { min: number; max: number } | null {
@@ -22,15 +21,10 @@ export function estimatePriceRange(categorySlug: string): { min: number; max: nu
 
 export function guessCategorySlug(categoryLabel: string): string {
   const lower = categoryLabel.toLowerCase()
-  if (lower.includes('מניקור') || lower.includes('ציפורן') || lower.includes('nail')) return 'nails'
-  if (
-    lower.includes('תספורת') ||
-    lower.includes('ספר') ||
-    lower.includes('hair') ||
-    lower.includes('barber')
-  )
-    return 'hair'
-  if (lower.includes('איפור') || lower.includes('מאפר') || lower.includes('makeup')) return 'makeup'
+  if (lower.includes('סמארטפון') || lower.includes('אייפון') || lower.includes('phone'))
+    return 'phone_repair'
+  if (lower.includes('הנדימן') || lower.includes('שיפוצים קטנים') || lower.includes('handyman'))
+    return 'handyman'
   if (lower.includes('אינסטל') || lower.includes('plumb')) return 'plumbing'
   if (lower.includes('חשמל') || lower.includes('electric')) return 'electricity'
   if (lower.includes('מיזוג') || lower.includes('ac')) return 'ac'

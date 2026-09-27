@@ -17,8 +17,8 @@ export default function FeaturedProCard({ professional: pro }: FeaturedProCardPr
   return (
     <div className="flex-shrink-0 w-40 min-h-[14.5rem]">
       <Link href={routes.professional(pro.id)}>
-        <div className="bg-white rounded-2xl border border-gray-100 p-3 text-center hover:shadow-md transition-all active:scale-95 min-h-[14.5rem]">
-          <div className="relative w-16 h-16 rounded-full mx-auto mb-2 bg-primary text-white flex items-center justify-center font-bold text-xl border-2 border-gray-50 shadow-sm overflow-hidden">
+        <div className="ios27-surface p-3 text-center hover:shadow-md transition-all active:scale-95 min-h-[14.5rem] duration-[var(--dur-1)]">
+          <div className="relative w-16 h-16 rounded-full mx-auto mb-2 bg-primary text-white flex items-center justify-center font-bold text-xl border-2 border-white/80 shadow-md shadow-primary/20 overflow-hidden">
             {pro.avatarUrl ? (
               <Image
                 src={pro.avatarUrl}

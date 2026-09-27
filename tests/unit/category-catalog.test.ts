@@ -22,9 +22,9 @@ describe('category catalog', () => {
   })
 
   it('never returns english for hebrew labels of known categories', () => {
-    assert.equal(resolveCategoryNameHe('furniture', null, 'Furniture'), 'ריהוט')
+    assert.equal(resolveCategoryNameHe('furniture', 'Furniture'), 'ריהוט')
     assert.equal(
-      resolveCategoryNameHe('appliance_repair', 'Appliance Repair', 'Appliance Repair'),
+      resolveCategoryNameHe('appliance_repair', 'Appliance Repair'),
       'תיקון מכשירים',
     )
   })
@@ -35,7 +35,9 @@ describe('category catalog', () => {
     assert.equal(getCategoryLabel('he', 'appliance_repair'), 'תיקון מכשירים')
   })
 
-  it('exposes english catalog names', () => {
-    assert.equal(resolveCategoryNameEn('computers'), 'Computers')
+  it('exposes english catalog names for Midrag trades', () => {
+    assert.equal(resolveCategoryNameEn('handyman'), 'Handyman')
+    assert.equal(resolveCategoryNameEn('phone_repair'), 'Phone repair')
+    assert.equal(resolveCategoryNameHe('solar'), 'דודי שמש וחשמל')
   })
 })

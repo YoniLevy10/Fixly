@@ -84,21 +84,21 @@ export default function ProfessionalsScreen() {
   const chips = useMemo(() => PROFESSIONALS_FILTER_CATEGORIES, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-4 lg:px-8 lg:py-6">
-      <h1 className="text-xl font-black mb-4 lg:text-2xl">
+    <div className="min-h-screen px-3 py-4 pb-28 lg:px-8 lg:py-6">
+      <h1 className="fixly-page-title mb-4 animate-ios-fade">
         {t('professionals.title')}
       </h1>
 
       <div className="relative mb-3">
         <Search
-          className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400"
+          className="absolute end-3 top-1/2 -translate-y-1/2 text-foreground/40"
           size={18}
         />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('professionals.searchPlaceholder')}
-          className="w-full bg-white border border-gray-200 rounded-2xl pe-10 ps-4 py-3 text-sm outline-none focus:border-primary/40"
+          className="w-full apple-glass rounded-2xl pe-10 ps-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/25"
           aria-busy={loading}
         />
       </div>
@@ -108,10 +108,10 @@ export default function ProfessionalsScreen() {
           type="button"
           onClick={() => setSelectedCategory('')}
           className={cn(
-            'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors active:scale-[0.97]',
+            'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors active:scale-[0.97]',
             !selectedCategory
-              ? 'bg-primary text-white border-primary'
-              : 'bg-white border-gray-200 text-gray-600',
+              ? 'bg-primary text-white border-primary shadow-sm shadow-primary/25'
+              : 'apple-glass-pill border-transparent text-foreground/60',
           )}
         >
           {t('common.all')}
@@ -124,10 +124,10 @@ export default function ProfessionalsScreen() {
               setSelectedCategory(selectedCategory === cat.slug ? '' : cat.slug)
             }
             className={cn(
-              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1 active:scale-[0.97]',
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors flex items-center gap-1 active:scale-[0.97]',
               selectedCategory === cat.slug
-                ? 'bg-primary text-white border-primary'
-                : 'bg-white border-gray-200 text-gray-600',
+                ? 'bg-primary text-white border-primary shadow-sm shadow-primary/25'
+                : 'apple-glass-pill border-transparent text-foreground/60',
             )}
           >
             <span>{cat.icon}</span>
@@ -140,12 +140,12 @@ export default function ProfessionalsScreen() {
         <button
           type="button"
           onClick={() => setShowSort((v) => !v)}
-          className="flex items-center gap-1 text-sm text-gray-600 active:scale-[0.97]"
+          className="flex items-center gap-1 text-sm text-foreground/60 active:scale-[0.97]"
         >
           <SlidersHorizontal size={16} />
           {t('professionals.sort')}
         </button>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-foreground/50">
           {loading && professionals.length === 0
             ? '…'
             : `${professionals.length} ${t('common.results')}`}
@@ -153,7 +153,7 @@ export default function ProfessionalsScreen() {
       </div>
 
       {showSort && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-3 mb-4 flex gap-2">
+        <div className="ios27-surface p-3 mb-4 flex gap-2 animate-ios-slide-up">
           {(
             [
               ['rating', 'professionals.sortRating'],
@@ -169,8 +169,8 @@ export default function ProfessionalsScreen() {
                 setShowSort(false)
               }}
               className={cn(
-                'flex-1 py-2 rounded-xl text-xs font-medium active:scale-[0.97]',
-                sortBy === key ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600',
+                'flex-1 py-2 rounded-xl text-xs font-bold active:scale-[0.97]',
+                sortBy === key ? 'bg-primary text-white' : 'bg-muted text-foreground/60',
               )}
             >
               {t(labelKey)}
@@ -180,24 +180,24 @@ export default function ProfessionalsScreen() {
       )}
 
       {error && (
-        <div role="alert" className="bg-red-50 text-red-700 rounded-xl p-3 mb-3 text-sm">
+        <div role="alert" className="bg-destructive/10 text-destructive rounded-2xl p-3 mb-3 text-sm">
           {error}
         </div>
       )}
 
-      <div className={cn('space-y-3 pb-24', loading && professionals.length > 0 && 'opacity-70')}>
+      <div className={cn('space-y-3', loading && professionals.length > 0 && 'opacity-70')}>
         {loading && professionals.length === 0 && (
           <div className="space-y-3" aria-busy="true">
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className="h-28 rounded-2xl bg-white border border-gray-100 animate-pulse"
+                className="h-28 ios27-surface animate-pulse"
               />
             ))}
           </div>
         )}
         {!loading && professionals.length === 0 && (
-          <div className="text-center py-8 space-y-1">
+          <div className="text-center py-8 space-y-1 ios27-surface">
             <p className="text-sm font-medium">{t('professionals.emptyTitle')}</p>
             <p className="text-xs text-muted-foreground">
               {t('professionals.emptyHint')}

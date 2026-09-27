@@ -33,8 +33,8 @@ export async function supabaseListCategories(): Promise<DbCategory[] | null> {
     return {
       id: row.id,
       slug,
-      name: resolveCategoryNameEn(slug, row.name, row.name_he),
-      nameHe: resolveCategoryNameHe(slug, row.name_he, row.name),
+      name: resolveCategoryNameEn(slug, row.name),
+      nameHe: resolveCategoryNameHe(slug, row.name_he ?? row.name),
       icon: resolveCategoryEmoji(slug, row.icon),
     }
   })

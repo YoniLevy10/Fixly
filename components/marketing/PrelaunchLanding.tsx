@@ -213,31 +213,31 @@ export default function PrelaunchLanding() {
 
   return (
     <div
-      className="prelaunch-root min-h-screen overflow-x-hidden bg-[#f7f9fc] pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] text-[#10233f] md:pb-0"
+      className="prelaunch-root min-h-screen overflow-x-hidden ios27-atmosphere pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] text-[#10233f] md:pb-0"
       dir="rtl"
       lang="he"
     >
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
-        <div className="prelaunch-drift absolute -right-28 -top-16 h-72 w-72 rounded-full bg-[#ffd98e]/50 blur-3xl" />
-        <div className="prelaunch-drift absolute -left-36 top-[34rem] h-88 w-88 rounded-full bg-[#bfd6f0]/55 blur-3xl [animation-delay:1.4s]" />
+        <div className="prelaunch-drift absolute -right-28 -top-16 h-72 w-72 rounded-full bg-secondary/40 blur-3xl" />
+        <div className="prelaunch-drift absolute -left-36 top-[34rem] h-88 w-88 rounded-full bg-primary/20 blur-3xl [animation-delay:1.4s]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(18,53,99,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(18,53,99,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_bottom,black,transparent_55%)]" />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-[#123563]/8 bg-[#f7f9fc]/88 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl">
+      <header className="sticky top-0 z-40 apple-glass pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-8">
           <a href="#top" className="flex items-center gap-2" aria-label="Fixly">
-            <span dir="ltr" className="text-2xl font-black tracking-tight text-[#123563]">
+            <span dir="ltr" className="text-2xl font-black tracking-tight text-primary">
               {copy.brand}
-              <span className="text-[#F59E0B]">.</span>
+              <span className="text-secondary">.</span>
             </span>
-            <span className="hidden rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200 sm:inline-flex">
+            <span className="hidden apple-glass-pill rounded-full px-2.5 py-1 text-[11px] font-bold text-muted-foreground sm:inline-flex">
               {copy.eyebrow}
             </span>
           </a>
           <a
             href="#waitlist"
             onClick={() => track('waitlist_cta_click', { placement: 'header', variant: VARIANT })}
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#123563] px-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#0c294f]"
+            className="inline-flex min-h-10 items-center gap-2 rounded-2xl bg-primary px-4 text-sm font-black text-white shadow-md shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary/90"
           >
             {copy.primaryCta}
             <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -512,7 +512,7 @@ export default function PrelaunchLanding() {
             onClick={() =>
               track('waitlist_cta_click', { placement: 'mobile_sticky', variant: VARIANT })
             }
-            className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#123563] px-5 text-base font-black text-white shadow-[0_16px_40px_rgba(18,53,99,0.32)]"
+            className="flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary px-5 text-base font-black text-white shadow-[0_16px_40px_rgba(18,53,99,0.32)]"
           >
             {copy.stickyCta}
             <ArrowLeft className="h-5 w-5" aria-hidden />
@@ -558,7 +558,7 @@ function WaitlistFormCard({
   return (
     <div
       id="waitlist-panel"
-      className="rounded-[1.75rem] border border-white/80 bg-white p-5 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:p-6"
+      className="apple-glass-strong rounded-[var(--radius-xl)] p-5 sm:p-6"
     >
       <h2 className="mb-1 text-center text-sm font-black tracking-wide text-[#123563]">
         {copy.formEyebrow}

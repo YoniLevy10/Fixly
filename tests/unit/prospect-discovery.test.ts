@@ -39,17 +39,18 @@ function withPlacesEnabled(fn: () => void | Promise<void>) {
 }
 
 describe('discovery mapping', () => {
-  it('covers expanded recruit categories including home-visit beauty and tutors', () => {
-    assert.ok(DISCOVERY_CATEGORY_MAP.length >= 23)
+  it('covers Midrag-style home-trade recruit categories', () => {
+    assert.ok(DISCOVERY_CATEGORY_MAP.length >= 21)
     assert.ok(DISCOVERY_CATEGORY_MAP.every((m) => m.placesQueryHe))
     const tiling = DISCOVERY_CATEGORY_MAP.find((m) => m.slug === 'tiling')
     assert.ok(tiling)
     assert.ok(tiling!.placesQueriesHeExtra?.some((q) => q.includes('קרמיקה')))
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'renovations'))
     assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'solar'))
-    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'nails'))
-    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'hair'))
-    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'home_tutor'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'handyman'))
+    assert.ok(DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'phone_repair'))
+    assert.ok(!DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'nails'))
+    assert.ok(!DISCOVERY_CATEGORY_MAP.some((m) => m.slug === 'home_tutor'))
   })
 
   it('defaults per-chunk discovery budgets for continue-loop coverage', async () => {

@@ -2,34 +2,10 @@ type BottomSheetProps = {
   children: React.ReactNode
 }
 
-export default function BottomSheet({
-  children,
-}: BottomSheetProps) {
+export default function BottomSheet({ children }: BottomSheetProps) {
   return (
-    <div
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: 'white',
-        borderTopLeftRadius: '34px',
-        borderTopRightRadius: '34px',
-        padding: '16px 20px 34px',
-        boxShadow: '0 -10px 40px rgba(0,0,0,0.08)',
-        backdropFilter: 'blur(20px)',
-      }}
-    >
-      <div
-        style={{
-          width: '52px',
-          height: '6px',
-          borderRadius: '999px',
-          background: '#E5E7EB',
-          margin: '0 auto 18px',
-        }}
-      />
-
+    <div className="fixed inset-x-0 bottom-0 z-50 apple-glass-strong rounded-t-[var(--radius-xl)] px-5 pt-4 pb-8 animate-ios-slide-up safe-area-pb">
+      <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-foreground/15" />
       {children}
     </div>
   )

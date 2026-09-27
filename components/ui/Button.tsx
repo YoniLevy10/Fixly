@@ -10,22 +10,22 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants = {
   primary:
-    'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 border-2 border-primary',
+    'bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 border border-primary/80',
   secondary:
-    'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/30 hover:brightness-105 border-2 border-secondary',
+    'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/30 hover:brightness-105 border border-secondary/80',
   success:
-    'bg-success text-success-foreground shadow-lg shadow-success/25 hover:brightness-105 border-2 border-success',
+    'bg-success text-success-foreground shadow-lg shadow-success/25 hover:brightness-105 border border-success/80',
   danger:
-    'bg-destructive text-destructive-foreground shadow-md hover:brightness-105 border-2 border-destructive',
+    'bg-destructive text-destructive-foreground shadow-md hover:brightness-105 border border-destructive/80',
   outline:
-    'bg-white text-primary border-2 border-primary hover:bg-primary/5',
-  ghost: 'bg-transparent text-foreground hover:bg-muted border-2 border-transparent',
+    'apple-glass-pill text-primary border border-primary/30 hover:bg-primary/5',
+  ghost: 'bg-transparent text-foreground hover:bg-muted border border-transparent',
 }
 
 const sizes = {
-  sm: 'min-h-[40px] px-3 py-2 text-sm rounded-xl',
-  md: 'min-h-[48px] px-4 py-2.5 text-base rounded-xl',
-  lg: 'min-h-[52px] px-5 py-3 text-base rounded-2xl',
+  sm: 'min-h-[40px] px-3 py-2 text-sm rounded-2xl',
+  md: 'min-h-[48px] px-4 py-2.5 text-base rounded-2xl',
+  lg: 'min-h-[52px] px-5 py-3 text-base rounded-[var(--radius-lg)]',
 }
 
 export default function Button({

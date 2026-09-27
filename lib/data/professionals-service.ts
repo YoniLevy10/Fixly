@@ -4,7 +4,6 @@ import {
   getFeaturedProfessionals,
   getProfessionalById,
 } from '@/mock/professionals'
-import { BEAUTY_PROFESSIONALS } from '@/mock/beauty-professionals'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import {
   supabaseGetFeaturedProfessionals,
@@ -13,15 +12,9 @@ import {
 } from '@/lib/data/supabase-professionals'
 import type { Professional } from '@/types/professional'
 
-/**
- * Curated beauty providers live in mock until claimed in Supabase.
- * Layer them onto DB results so nails/hair/makeup search is never empty
- * while the beauty vertical is still bootstrapping.
- */
+/** Identity helper kept for call sites / tests — no curated overlay. */
 export function withCuratedProfessionals(list: Professional[]): Professional[] {
-  const ids = new Set(list.map((p) => p.id))
-  const extras = BEAUTY_PROFESSIONALS.filter((p) => !ids.has(p.id))
-  return extras.length ? [...extras, ...list] : list
+  return list
 }
 
 function applyListOptions(
@@ -37,12 +30,6 @@ function applyListOptions(
 
   if (categorySlug) {
     const slugMap: Record<string, string[]> = {
-      nails: ['מניקור', 'ציפורניים'],
-      hair: ['תספורת', 'שיער', 'ספר'],
-      makeup: ['איפור', 'מאפר'],
-      manicure: ['מניקור', 'ציפורניים'],
-      barber: ['תספורת', 'ספר'],
-      home_tutor: ['מורה', 'שיעור', 'פרטי'],
       plumbing: ['Plumber', 'אינסטל'],
       electricity: ['Electrician', 'חשמל'],
       ac: ['Air Conditioning', 'מיזוג'],
@@ -58,13 +45,14 @@ function applyListOptions(
       furniture: ['ריהוט', 'רהיט'],
       appliance_repair: ['מכשיר', 'כביסה', 'מקרר', 'מדיח'],
       appliances: ['מכשיר', 'כביסה', 'מקרר'],
-      computers: ['מחשב', 'IT'],
+      phone_repair: ['סמארטפון', 'אייפון', 'טלפון'],
       glazing: ['זגג', 'זכוכית', 'חלון'],
       renovations: ['שיפוץ', 'שיפוצים'],
+      handyman: ['שיפוצים קטנים', 'הנדימן', 'תיקונים קטנים'],
       waterproofing: ['איטום', 'רטיבות'],
       aluminum: ['אלומיניום', 'תריס', 'פרגולה'],
       drywall: ['גבס', 'טיח'],
-      solar: ['סולאר', 'שמש', 'קולט'],
+      solar: ['דוד שמש', 'דודי שמש', 'שמש', 'קולט'],
       general: ['כללי', 'אחר', 'תיקון'],
     }
     const names = slugMap[categorySlug] ?? [categorySlug]
@@ -114,7 +102,7 @@ export async function listProfessionals(options?: {
     if (fromDb) {
       return applyListOptions(withCuratedProfessionals(fromDb), options)
     }
-    // Query failure (e.g. schema drift) — keep marketplace usable with curated catalog
+    // Query failure (e.g. schema drift) — keep marketplace usable with mock catalog
     return filterProfessionals(options ?? {})
   }
 
@@ -146,7 +134,6 @@ export async function getProfessional(id: string): Promise<Professional | undefi
   if (resolveDataBackend() === 'supabase') {
     const fromDb = await supabaseGetProfessionalById(id)
     if (fromDb) return fromDb
-    // Curated beauty ids (b1…) are not in Supabase yet
     return getProfessionalById(id)
   }
 

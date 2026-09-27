@@ -42,8 +42,8 @@ export default function NativeAwareMain({
   const mainClass = hideNav
     ? 'min-h-screen native-main'
     : isNative
-      ? 'min-h-screen native-main pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] px-0'
-      : 'min-h-screen pb-24 lg:pb-8 px-0 lg:px-8'
+      ? 'min-h-screen native-main pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] px-0'
+      : 'min-h-screen pb-28 lg:pb-8 px-0 lg:px-8'
 
   return (
     <main className={mainClass}>

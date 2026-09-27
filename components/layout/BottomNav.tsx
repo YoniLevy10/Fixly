@@ -34,23 +34,26 @@ export default function BottomNav() {
         key={path}
         href={path}
         className={cn(
-          'relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors',
-          isActive && 'bg-primary/15'
+          'relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-2xl transition-colors duration-[var(--dur-1)]',
+          isActive && 'nav-pill-active'
         )}
       >
         {showBadge && (
-          <span className="absolute top-0 end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+          <span className="absolute top-0 end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center ring-2 ring-white z-[2]">
             {pendingCount > 9 ? '9+' : pendingCount}
           </span>
         )}
         <Icon
           size={22}
           strokeWidth={isActive ? 2.5 : 1.8}
-          className={cn(isActive ? 'text-primary' : 'text-foreground/45')}
+          className={cn(
+            'relative z-[1]',
+            isActive ? 'text-primary' : 'text-foreground/45'
+          )}
         />
         <span
           className={cn(
-            'text-xs font-bold',
+            'relative z-[1] text-[11px] font-bold',
             isActive ? 'text-primary' : 'text-foreground/50'
           )}
         >
@@ -61,25 +64,27 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="native-bottom-nav lg:hidden fixed bottom-0 right-0 left-0 z-50 bg-card border-t-2 border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] safe-area-pb">
-      <div className="flex items-center h-16 px-2 relative max-w-lg mx-auto">
-        <div className="flex items-center justify-around flex-1">
-          {mobileNav.slice(0, 2).map(renderItem)}
-        </div>
+    <nav className="native-bottom-nav lg:hidden fixed bottom-3 inset-x-3 z-50 mx-auto max-w-lg">
+      <div className="apple-glass rounded-[var(--radius-xl)] safe-area-pb">
+        <div className="flex items-center h-16 px-2 relative">
+          <div className="flex items-center justify-around flex-1">
+            {mobileNav.slice(0, 2).map(renderItem)}
+          </div>
 
-        <div className="flex flex-col items-center -mt-5 mx-2">
-          <button
-            type="button"
-            onClick={() => router.push(routes.quickRequest)}
-            className="w-12 h-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-lg shadow-secondary/40 border-4 border-card active:scale-95 transition-transform"
-            aria-label={t('common.publishIssue')}
-          >
-            <span className="text-2xl font-bold leading-none">+</span>
-          </button>
-        </div>
+          <div className="flex flex-col items-center -mt-6 mx-2">
+            <button
+              type="button"
+              onClick={() => router.push(routes.quickRequest)}
+              className="w-14 h-14 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-lg shadow-secondary/35 border-[3px] border-white/80 active:scale-95 transition-transform duration-[var(--dur-1)]"
+              aria-label={t('common.publishIssue')}
+            >
+              <span className="text-2xl font-bold leading-none">+</span>
+            </button>
+          </div>
 
-        <div className="flex items-center justify-around flex-1">
-          {mobileNav.slice(2).map(renderItem)}
+          <div className="flex items-center justify-around flex-1">
+            {mobileNav.slice(2).map(renderItem)}
+          </div>
         </div>
       </div>
     </nav>
