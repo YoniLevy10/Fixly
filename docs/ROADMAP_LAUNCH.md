@@ -56,6 +56,7 @@
 ## מסמכים קשורים
 
 - [DIFFERENTIATION.md](./DIFFERENTIATION.md) — **בידול מחייב**
+- [CONSUMER_ACCESS_PLAN.md](./CONSUMER_ACCESS_PLAN.md) — הנגשה לקהל הרחב (מסך הזמנה + כסף)
 - [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) — מדריך השקה
 - [MONETIZATION.md](./MONETIZATION.md)
 - [IMPROVEMENTS_25.md](./IMPROVEMENTS_25.md)
