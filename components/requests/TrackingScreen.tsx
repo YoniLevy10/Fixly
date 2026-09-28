@@ -10,7 +10,6 @@ import {
   MapPin,
   MessageCircle,
   Navigation,
-  Phone,
   Sparkles,
   Star,
 } from 'lucide-react'
@@ -450,12 +449,6 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
                         message={whatsAppMessage}
                         className="w-full"
                       />
-                    </div>
-                  )}
-                  {request.customerPhone && isPending && (
-                    <div className="apple-glass-pill flex items-center gap-1.5 rounded-2xl px-3 text-xs font-semibold text-muted-foreground">
-                      <Phone size={14} />
-                      {t('orderHub.awaitingCall')}
                     </div>
                   )}
                 </div>
