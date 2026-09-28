@@ -34,18 +34,32 @@ export async function GET(request: Request) {
       ok: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
       detail: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'missing',
     },
-    tranzila: {
-      ok: Boolean(
-        process.env.TRANZILA_TERMINAL &&
-          process.env.TRANZILA_API_APP_KEY &&
-          process.env.TRANZILA_API_SECRET_KEY,
-      ),
+    grow: {
+      ok:
+        process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'true' ||
+        Boolean(
+          process.env.GROW_API_KEY &&
+            process.env.GROW_PAGE_CODE &&
+            process.env.GROW_WEBHOOK_SECRET,
+        ),
       detail:
-        process.env.TRANZILA_TERMINAL &&
-        process.env.TRANZILA_API_APP_KEY &&
-        process.env.TRANZILA_API_SECRET_KEY
-          ? 'configured'
-          : 'partial or missing',
+        process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'true'
+          ? 'deferred — Grow later'
+          : process.env.GROW_API_KEY &&
+              process.env.GROW_PAGE_CODE &&
+              process.env.GROW_WEBHOOK_SECRET
+            ? 'Grow configured'
+            : 'monetization on but Grow keys missing',
+    },
+    nationwide: {
+      ok:
+        process.env.NEXT_PUBLIC_FF_NATIONWIDE === 'true' ||
+        process.env.FIXLY_NATIONWIDE === 'true',
+      detail:
+        process.env.NEXT_PUBLIC_FF_NATIONWIDE === 'true' ||
+        process.env.FIXLY_NATIONWIDE === 'true'
+          ? 'nationwide consumer open'
+          : 'city density gate active',
     },
     rate_limit: {
       ok: Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),

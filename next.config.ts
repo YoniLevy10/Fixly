@@ -3,10 +3,6 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  /** Demo ON until funding — tour + mock marketplace. Kill with NEXT_PUBLIC_FF_DEMO_KILL=true. */
-  env: {
-    NEXT_PUBLIC_FF_DEMO_DATA: 'true',
-  },
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
@@ -16,6 +12,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'lfzxvmievofvdhxrwggo.supabase.co',
+      },
     ],
   },
   async redirects() {
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
       { source: '/dashboard', destination: '/my-requests', permanent: false },
       { source: '/pro-dashboard', destination: '/pro/dashboard', permanent: false },
       { source: '/tracking', destination: '/my-requests', permanent: false },
-      // Dead marketing stubs → canonical demand campaign landing
+      // Dead marketing stubs → waitlist (kept for old campaign URLs)
       { source: '/go', destination: '/waitlist', permanent: true },
       { source: '/go/:path*', destination: '/waitlist', permanent: true },
     ]
