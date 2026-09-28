@@ -13,6 +13,7 @@ describe('site-hosts', () => {
   const originalPrelaunch = process.env.NEXT_PUBLIC_FF_PRELAUNCH
   const originalProductHost = process.env.NEXT_PUBLIC_PRODUCT_HOST
   const originalDemoKill = process.env.NEXT_PUBLIC_FF_DEMO_KILL
+  const originalDemoData = process.env.NEXT_PUBLIC_FF_DEMO_DATA
 
   afterEach(() => {
     if (originalPrelaunch === undefined) delete process.env.NEXT_PUBLIC_FF_PRELAUNCH
@@ -21,6 +22,8 @@ describe('site-hosts', () => {
     else process.env.NEXT_PUBLIC_PRODUCT_HOST = originalProductHost
     if (originalDemoKill === undefined) delete process.env.NEXT_PUBLIC_FF_DEMO_KILL
     else process.env.NEXT_PUBLIC_FF_DEMO_KILL = originalDemoKill
+    if (originalDemoData === undefined) delete process.env.NEXT_PUBLIC_FF_DEMO_DATA
+    else process.env.NEXT_PUBLIC_FF_DEMO_DATA = originalDemoData
   })
 
   it('normalizes host with port and case', () => {
@@ -45,6 +48,7 @@ describe('site-hosts', () => {
 
   it('skips waitlist on fixly.tech while demo mode is on (pre-funding)', () => {
     delete process.env.NEXT_PUBLIC_FF_DEMO_KILL
+    process.env.NEXT_PUBLIC_FF_DEMO_DATA = 'true'
     process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'true'
     assert.equal(shouldShowPrelaunchLanding('fixly.tech'), false)
     assert.equal(shouldShowPrelaunchLanding('www.fixly.tech'), false)
