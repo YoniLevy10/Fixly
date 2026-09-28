@@ -1,13 +1,9 @@
 # Fixly — מודל הכנסות
 
-<<<<<<< HEAD
-> **לא הייתה החלטה חד-משמעית בקוד עד עכשיו.** בשיחה הומלץ על שילוב פרגמטי; המסמך הזה קובע את כיוון המימוש.
->
-> תוכנית הנגשה לצרכנים + פירוט 3 מסלולים / עקיפה: [`CONSUMER_ACCESS_PLAN.md`](./CONSUMER_ACCESS_PLAN.md) (סעיף 5).
-=======
 > **השקה ארצית:** תשלומים **בצד**. כשנחבר כסף — **Grow** (כמו Bino), לא Tranzila.
 > פירוט: [`PAYMENTS_GROW.md`](./PAYMENTS_GROW.md) · [`PRODUCTION_NATIONWIDE.md`](./PRODUCTION_NATIONWIDE.md)
->>>>>>> origin/main
+>
+> תוכנית הנגשה לצרכנים + פירוט 3 מסלולים / עקיפה: [`CONSUMER_ACCESS_PLAN.md`](./CONSUMER_ACCESS_PLAN.md) (סעיף 5).
 
 ## עקרון
 
