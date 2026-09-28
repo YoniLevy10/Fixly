@@ -1,0 +1,14 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: מצב הדגמה למשקיעים
+    - generic [ref=e5]:
+      - button "לקוח" [ref=e6] [cursor=pointer]
+      - button "בעל מקצוע" [ref=e7] [cursor=pointer]
+    - button "התחל סיור" [ref=e8] [cursor=pointer]
+  - status "טוען…" [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e12]:
+        - paragraph [ref=e13]: Fixly.
+        - paragraph [ref=e14]: תחזוקה חכמה
+      - paragraph [ref=e18]: טוען…
+  - button "Open Next.js Dev Tools" [ref=e24] [cursor=pointer]
