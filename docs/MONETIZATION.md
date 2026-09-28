@@ -2,6 +2,8 @@
 
 > **השקה ארצית:** תשלומים **בצד**. כשנחבר כסף — **Grow** (כמו Bino), לא Tranzila.
 > פירוט: [`PAYMENTS_GROW.md`](./PAYMENTS_GROW.md) · [`PRODUCTION_NATIONWIDE.md`](./PRODUCTION_NATIONWIDE.md)
+>
+> תוכנית הנגשה לצרכנים + פירוט 3 מסלולים / עקיפה: [`CONSUMER_ACCESS_PLAN.md`](./CONSUMER_ACCESS_PLAN.md) (סעיף 5).
 
 ## עקרון
 
