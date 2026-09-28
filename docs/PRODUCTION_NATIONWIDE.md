@@ -6,7 +6,8 @@
 
 | נושא | החלטה |
 |------|--------|
-| דמו | כבוי (`NEXT_PUBLIC_FF_DEMO_DATA` לא true) |
+| דמו מלא (mock backend) | כבוי — בקשות/auth על Supabase |
+| קטלוג בעלי מקצוע mock | **דלוק** (`NEXT_PUBLIC_FF_MOCK_CATALOG=true`) — ממלא את השוק עד שיש supply אמיתי |
 | Prelaunch waitlist | כבוי — `fixly.tech` מציג את האפליקציה |
 | צרכנים | ארצי — `NEXT_PUBLIC_FF_NATIONWIDE=true` |
 | תשלומים | **בצד** — בעתיד **Grow** (כמו Bino), לא Tranzila |

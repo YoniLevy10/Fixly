@@ -1,5 +1,6 @@
 import type { Review } from '@/types/review'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
+import { isMockCatalogEnabled } from '@/lib/data/mock-catalog'
 import { getDemoDataset } from '@/mock/demo-seed'
 
 const now = Date.now()
@@ -35,7 +36,10 @@ const LEGACY_REVIEWS: Review[] = [
 ]
 
 export function getMockReviews(): Review[] {
-  return isDemoDataMode() ? getDemoDataset().reviews : LEGACY_REVIEWS
+  if (isDemoDataMode() || isMockCatalogEnabled()) {
+    return getDemoDataset().reviews
+  }
+  return LEGACY_REVIEWS
 }
 
 /** @deprecated Prefer getMockReviews() */
