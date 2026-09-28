@@ -955,6 +955,7 @@ export type Database = {
           sender_id: string
           sender_role: string
           body: string
+          image_url: string | null
           read_at: string | null
           created_at: string
         }
@@ -963,7 +964,8 @@ export type Database = {
           request_id: string
           sender_id: string
           sender_role: string
-          body: string
+          body?: string
+          image_url?: string | null
           read_at?: string | null
           created_at?: string
         }
@@ -973,6 +975,7 @@ export type Database = {
           sender_id?: string
           sender_role?: string
           body?: string
+          image_url?: string | null
           read_at?: string | null
           created_at?: string
         }

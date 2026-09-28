@@ -4,9 +4,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  CheckCircle,
-  Clock,
-  Loader,
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Phone,
+  Sparkles,
   Star,
 } from 'lucide-react'
 import BackButton from '@/components/shared/BackButton'
@@ -37,10 +42,16 @@ import {
   readTourRequest,
 } from '@/lib/demo/tour-session'
 import dynamic from 'next/dynamic'
+import { cn } from '@/lib/utils/cn'
 
 const LiveTrackingMap = dynamic(
   () => import('@/components/tracking/LiveTrackingMap'),
-  { ssr: false, loading: () => <div className="h-64 bg-muted rounded-2xl animate-pulse" /> }
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-56 animate-pulse rounded-[var(--radius-lg)] bg-muted/60" />
+    ),
+  },
 )
 
 const STATUS_ORDER: RequestStatus[] = [
@@ -55,6 +66,25 @@ type TrackingScreenProps = {
   requestId: string
 }
 
+function statusTone(status: string) {
+  switch (status) {
+    case 'pending':
+      return 'from-amber-400/25 via-orange-300/10 to-transparent'
+    case 'accepted':
+      return 'from-sky-400/25 via-primary/10 to-transparent'
+    case 'on_the_way':
+      return 'from-secondary/30 via-orange-200/15 to-transparent'
+    case 'in_progress':
+      return 'from-info/25 via-cyan-200/10 to-transparent'
+    case 'completed':
+      return 'from-success/30 via-emerald-200/15 to-transparent'
+    case 'cancelled':
+      return 'from-destructive/20 via-red-200/10 to-transparent'
+    default:
+      return 'from-primary/15 to-transparent'
+  }
+}
+
 export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   const router = useRouter()
   const { t } = useLocale()
@@ -64,17 +94,16 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   const steps = useMemo(
     () =>
       [
-        { key: 'pending' as const, labelKey: 'status.pending', icon: Clock },
-        { key: 'accepted' as const, labelKey: 'status.accepted', icon: CheckCircle },
-        { key: 'on_the_way' as const, labelKey: 'status.on_the_way', icon: Loader },
-        { key: 'in_progress' as const, labelKey: 'status.in_progress', icon: Loader },
-        { key: 'completed' as const, labelKey: 'status.completed', icon: CheckCircle },
+        { key: 'pending' as const, labelKey: 'status.pending', icon: Clock3 },
+        { key: 'accepted' as const, labelKey: 'status.accepted', icon: CheckCircle2 },
+        { key: 'on_the_way' as const, labelKey: 'status.on_the_way', icon: Navigation },
+        { key: 'in_progress' as const, labelKey: 'status.in_progress', icon: Loader2 },
+        { key: 'completed' as const, labelKey: 'status.completed', icon: Sparkles },
       ] as const,
-    []
+    [],
   )
 
   const loadRequest = useCallback(() => {
-    // Prefer in-tab tour snapshot (survives multi-instance + stale SW caches)
     const local = readTourRequest(requestId)
     if (local) {
       setRequest(local)
@@ -102,7 +131,6 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
           }
           return
         }
-        // Never let a stale API/SW response rewind a newer tour snapshot
         const latestLocal = readTourRequest(requestId)
         if (
           latestLocal &&
@@ -120,7 +148,6 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
     loadRequest()
   }, [loadRequest])
 
-  // Live updates from the investor tour (same tab)
   useEffect(() => {
     const onTour = (event: Event) => {
       const detail = (event as CustomEvent<MockRequest>).detail
@@ -147,7 +174,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
 
   const { tracking: liveTracking } = useLiveTracking(
     requestId,
-    Boolean(showLiveMap)
+    Boolean(showLiveMap),
   )
 
   useTrackingPushAlerts({
@@ -158,7 +185,7 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   })
 
   const [professional, setProfessional] = useState<Professional | undefined>(
-    undefined
+    undefined,
   )
 
   useEffect(() => {
@@ -169,17 +196,20 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center ios27-atmosphere">
+        <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-muted border-t-primary" />
       </div>
     )
   }
 
   if (!request) {
     return (
-      <div className="text-center py-20 px-4">
-        <p>{t('requests.notFound')}</p>
-        <Link href={routes.myRequests} className="text-primary mt-4 inline-block">
+      <div className="px-4 py-20 text-center ios27-atmosphere">
+        <p className="font-bold">{t('requests.notFound')}</p>
+        <Link
+          href={routes.myRequests}
+          className="mt-4 inline-block text-primary font-semibold"
+        >
           {t('requests.backToRequests')}
         </Link>
       </div>
@@ -187,10 +217,14 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
   }
 
   const currentStepIndex = STATUS_ORDER.indexOf(
-    request.status as (typeof STATUS_ORDER)[number]
+    request.status as (typeof STATUS_ORDER)[number],
   )
   const isCancelled = request.status === 'cancelled'
   const isCompleted = request.status === 'completed'
+  const isPending = request.status === 'pending'
+  const chatEnabled =
+    Boolean(request.professionalId) &&
+    ['accepted', 'on_the_way', 'in_progress', 'completed'].includes(request.status)
   const isPendingMulti =
     request.status === 'pending' &&
     request.matchMode === 'multi' &&
@@ -214,204 +248,377 @@ export default function TrackingScreen({ requestId }: TrackingScreenProps) {
       ? 0
       : Math.min(100, Math.round(((currentStepIndex + 1) / STATUS_ORDER.length) * 100))
 
+  const title = request.title ?? request.description
+  const proName =
+    professional?.name ?? request.professionalName ?? t('chat.proFallback')
+
   return (
     <div
       data-testid="tracking-status"
-      className="min-h-screen bg-background max-w-3xl mx-auto lg:max-w-4xl"
+      className="relative min-h-[100dvh] ios27-atmosphere pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
     >
-      <div className="bg-card px-4 py-4 lg:px-8 flex items-center gap-3 border-b-2 border-border sticky top-[var(--fixly-tour-narrator-h,0px)] z-10 lg:static lg:rounded-t-2xl lg:mt-6 lg:border-2 lg:mx-8 shadow-sm">
-        <BackButton onClick={() => router.back()} />
-        <h1 className="font-black text-lg flex-1 lg:text-xl">{t('requests.trackingTitle')}</h1>
-        <RequestStatusBadge status={request.status} size="sm" />
-      </div>
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b',
+          statusTone(request.status),
+        )}
+      />
 
-      <div className="px-4 py-5 space-y-4 lg:px-8 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-        <div className="space-y-4">
-          <div className="bg-card rounded-2xl border-2 border-border p-4 shadow-md">
-            <p className="text-xs font-bold text-info mb-1">{request.category}</p>
-            <h2 className="font-bold text-base mb-1">
-              {request.title ?? request.description}
-            </h2>
-            <p className="text-sm text-foreground/70 font-medium">{request.location}</p>
-            <div className="mt-3" data-tour="status-progress">
-              <p className="text-xs font-bold text-foreground mb-1">{t('improvements.progress')}</p>
-              <div className="h-3 bg-muted rounded-full overflow-hidden border border-border">
-                <div
-                  className="h-full bg-gradient-to-l from-secondary via-primary to-success transition-all duration-500"
-                  style={{ width: `${progressPct}%` }}
+      <div className="relative mx-auto max-w-3xl lg:max-w-5xl">
+        {/* Sticky glass header */}
+        <header className="sticky top-[var(--fixly-tour-narrator-h,0px)] z-20 mx-3 mt-2 apple-glass rounded-[var(--radius-lg)] px-3 py-3 flex items-center gap-3 safe-area-pt animate-ios-fade lg:mx-6 lg:mt-4">
+          <BackButton onClick={() => router.back()} />
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              {t('orderHub.eyebrow')}
+            </p>
+            <h1 className="truncate text-base font-black text-foreground lg:text-lg">
+              {t('orderHub.title')}
+            </h1>
+          </div>
+          <RequestStatusBadge status={request.status} size="sm" />
+        </header>
+
+        <div className="relative space-y-4 px-3 pt-4 lg:grid lg:grid-cols-5 lg:gap-5 lg:space-y-0 lg:px-6 lg:pt-5">
+          {/* Main column */}
+          <div className="space-y-4 lg:col-span-3">
+            {/* Hero status */}
+            <section className="ios27-surface relative overflow-hidden p-5 animate-ios-slide-up">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-secondary">
+                    {request.category}
+                  </p>
+                  <h2 className="mt-1 text-xl font-black leading-snug text-foreground lg:text-2xl">
+                    {title}
+                  </h2>
+                  {request.location ? (
+                    <p className="mt-2 flex items-start gap-1.5 text-sm font-medium text-foreground/70">
+                      <MapPin size={16} className="mt-0.5 shrink-0 text-primary" />
+                      <span>{request.location}</span>
+                    </p>
+                  ) : null}
+                </div>
+                <div className="apple-glass-pill shrink-0 rounded-2xl px-3 py-2 text-center">
+                  <p className="text-[10px] font-bold text-muted-foreground">
+                    {t('orderHub.progress')}
+                  </p>
+                  <p className="text-lg font-black tabular-nums text-primary">
+                    {progressPct}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4" data-tour="status-progress">
+                <div className="h-2.5 overflow-hidden rounded-full bg-muted/80 ring-1 ring-border/40">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-l from-secondary via-primary to-success transition-all duration-500 ease-[var(--ease)]"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {isPending
+                    ? t('orderHub.waitingApproval')
+                    : chatEnabled
+                      ? t('orderHub.canChat')
+                      : t(`status.${request.status}`)}
+                </p>
+              </div>
+
+              {request.description && request.title ? (
+                <p className="mt-3 text-sm leading-relaxed text-foreground/75">
+                  {request.description}
+                </p>
+              ) : null}
+
+              {(request.preferredDate || request.preferredTime) && (
+                <p className="mt-3 text-xs font-bold text-muted-foreground">
+                  {t('orderHub.preferred')}:{' '}
+                  {[request.preferredDate, request.preferredTime]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              )}
+
+              {request.images && request.images.length > 0 ? (
+                <div className="mt-4 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {request.images.map((src, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      key={`${src}-${i}`}
+                      src={src}
+                      alt=""
+                      className="h-20 w-20 shrink-0 rounded-2xl object-cover ring-1 ring-border/50"
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <ShareRequestButton
+                  requestId={request.id}
+                  title={title}
                 />
               </div>
-            </div>
+            </section>
+
+            {isPendingMulti && (
+              <section className="ios27-surface border border-amber-200/80 bg-amber-50/80 p-4 animate-ios-fade">
+                <p className="font-black text-amber-950">
+                  {t('matching.waitingTitle')}
+                </p>
+                <p className="mt-1 text-sm text-amber-900">
+                  {t('matching.waitingBody')}
+                </p>
+                {request.candidates?.length ? (
+                  <ul className="mt-3 space-y-2">
+                    {request.candidates.map((c) => (
+                      <li
+                        key={c.professionalId}
+                        className="flex items-center justify-between rounded-xl bg-white/80 px-3 py-2 text-sm"
+                      >
+                        <span className="font-semibold">{c.name}</span>
+                        <span className="flex items-center gap-1 text-amber-600">
+                          <Star size={12} fill="currentColor" />
+                          {c.rating.toFixed(1)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </section>
+            )}
+
+            {/* Professional card */}
+            {(professional || request.professionalId) && (
+              <section className="ios27-surface p-4 animate-ios-slide-up">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  {t('orderHub.yourPro')}
+                </p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-black text-white bg-cover bg-center ring-2 ring-white shadow-md"
+                    style={{
+                      backgroundImage: professional?.avatarUrl
+                        ? `url(${professional.avatarUrl})`
+                        : undefined,
+                    }}
+                  >
+                    {!professional?.avatarUrl && proName.charAt(0)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-black text-foreground">
+                        {proName}
+                      </p>
+                      {professional?.isVerified && <VerifiedBadge />}
+                    </div>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {professional?.title ??
+                        professional?.category ??
+                        request.category}
+                    </p>
+                    {professional && (
+                      <ResponseTimeBadge
+                        avgResponseMinutes={professional.avgResponseMinutes}
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                  {professional?.rating != null && (
+                    <div className="flex items-center gap-1 text-sm font-bold text-amber-500">
+                      <Star size={14} fill="currentColor" />
+                      {professional.rating.toFixed(1)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                  {chatEnabled && (
+                    <a
+                      href="#order-chat"
+                      className="apple-glass-pill flex flex-1 items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-bold text-primary transition-transform active:scale-[0.98]"
+                    >
+                      <MessageCircle size={16} />
+                      {t('orderHub.openChat')}
+                    </a>
+                  )}
+                  {professional?.phone && whatsAppMessage && (
+                    <div className="flex-1">
+                      <WhatsAppButton
+                        phone={professional.phone}
+                        message={whatsAppMessage}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                  {request.customerPhone && isPending && (
+                    <div className="apple-glass-pill flex items-center gap-1.5 rounded-2xl px-3 text-xs font-semibold text-muted-foreground">
+                      <Phone size={14} />
+                      {t('orderHub.awaitingCall')}
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {isPending && !isPendingMulti && (
+              <section className="ios27-surface flex items-start gap-3 p-4 animate-ios-fade">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary/15 text-secondary">
+                  <Clock3 size={20} className="animate-pulse" />
+                </div>
+                <div>
+                  <p className="font-black text-foreground">
+                    {t('orderHub.pendingTitle')}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t('orderHub.pendingBody')}
+                  </p>
+                </div>
+              </section>
+            )}
+
             {showLiveMap && liveTracking?.liveTrackingActive && liveTracking.proLat != null && (
-              <div className="mt-4" data-tour="live-map">
-                <p className="text-sm font-bold text-secondary mb-2 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+              <section className="ios27-surface overflow-hidden p-3" data-tour="live-map">
+                <p className="mb-2 flex items-center gap-2 px-1 text-sm font-bold text-secondary">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-secondary" />
                   {t('tracking.liveTitle')}
                 </p>
                 <LiveTrackingMap tracking={liveTracking} />
-                <p className="text-xs text-muted-foreground mt-2">{t('tracking.liveHint')}</p>
-              </div>
+                <p className="mt-2 px-1 text-xs text-muted-foreground">
+                  {t('tracking.liveHint')}
+                </p>
+              </section>
             )}
 
-            {showLiveMap && liveTracking?.liveTrackingActive && liveTracking.proLat == null && (
-              <p className="mt-3 text-sm bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-950">
-                {t('tracking.waitingForPro')}
-              </p>
-            )}
+            {showLiveMap &&
+              liveTracking?.liveTrackingActive &&
+              liveTracking.proLat == null && (
+                <p className="rounded-[var(--radius-lg)] border border-amber-200 bg-amber-50/90 p-3 text-sm text-amber-950">
+                  {t('tracking.waitingForPro')}
+                </p>
+              )}
 
-            <div className="mt-3">
-              <ShareRequestButton
-                requestId={request.id}
-                title={request.title ?? request.description}
-              />
-            </div>
-            {professional?.phone && whatsAppMessage && (
-              <div className="mt-3">
-                <WhatsAppButton
-                  phone={professional.phone}
-                  message={whatsAppMessage}
-                  className="w-full"
-                />
-              </div>
-            )}
+            <FixlyGuaranteeBanner compact />
           </div>
 
-          <FixlyGuaranteeBanner compact />
-
-          {isPendingMulti && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-              <p className="font-bold text-amber-950">{t('matching.waitingTitle')}</p>
-              <p className="text-sm text-amber-900 mt-1">{t('matching.waitingBody')}</p>
-              {request.candidates?.length ? (
-                <ul className="mt-3 space-y-2">
-                  {request.candidates.map((c) => (
-                    <li
-                      key={c.professionalId}
-                      className="text-sm flex justify-between bg-white rounded-lg px-3 py-2"
-                    >
-                      <span>{c.name}</span>
-                      <span className="text-yellow-600">★ {c.rating.toFixed(1)}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          )}
-
-          {professional && (
-            <div className="bg-card rounded-2xl border-2 border-primary/30 p-4 flex items-center gap-3 shadow-md">
-              <div
-                className="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg bg-cover bg-center"
-                style={{
-                  backgroundImage: professional.avatarUrl
-                    ? `url(${professional.avatarUrl})`
-                    : undefined,
-                }}
+          {/* Side column: timeline + chat */}
+          <div className="space-y-4 lg:col-span-2">
+            {!isCancelled && (
+              <section
+                className="ios27-surface p-5 animate-ios-slide-up"
+                data-tour="status-timeline"
               >
-                {!professional.avatarUrl && professional.name.charAt(0)}
+                <h3 className="mb-4 font-black text-foreground">
+                  {t('requests.statusTitle')}
+                </h3>
+                <ol className="space-y-0">
+                  {steps.map((step, index) => {
+                    const Icon = step.icon
+                    const done = currentStepIndex > index
+                    const active = currentStepIndex === index && !isCompleted
+                    const completedStep =
+                      isCompleted && index <= STATUS_ORDER.length - 1
+                    const reached = done || active || completedStep
+                    return (
+                      <li key={step.key} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={cn(
+                              'flex h-9 w-9 items-center justify-center rounded-full ring-2 transition-colors duration-[var(--dur-2)]',
+                              done || completedStep
+                                ? 'bg-success text-success-foreground ring-success/40'
+                                : active
+                                  ? 'bg-secondary text-secondary-foreground ring-secondary/40 animate-pulse'
+                                  : 'bg-muted text-foreground/35 ring-border',
+                            )}
+                          >
+                            <Icon
+                              size={16}
+                              className={
+                                active && step.key === 'in_progress'
+                                  ? 'animate-spin'
+                                  : undefined
+                              }
+                            />
+                          </div>
+                          {index < steps.length - 1 && (
+                            <div
+                              className={cn(
+                                'my-1 w-0.5 flex-1 min-h-[1.1rem] rounded-full',
+                                done || (isCompleted && index < steps.length - 1)
+                                  ? 'bg-success/70'
+                                  : 'bg-border',
+                              )}
+                            />
+                          )}
+                        </div>
+                        <div className="pb-4 pt-1.5">
+                          <p
+                            className={cn(
+                              'text-sm',
+                              reached
+                                ? 'font-bold text-foreground'
+                                : 'font-medium text-foreground/40',
+                            )}
+                          >
+                            {t(step.labelKey)}
+                          </p>
+                          {active && step.key === 'accepted' && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {t('orderHub.acceptedHint')}
+                            </p>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ol>
+              </section>
+            )}
+
+            {isCancelled && (
+              <div className="rounded-[var(--radius-lg)] bg-red-50 p-4 text-center text-sm font-semibold text-red-800">
+                {t('requests.cancelled')}
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold">{professional.name}</p>
-                  {professional.isVerified && <VerifiedBadge />}
+            )}
+
+            {isCompleted && (
+              <div className="space-y-3 animate-ios-fade">
+                <div className="rounded-[var(--radius-lg)] bg-emerald-50 p-4 text-center text-sm font-bold text-emerald-900">
+                  {t('requests.completed')}
                 </div>
-                <p className="text-sm text-gray-500">
-                  {professional.title ?? professional.category}
-                </p>
-                <ResponseTimeBadge
-                  avgResponseMinutes={professional.avgResponseMinutes}
-                  className="mt-1"
+                <JobPaymentButton
+                  requestId={request.id}
+                  amountIls={request.quotedAmount}
+                  paymentStatus={request.paymentStatus}
+                  onPaid={(paid) => setRequest(paid)}
+                />
+                {request.professionalId && (
+                  <Link
+                    href={`${routes.newRequest}?professional=${request.professionalId}`}
+                    className="block text-center text-sm font-bold text-primary"
+                  >
+                    {t('improvements.repeatRequest')}
+                  </Link>
+                )}
+                <ReviewForm
+                  requestId={request.id}
+                  professionalId={request.professionalId}
                 />
               </div>
-              <div className="flex items-center gap-1 text-yellow-500 font-semibold text-sm">
-                <Star size={14} fill="currentColor" />
-                {professional.rating.toFixed(1)}
-              </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        <div>
-          {!isCancelled && (
-            <div className="bg-white rounded-2xl border border-gray-100 p-5" data-tour="status-timeline">
-              <h3 className="font-bold mb-5">{t('requests.statusTitle')}</h3>
-              <div className="space-y-4">
-                {steps.map((step, index) => {
-                  const Icon = step.icon
-                  const done = currentStepIndex > index
-                  const active = currentStepIndex === index && !isCompleted
-                  const completedStep =
-                    isCompleted && index <= STATUS_ORDER.length - 1
-
-                  return (
-                    <div key={step.key} className="flex items-center gap-3">
-                      <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ring-2 ${
-                          done || completedStep
-                            ? 'bg-success text-success-foreground ring-success'
-                            : active
-                              ? 'bg-secondary text-secondary-foreground ring-secondary animate-pulse'
-                              : 'bg-muted text-foreground/40 ring-border'
-                        }`}
-                      >
-                        <Icon size={18} className={active ? 'animate-spin' : ''} />
-                      </div>
-                      <span
-                        className={`text-sm ${
-                          done || active || completedStep
-                            ? 'font-bold text-foreground'
-                            : 'font-medium text-foreground/45'
-                        }`}
-                      >
-                        {t(step.labelKey)}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {isCancelled && (
-            <div className="bg-red-50 text-red-800 rounded-2xl p-4 text-center text-sm font-medium mt-4">
-              {t('requests.cancelled')}
-            </div>
-          )}
-
-          {isCompleted && (
-            <>
-              <div className="bg-green-50 text-green-800 rounded-2xl p-4 text-center text-sm mt-4">
-                {t('requests.completed')}
-              </div>
-              <JobPaymentButton
+            <div id="order-chat">
+              <RequestChat
                 requestId={request.id}
-                amountIls={request.quotedAmount}
-                paymentStatus={request.paymentStatus}
-                onPaid={(paid) => setRequest(paid)}
+                enabled={chatEnabled}
+                professionalName={proName}
+                expanded
+                lockedHint={t('chat.lockedBody')}
               />
-              {request.professionalId && (
-                <Link
-                  href={`${routes.newRequest}?professional=${request.professionalId}`}
-                  className="block text-center text-primary font-bold text-sm mt-3"
-                >
-                  {t('improvements.repeatRequest')}
-                </Link>
-              )}
-              <ReviewForm
-                requestId={request.id}
-                professionalId={request.professionalId}
-              />
-            </>
-          )}
-
-          {!isCancelled && request.professionalId && (
-            <RequestChat
-              requestId={request.id}
-              enabled={['accepted', 'on_the_way', 'in_progress', 'completed'].includes(
-                request.status,
-              )}
-            />
-          )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -204,23 +204,30 @@ export default function NewRequestForm() {
           : `${t('requests.submit')} →`
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 lg:px-8">
-      <div className="flex items-center gap-3 mb-6">
-        <BackButton onClick={() => router.back()} />
-        <h1 className="text-xl font-black lg:text-2xl">{t('requests.newTitle')}</h1>
-      </div>
+    <div className="relative min-h-[100dvh] ios27-atmosphere pb-10">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-primary/10 to-transparent" />
+      <div className="relative mx-auto max-w-2xl px-3 pt-3 lg:px-8 lg:pt-6">
+        <div className="mb-4 flex items-center gap-3 apple-glass rounded-[var(--radius-lg)] px-3 py-3 animate-ios-fade">
+          <BackButton onClick={() => router.back()} />
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Fixly
+            </p>
+            <h1 className="text-lg font-black lg:text-xl">{t('requests.newTitle')}</h1>
+          </div>
+        </div>
 
       {estimate && (
-        <p className="text-sm text-muted-foreground mb-4 bg-muted/50 rounded-xl p-3">
+        <p className="mb-4 rounded-[var(--radius-md)] bg-muted/50 p-3 text-sm text-muted-foreground apple-glass-pill">
           {t('improvements.estimate')}: {formatPrice(locale, estimate.min)} –{' '}
           {formatPrice(locale, estimate.max)}
         </p>
       )}
 
       {pro && (
-        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center gap-3">
+        <div className="ios27-surface mb-4 flex items-center gap-3 p-4 animate-ios-slide-up">
           <div
-            className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-lg bg-cover bg-center"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-white bg-cover bg-center"
             style={{
               backgroundImage: pro.avatarUrl ? `url(${pro.avatarUrl})` : undefined,
             }}
@@ -235,11 +242,11 @@ export default function NewRequestForm() {
       )}
 
       {!pro && !proId && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 text-sm text-yellow-800">
+        <div className="mb-4 rounded-[var(--radius-lg)] border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
           {t('requests.noProSelected')}{' '}
           <button
             type="button"
-            className="underline font-medium"
+            className="font-medium underline"
             onClick={() => router.push(routes.professionals)}
           >
             {t('requests.findPro')}
@@ -248,12 +255,15 @@ export default function NewRequestForm() {
       )}
 
       {error && (
-        <div role="alert" className="bg-red-50 text-red-700 rounded-xl p-3 mb-4 text-sm">
+        <div role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+      <form
+        onSubmit={handleSubmit}
+        className="ios27-surface space-y-5 p-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0 lg:p-6 animate-ios-slide-up"
+      >
         <div className="space-y-5 lg:col-span-2">
           <div>
             <Label>{t('requests.requestTitle')}</Label>
@@ -369,12 +379,13 @@ export default function NewRequestForm() {
             type="submit"
             disabled={loading}
             aria-busy={loading}
-            className="w-full bg-secondary text-white font-bold py-3 text-base rounded-xl hover:opacity-90 disabled:opacity-60 transition-opacity active:scale-[0.98]"
+            className="w-full rounded-2xl bg-secondary py-3.5 text-base font-bold text-white shadow-md transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
           >
             {submitLabel}
           </button>
         </div>
       </form>
+      </div>
     </div>
   )
 }
