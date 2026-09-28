@@ -61,6 +61,15 @@ export async function GET(request: Request) {
           ? 'nationwide consumer open'
           : 'city density gate active',
     },
+    mock_catalog: {
+      ok: true,
+      detail:
+        process.env.NEXT_PUBLIC_FF_MOCK_CATALOG === 'false' ||
+        process.env.NEXT_PUBLIC_FF_MOCK_CATALOG === '0' ||
+        process.env.NEXT_PUBLIC_FF_MOCK_CATALOG === 'off'
+          ? 'mock catalog OFF — DB professionals only'
+          : 'mock professionals/reviews catalog ON (merged with Supabase)',
+    },
     rate_limit: {
       ok: Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
       detail:

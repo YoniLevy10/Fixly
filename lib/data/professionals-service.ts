@@ -3,8 +3,10 @@ import {
   getApprovedProfessionals,
   getFeaturedProfessionals,
   getProfessionalById,
+  getProfessionals,
 } from '@/mock/professionals'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
+import { isMockCatalogEnabled } from '@/lib/data/mock-catalog'
 import {
   supabaseGetFeaturedProfessionals,
   supabaseGetProfessionalById,
@@ -15,6 +17,17 @@ import type { Professional } from '@/types/professional'
 /** Identity helper kept for call sites / tests — no curated overlay. */
 export function withCuratedProfessionals(list: Professional[]): Professional[] {
   return list
+}
+
+function mergeCatalog(
+  fromDb: Professional[],
+  mockList: Professional[],
+): Professional[] {
+  const byId = new Map<string, Professional>()
+  // Mock fills the marketplace; real claimed Pros win on id collision
+  for (const p of mockList) byId.set(p.id, p)
+  for (const p of fromDb) byId.set(p.id, p)
+  return Array.from(byId.values())
 }
 
 function applyListOptions(
@@ -98,11 +111,16 @@ export async function listProfessionals(options?: {
   }
 
   if (resolveDataBackend() === 'supabase') {
-    const fromDb = await supabaseListProfessionals()
-    if (fromDb) {
+    const fromDb = (await supabaseListProfessionals()) ?? []
+    if (isMockCatalogEnabled()) {
+      return applyListOptions(
+        mergeCatalog(fromDb, getProfessionals()),
+        options,
+      )
+    }
+    if (fromDb.length > 0) {
       return applyListOptions(withCuratedProfessionals(fromDb), options)
     }
-    // Query failure (e.g. schema drift) — keep marketplace usable with mock catalog
     return filterProfessionals(options ?? {})
   }
 
@@ -115,10 +133,16 @@ export async function getFeaturedProfessionalsList(): Promise<Professional[]> {
   }
 
   if (resolveDataBackend() === 'supabase') {
-    const fromDb = await supabaseGetFeaturedProfessionals()
-    if (fromDb) {
-      const merged = withCuratedProfessionals(fromDb)
-      return merged.filter((p) => p.isFeatured && p.isAvailable).slice(0, 8)
+    const fromDb = (await supabaseGetFeaturedProfessionals()) ?? []
+    if (isMockCatalogEnabled()) {
+      const merged = mergeCatalog(fromDb, getProfessionals())
+      const featured = merged.filter((p) => p.isFeatured && p.isAvailable)
+      return featured.slice(0, 8)
+    }
+    if (fromDb.length > 0) {
+      return withCuratedProfessionals(fromDb)
+        .filter((p) => p.isFeatured && p.isAvailable)
+        .slice(0, 8)
     }
     return getFeaturedProfessionals()
   }
@@ -134,7 +158,8 @@ export async function getProfessional(id: string): Promise<Professional | undefi
   if (resolveDataBackend() === 'supabase') {
     const fromDb = await supabaseGetProfessionalById(id)
     if (fromDb) return fromDb
-    return getProfessionalById(id)
+    if (isMockCatalogEnabled()) return getProfessionalById(id)
+    return undefined
   }
 
   return getProfessionalById(id)
