@@ -1,17 +1,17 @@
 /**
- * Rich mock dataset — makes the app feel alive without Supabase seed.
+ * Demo / mock dataset mode.
  *
- * Pre-funding default: ON everywhere (including production), so the investor
- * tour and demo booking flow work on fixly.tech without a separate Preview.
+ * Production default: OFF (real Supabase).
+ * Opt-in for investor tours / local showcase:
+ *   NEXT_PUBLIC_FF_DEMO_DATA=true
  *
- * Production may still have legacy `NEXT_PUBLIC_FF_DEMO_DATA=false` from the
- * marketing-ready launch — that value is ignored until funding.
- *
- * Kill-switch (after investment / real ops):
+ * Hard kill (also forces OFF even if DEMO_DATA is set):
  *   NEXT_PUBLIC_FF_DEMO_KILL=true
  */
 export function isDemoDataMode(): boolean {
   const kill = process.env.NEXT_PUBLIC_FF_DEMO_KILL?.trim().toLowerCase()
   if (kill === 'true' || kill === '1' || kill === 'on') return false
-  return true
+
+  const on = process.env.NEXT_PUBLIC_FF_DEMO_DATA?.trim().toLowerCase()
+  return on === 'true' || on === '1' || on === 'on'
 }

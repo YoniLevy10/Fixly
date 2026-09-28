@@ -12,14 +12,20 @@ export const featureFlags = {
   /** GA4 on by default (G-EK4R8FW52G). Set NEXT_PUBLIC_FF_ANALYTICS=false to disable. */
   analytics: process.env.NEXT_PUBLIC_FF_ANALYTICS !== 'false',
   pushNotifications: isDemoDataMode() || process.env.NEXT_PUBLIC_FF_PUSH === 'true',
-  monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false',
+  /**
+   * Monetization / Grow checkout. Opt-in — off for nationwide launch (payments deferred).
+   */
+  monetization: process.env.NEXT_PUBLIC_FF_MONETIZATION === 'true',
   googleOAuth: process.env.NEXT_PUBLIC_FF_GOOGLE_OAUTH !== 'false',
   liveTracking: process.env.NEXT_PUBLIC_FF_LIVE_TRACKING !== 'false',
   /**
-   * Pre-launch mode: branded domain (fixly.tech) shows waitlist on `/`.
-   * Product hosts (*.vercel.app, localhost) still serve the full app.
-   * Set to false after public launch to show the app on every host.
-   * Host resolution: `lib/site-hosts.ts` → `shouldShowPrelaunchLanding`.
+   * Pre-launch waitlist on marketing hosts. Opt-in only.
+   * Nationwide production keeps this false so fixly.tech serves the app.
    */
-  prelaunch: process.env.NEXT_PUBLIC_FF_PRELAUNCH !== 'false',
+  prelaunch: process.env.NEXT_PUBLIC_FF_PRELAUNCH === 'true',
+  /**
+   * Open consumer create-request for every city in Israel.
+   * See lib/regions/nationwide.ts
+   */
+  nationwide: process.env.NEXT_PUBLIC_FF_NATIONWIDE === 'true',
 } as const

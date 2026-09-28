@@ -2,11 +2,12 @@
  * Host routing for Fixly.
  * Canonical public domain is always fixly.tech — not *.vercel.app aliases.
  *
- * Consumer create-request is separately gated by `launch_regions` density
+ * Consumer create-request is separately gated by `launch_regions` / nationwide
  * (see lib/regions/consumer-access.ts). Host prelaunch ≠ city open.
  */
 
 import { isDemoDataMode } from '@/lib/data/demo-mode'
+import { featureFlags } from '@/lib/feature-flags'
 
 export const MARKETING_HOSTS = ['fixly.tech', 'www.fixly.tech'] as const
 
@@ -56,21 +57,14 @@ export function isProductHost(host: string | null | undefined): boolean {
 }
 
 /**
- * Show pre-launch waitlist on `/` only when explicitly enabled and not in demo.
- * Canonical product lives on fixly.tech.
- *
- * Set NEXT_PUBLIC_FF_PRELAUNCH=false (or leave demo on) to show the app on fixly.tech.
- * Set NEXT_PUBLIC_FF_DEMO_KILL=true + PRELAUNCH=true to restore waitlist-only marketing hosts.
+ * Show pre-launch waitlist on `/` only when explicitly enabled.
+ * Nationwide production: featureFlags.prelaunch is false → full app on fixly.tech.
  */
 export function shouldShowPrelaunchLanding(host: string | null | undefined): boolean {
   if (isDemoDataMode()) return false
-  if (process.env.NEXT_PUBLIC_FF_PRELAUNCH === 'false') return false
+  if (!featureFlags.prelaunch) return false
   if (isProductHost(host) && !isMarketingHost(host)) return false
-  if (isMarketingHost(host)) {
-    // Branded domain shows waitlist only when prelaunch is on AND demo kill is set
-    return process.env.NEXT_PUBLIC_FF_DEMO_KILL === 'true'
-  }
-  return process.env.NEXT_PUBLIC_FF_PRELAUNCH !== 'false'
+  return isMarketingHost(host)
 }
 
 export function requestHostFromHeaders(headersList: Headers): string {
