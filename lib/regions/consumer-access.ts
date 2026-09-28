@@ -2,11 +2,12 @@ import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
+import { isNationwideConsumerOpen } from '@/lib/regions/nationwide'
 
 export type RegionStatus = 'closed' | 'waitlist' | 'open'
 
 export type ConsumerAccessResult =
-  | { allowed: true; status: RegionStatus | 'demo' | 'unconfigured' }
+  | { allowed: true; status: RegionStatus | 'demo' | 'unconfigured' | 'nationwide' }
   | {
       allowed: false
       status: RegionStatus | 'unknown'
@@ -23,6 +24,7 @@ function normalizeCity(city: string): string {
  * Private consumer create-request gate.
  * Partner / Bamakor jobs must NOT call this — they are always allowed.
  *
+ * Nationwide launch (`NEXT_PUBLIC_FF_NATIONWIDE=true`) opens every city.
  * Demo / mock backends stay open so local UI and investor demos work.
  * Missing launch_regions row → treated as waitlist (not open).
  */
@@ -31,6 +33,10 @@ export async function assertConsumerRegionOpen(
 ): Promise<ConsumerAccessResult> {
   if (resolveDataBackend() === 'mock' || isDemoDataMode()) {
     return { allowed: true, status: 'demo' }
+  }
+
+  if (isNationwideConsumerOpen()) {
+    return { allowed: true, status: 'nationwide' }
   }
 
   const normalized = city ? normalizeCity(city) : ''

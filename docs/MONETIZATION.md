@@ -1,55 +1,41 @@
-# Fixly — מודל הכנסות (החלטה רשמית)
+# Fixly — מודל הכנסות
 
+<<<<<<< HEAD
 > **לא הייתה החלטה חד-משמעית בקוד עד עכשיו.** בשיחה הומלץ על שילוב פרגמטי; המסמך הזה קובע את כיוון המימוש.
 >
 > תוכנית הנגשה לצרכנים + פירוט 3 מסלולים / עקיפה: [`CONSUMER_ACCESS_PLAN.md`](./CONSUMER_ACCESS_PLAN.md) (סעיף 5).
+=======
+> **השקה ארצית:** תשלומים **בצד**. כשנחבר כסף — **Grow** (כמו Bino), לא Tranzila.
+> פירוט: [`PAYMENTS_GROW.md`](./PAYMENTS_GROW.md) · [`PRODUCTION_NATIONWIDE.md`](./PRODUCTION_NATIONWIDE.md)
+>>>>>>> origin/main
 
 ## עקרון
 
-| קהל | מחיר |
-|-----|------|
-| **לקוחות** | חינם תמיד (גידול והמרה) |
-| **אנשי מקצוע** | משלמים — מנוי, לידים, ו/או עמלה על עסקה |
+| קהל | מחיר (השקה) |
+|-----|-------------|
+| **לקוחות** | חינם תמיד |
+| **אנשי מקצוע** | חינם בשלב ההשקה; מאוחר יותר מנוי / ליד / עמלה דרך Grow |
 
-## מודל מומלץ (3 מסלולים — משולבים)
+## כש־`NEXT_PUBLIC_FF_MONETIZATION=true`
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
 │ 1. מנוי Pro (חודשי)     │ פרופיל מודגש, לידים ללא הגבלה │
 │ 2. תשלום לליד          │ כשמאשרים בקשה (אם אין מנוי)   │
-│ 3. עמלה על עסקה        │ % רק כשיש תשלום דרך Fixly      │
+│ 3. עמלה על עסקה        │ % רק כשיש תשלום דרך Fixly+Grow │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### שלב השקה (עכשיו — בקוד)
+סליקה: Grow (`GROW_API_KEY`, `GROW_PAGE_CODE`, `GROW_WEBHOOK_SECRET`).
 
-- **פיילוט:** 3 לידים חינם לכל Pro (`lead_credits`), אחר כך חיוב לליד בקבלה (`accepted`).
-- **מנוי Pro:** 149 ₪/חודש (מוגדר ב-`lib/monetization/config.ts`) — דף `/pro/pricing`, Stripe כשמוגדר.
-- **עמלה:** 10% מסכום שדווח ב-`quoted_amount` כשהבקשה `completed` (רישום ב-`billing_events`; גבייה ב-Stripe בשלב 2).
-
-### שלב 2 (אחרי Stripe)
-
-- Checkout למנוי + Payment Intent ללידים.
-- Webhook מעדכן `subscription_until` ו-`lead_credits`.
-
-### שלב 3
-
-- Escrow, אחריות, תמחור לפי קטגוריה/עיר.
-
-## נקודת מדידה
-
-**עסקה לחיוב עמלה** = `requests.status = completed` **ו** `quoted_amount` מולא **ו** (בעתיד) `paid_at` דרך Fixly.
-
-## משתני סביבה
+## משתני סביבה (כשמפעילים)
 
 ```env
 NEXT_PUBLIC_FF_MONETIZATION=true
-STRIPE_SECRET_KEY=sk_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_...
-STRIPE_PRICE_PRO_MONTHLY=price_...
+GROW_API_KEY=...
+GROW_PAGE_CODE=...
+GROW_WEBHOOK_SECRET=...
+GROW_ENV=sandbox
 ```
 
-## טבלאות
-
-ראה `supabase/migrations/20260530100000_monetization.sql`.
+Webhook: `https://fixly.tech/api/webhook/grow?token=…`

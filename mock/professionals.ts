@@ -1,5 +1,6 @@
 import type { Professional } from '@/types/professional'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
+import { isMockCatalogEnabled } from '@/lib/data/mock-catalog'
 import { getDemoDataset } from '@/mock/demo-seed'
 
 /** Ported from BASE44 mockData.js — Hebrew professionals seed (non-demo) */
@@ -167,11 +168,13 @@ const LEGACY_PROFESSIONALS: Professional[] = [
   },
 ]
 
-/** Lazy — reads demo flag at call time (not only at module import). */
+/** Lazy — reads flags at call time (not only at module import). */
 export function getProfessionals(): Professional[] {
-  return isDemoDataMode()
-    ? getDemoDataset().professionals
-    : LEGACY_PROFESSIONALS
+  // Full demo tour OR production catalog fill — rich seed dataset
+  if (isDemoDataMode() || isMockCatalogEnabled()) {
+    return getDemoDataset().professionals
+  }
+  return LEGACY_PROFESSIONALS
 }
 
 /** @deprecated Use getProfessionals() */

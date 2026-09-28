@@ -1,6 +1,8 @@
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { isProduction } from '@/lib/data/config'
 import { isSupabaseEnabled } from '@/lib/data/config'
+import { isGrowPlatformConfigured } from '@/lib/grow/config'
+import { featureFlags } from '@/lib/feature-flags'
 
 export type EnvValidationResult = {
   ok: boolean
@@ -18,7 +20,7 @@ export function validateProductionEnv(): EnvValidationResult {
 
   if (isDemoDataMode()) {
     warnings.push(
-      'Demo mode ON (pre-funding). After investment set NEXT_PUBLIC_FF_DEMO_KILL=true and redeploy.',
+      'Demo mode ON — set NEXT_PUBLIC_FF_DEMO_DATA=false (or omit) and redeploy for real data.',
     )
   }
 
@@ -28,8 +30,6 @@ export function validateProductionEnv(): EnvValidationResult {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()
   if (!appUrl) {
-    // Code defaults to https://fixly.tech — warn so ops still sets it explicitly,
-    // but do not treat as a hard error (was flooding cold-start logs).
     warnings.push(
       'NEXT_PUBLIC_APP_URL unset — defaulting to https://fixly.tech for redirects',
     )
@@ -51,18 +51,14 @@ export function validateProductionEnv(): EnvValidationResult {
     warnings.push('BAMAKOR_WEBHOOK_SECRET missing — outbound status webhooks unsigned')
   }
 
-  if (process.env.NEXT_PUBLIC_FF_MONETIZATION !== 'false') {
-    if (!process.env.TRANZILA_TERMINAL) {
-      warnings.push('TRANZILA_TERMINAL missing — monetization checkout disabled')
-    }
-    if (!process.env.TRANZILA_API_APP_KEY || !process.env.TRANZILA_API_SECRET_KEY) {
-      warnings.push('TRANZILA_API_APP_KEY / TRANZILA_API_SECRET_KEY missing — checkout disabled')
-    }
-    if (!process.env.TRANZILA_WEBHOOK_SECRET?.trim()) {
+  if (featureFlags.monetization) {
+    if (!isGrowPlatformConfigured()) {
       warnings.push(
-        'TRANZILA_WEBHOOK_SECRET missing — /api/tranzila/webhook accepts unsigned notifications',
+        'Grow not configured (GROW_API_KEY / GROW_PAGE_CODE / GROW_WEBHOOK_SECRET) — checkout disabled',
       )
     }
+  } else {
+    warnings.push('Monetization deferred — payments via Grow later (NEXT_PUBLIC_FF_MONETIZATION=false)')
   }
 
   if (
@@ -70,7 +66,7 @@ export function validateProductionEnv(): EnvValidationResult {
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
   ) {
     warnings.push(
-      'NEXT_PUBLIC_GA_MEASUREMENT_ID is set but NEXT_PUBLIC_FF_ANALYTICS=false — gtag will not load'
+      'NEXT_PUBLIC_GA_MEASUREMENT_ID is set but NEXT_PUBLIC_FF_ANALYTICS=false — gtag will not load',
     )
   }
 
