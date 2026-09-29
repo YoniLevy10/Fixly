@@ -536,6 +536,10 @@ export default function PrelaunchLanding({
           <Link href="/about" className="underline underline-offset-2">
             אודות
           </Link>
+          {' · '}
+          <Link href="/waitlist" className="underline underline-offset-2">
+            הרשמה
+          </Link>
           {PRODUCT_URL ? (
             <>
               {' · '}

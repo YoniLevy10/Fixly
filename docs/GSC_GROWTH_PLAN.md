@@ -188,10 +188,12 @@ flowchart LR
 
 ---
 
-## 9) הצעד הבא ליישום בקוד (כשתאשרו)
+## 9) יישום בקוד (סטטוס)
 
-1. עדכון מטא + FAQ של `/waitlist` לכוונה (בלי לשבור מותג)  
-2. חיזוק internal links + CTA אורגני ב־`HomeScreen`  
-3. הרחבת `/about` כדף מותג/כוונה  
-4. סקריפט/צ׳קליסט שבועי לייצוא GSC מול `signupGoal`  
-5. פתיחת דף services ראשון **רק** אחרי בעל מקצוע אמיתי או 3 הרשמות בעיר
+1. ✅ מטא + FAQ של `/waitlist` לכוונה (בלי לשבור מותג)  
+2. ✅ internal links + CTA אורגני ב־`HomeScreen` (`home-waitlist-cta`)  
+3. ✅ הרחבת `/about` כדף מותג/כוונה + JSON-LD  
+4. ✅ צ׳קליסט שבועי: [`GSC_WEEKLY_CHECKLIST.md`](./GSC_WEEKLY_CHECKLIST.md)  
+5. ✅ שער אינדקס services: בעל מקצוע אמיתי **או** ≥3 הרשמות לקוח לעיר — [`lib/seo/has-seo-value.ts`](../lib/seo/has-seo-value.ts)
+
+**לא נפתח דף services באינדקס** עד שעוברים את השער — אין תבניות ריקות.

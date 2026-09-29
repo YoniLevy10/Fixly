@@ -53,6 +53,9 @@ export const en: MessageTree = {
     lessCategories: 'Fewer categories',
     featuredPros: 'Recommended professionals',
     showAll: 'View all',
+    waitlistCtaTitle: 'Want updates when your area opens?',
+    waitlistCtaLead: 'Join the Fixly list — customers and professionals',
+    waitlistCta: 'Sign up',
   },
   professionals: {
     title: 'Find professionals',
@@ -321,6 +324,17 @@ export const en: MessageTree = {
     repeatRequest: 'Request again from same pro',
     loadMore: 'Load more',
     about: 'About',
+    aboutLead:
+      'Fixly connects customers with verified professionals in Israel — one request, matching by trade and area, and tracking until the job is done.',
+    aboutHowTitle: 'How it works',
+    aboutHow1: 'Send one request instead of dozens of calls',
+    aboutHow2: 'Match by trade, area, availability, and performance',
+    aboutHow3: 'Track until the home repair is closed',
+    aboutIntentTitle: 'Home repairs & pros to your door',
+    aboutIntentBody:
+      'Plumbing, electrical, AC, and more — Fixly opens city by city with real density, no fake demo profiles and no empty directories.',
+    aboutWaitlistCta: 'Join the waitlist',
+    aboutProCta: 'I am a professional',
     version: 'Version',
     proJoin: 'Join as a professional',
     proJoinTitle: 'Join Fixly',

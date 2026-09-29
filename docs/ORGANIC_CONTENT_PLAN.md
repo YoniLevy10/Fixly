@@ -3,16 +3,15 @@
 עקרון: **אין דפי תבנית ריקים**. עמוד עיר×קטגוריה מאונדקס רק כשיש ערך אמיתי.
 
 תוכנית מלאה מנתוני Search Console + יעד חשיפה/הרשמות:  
-[`GSC_GROWTH_PLAN.md`](./GSC_GROWTH_PLAN.md) · יעד 10: [`MONTHLY_SIGNUP_GOAL.md`](./MONTHLY_SIGNUP_GOAL.md)
+[`GSC_GROWTH_PLAN.md`](./GSC_GROWTH_PLAN.md) · יעד 10: [`MONTHLY_SIGNUP_GOAL.md`](./MONTHLY_SIGNUP_GOAL.md) · צ׳קליסט שבועי: [`GSC_WEEKLY_CHECKLIST.md`](./GSC_WEEKLY_CHECKLIST.md)
 
 ## בדיקה טכנית (לפני תוכן חדש)
 
 1. `/` מציג marketplace עם מטא «תיקונים ואנשי מקצוע» — לא «הרשמה מוקדמת».
 2. `/waitlist` הוא דף ההרשמה הקנוני (לקוח + בעל מקצוע).
-3. `/services/...` עם 0 בעלי מקצוע אמיתיים → `noindex` + CTA להרשמה (בלי mock).
+3. `/services/...` עם 0 בעלי מקצוע אמיתיים **ו־** פחות מ־3 הרשמות לקוח לעיר → `noindex` + CTA להרשמה (בלי mock). שער: `lib/seo/has-seo-value.ts`.
 4. Googlebot עובר את שערי ה-geo (`isSearchCrawler`).
 5. Sitemap נשאר; דפים ריקים לא אמורים להרוויח אינדקס.
-
 ## שלב א׳ — רק איפה שיש ערך
 
 אינדקס / קידום פעיל רק כשמתקיים אחד:

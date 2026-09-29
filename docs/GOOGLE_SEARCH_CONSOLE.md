@@ -3,7 +3,7 @@
 מדריך קצר לחיבור הדומיין `fixly.tech` ל-Google Search Console ולדחיפת תנועה אורגנית.
 
 **תוכנית צמיחה מנתוני GSC (מותג → כוונה → יעד 10 הרשמות):**  
-[`GSC_GROWTH_PLAN.md`](./GSC_GROWTH_PLAN.md)
+[`GSC_GROWTH_PLAN.md`](./GSC_GROWTH_PLAN.md) · צ׳קליסט שבועי: [`GSC_WEEKLY_CHECKLIST.md`](./GSC_WEEKLY_CHECKLIST.md)
 
 מפת URL לקמפיינים ולהרשמה: [`ACQUISITION_URLS.md`](./ACQUISITION_URLS.md).
 

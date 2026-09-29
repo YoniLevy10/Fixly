@@ -9,6 +9,7 @@ import {
   getCityBySlug,
 } from '@/lib/seo/marketplace-pages'
 import { listRealProfessionalsForSeo } from '@/lib/data/professionals-service'
+import { resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
 import { routes } from '@/lib/routes'
 import ProListCard from '@/components/professionals/ProListCard'
 import FixlyGuaranteeBanner from '@/components/shared/FixlyGuaranteeBanner'
@@ -32,23 +33,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const catMeta = getCategoryBySlug(category)
   if (!cityMeta || !catMeta) return { title: 'Fixly' }
 
-  const realPros = await listRealProfessionalsForSeo({
+  const seo = await resolveSeoIndexValue({
+    cityQuery: cityMeta.query,
     categorySlug: category,
-    query: cityMeta.query,
   })
-  const hasRealValue = realPros.length > 0
 
   return {
     title: `${catMeta.nameHe} ב${cityMeta.nameHe} | Fixly`,
-    description: hasRealValue
+    description: seo.hasValue
       ? `מצא ${catMeta.nameHe} מומלץ ב${cityMeta.nameHe}. בקשה מהירה ומעקב עד סיום — Fixly.`
       : `${catMeta.nameHe} ב${cityMeta.nameHe} — Fixly נפתחת לפי צפיפות. הירשמו לעדכון.`,
-    robots: hasRealValue
+    robots: seo.hasValue
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {
       title: `${catMeta.nameHe} ב${cityMeta.nameHe}`,
-      description: hasRealValue
+      description: seo.hasValue
         ? `אנשי מקצוע אמיתיים ב${cityMeta.nameHe}`
         : `הרשמה ל-${catMeta.nameHe} ב${cityMeta.nameHe}`,
     },
@@ -64,10 +64,17 @@ export default async function ServiceLandingPage({ params }: PageProps) {
     return <main className="p-6">Not found</main>
   }
 
-  const pros = await listRealProfessionalsForSeo({
+  const seo = await resolveSeoIndexValue({
+    cityQuery: cityMeta.query,
     categorySlug: category,
-    query: cityMeta.query,
   })
+  const pros =
+    seo.realProCount > 0
+      ? await listRealProfessionalsForSeo({
+          categorySlug: category,
+          query: cityMeta.query,
+        })
+      : []
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-6">
@@ -79,7 +86,9 @@ export default async function ServiceLandingPage({ params }: PageProps) {
         <p className="text-muted-foreground mt-2">
           {pros.length > 0
             ? `${pros.length} אנשי מקצוע זמינים • בקשה חינם • מעקב חי`
-            : 'נפתח לפי צפיפות אמיתית באזור — בלי פרופילי דמו'}
+            : seo.reason === 'waitlist_demand'
+              ? `ביקוש מאומת באזור — נפתח כשיש אספקה. בינתיים אפשר להירשם.`
+              : 'נפתח לפי צפיפות אמיתית באזור — בלי פרופילי דמו'}
         </p>
       </div>
 
@@ -105,7 +114,7 @@ export default async function ServiceLandingPage({ params }: PageProps) {
             אנחנו לא מציגים פרופילי דמו בדפי חיפוש.
           </p>
           <Link
-            href={`${routes.waitlist}?audience=customer`}
+            href={`${routes.waitlist}?audience=customer&utm_source=fixly&utm_medium=organic&utm_campaign=services_${city}_${category}`}
             className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white"
           >
             הירשמו לעדכון כשלקוחות נפתחים באזור
@@ -113,7 +122,7 @@ export default async function ServiceLandingPage({ params }: PageProps) {
           <p className="text-xs text-muted-foreground">
             בעל/ת מקצוע?{' '}
             <Link
-              href={`${routes.waitlist}?audience=professional`}
+              href={`${routes.waitlist}?audience=professional&utm_source=fixly&utm_medium=organic&utm_campaign=services_pro_${city}`}
               className="font-bold text-primary underline"
             >
               הצטרפו לרשימה
