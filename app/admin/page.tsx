@@ -42,6 +42,18 @@ type AdminPayload = {
     prospectsNew?: number
     prospectsContacted?: number
   }
+  signupGoal?: {
+    label: string
+    start: string
+    end: string
+    target: number
+    count: number
+    remaining: number
+    pct: number
+    hit: boolean
+    customers: number
+    professionals: number
+  }
   recentWaitlist: WaitlistRow[]
   recentBilling: BillingRow[]
 }
@@ -311,7 +323,7 @@ export default function AdminPage() {
     )
   }
 
-  const { stats, recentBilling } = data
+  const { stats, recentBilling, signupGoal } = data
   const cards = [
     {
       label: 'רשימת המתנה',
@@ -370,6 +382,47 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      {signupGoal ? (
+        <Card>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-primary">{signupGoal.label}</p>
+              <p className="mt-1 text-3xl font-black tabular-nums">
+                {signupGoal.count}
+                <span className="text-lg font-bold text-muted-foreground">
+                  {' '}
+                  / {signupGoal.target}
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {signupGoal.customers} לקוחות · {signupGoal.professionals} בעלי
+                מקצוע · נותרו {signupGoal.remaining}
+                {signupGoal.hit ? ' · היעד הושג ✓' : ''}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                חלון: {new Date(signupGoal.start).toLocaleDateString('he-IL')} –{' '}
+                {new Date(signupGoal.end).toLocaleDateString('he-IL')} · בלי
+                ספאם / smoke
+              </p>
+            </div>
+            <a
+              href="/waitlist"
+              className="rounded-xl bg-[#F59E0B] px-4 py-2 text-sm font-black text-[#123563]"
+            >
+              דף הרשמה
+            </a>
+          </div>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={`h-full rounded-full transition-all ${
+                signupGoal.hit ? 'bg-emerald-500' : 'bg-primary'
+              }`}
+              style={{ width: `${signupGoal.pct}%` }}
+            />
+          </div>
+        </Card>
+      ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {cards.map((card) => (

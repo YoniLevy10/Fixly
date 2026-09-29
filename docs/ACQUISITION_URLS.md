@@ -34,6 +34,10 @@ https://fixly.tech/waitlist?utm_source=meta&utm_medium=paid&utm_campaign=weekend
 https://fixly.tech/waitlist?audience=professional&utm_source=outreach&utm_medium=referral&utm_campaign=pro_leads
 ```
 
+## יעד חודשי (ספט׳–אוק׳ 2026)
+
+**10 נרשמים אמיתיים** ב-`pro_waitlist` עד 29/10/2026. מעקב ב-`/admin` (`signupGoal`). פירוט: [`MONTHLY_SIGNUP_GOAL.md`](./MONTHLY_SIGNUP_GOAL.md).
+
 ## איפה רואים את הרשימות
 
 - `/admin` — הרשמות אמיתיות (`pro_waitlist`) לפי `audience`
