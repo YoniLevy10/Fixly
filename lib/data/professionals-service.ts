@@ -7,6 +7,7 @@ import {
 } from '@/mock/professionals'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import { isMockCatalogEnabled } from '@/lib/data/mock-catalog'
+import { isSeedDemoProfessionalId } from '@/lib/data/seed-professionals'
 import {
   supabaseGetFeaturedProfessionals,
   supabaseGetProfessionalById,
@@ -125,6 +126,20 @@ export async function listProfessionals(options?: {
   }
 
   return filterProfessionals(options ?? {})
+}
+
+/**
+ * Organic / SEO pages only — real Supabase professionals, excluding seed demos
+ * and never merging the mock catalog. Empty means the page should noindex.
+ */
+export async function listRealProfessionalsForSeo(options?: {
+  query?: string
+  categorySlug?: string
+}): Promise<Professional[]> {
+  if (resolveDataBackend() !== 'supabase') return []
+  const fromDb = (await supabaseListProfessionals()) ?? []
+  const real = fromDb.filter((p) => !isSeedDemoProfessionalId(p.id))
+  return applyListOptions(real, options)
 }
 
 export async function getFeaturedProfessionalsList(): Promise<Professional[]> {

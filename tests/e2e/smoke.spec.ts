@@ -17,27 +17,61 @@ test.describe('public pages', () => {
     await expect(waitlistCta.or(search)).toBeVisible()
   })
 
-  test('waitlist page collects early access signups', async ({ page }) => {
+  test('waitlist page collects signups for customers and pros', async ({ page }) => {
+    // CI has no Supabase — route proves UI success only after a real API id.
+    await page.route('**/api/waitlist', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue()
+        return
+      }
+      const body = route.request().postDataJSON() as { audience?: string }
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ok: true,
+          audience: body.audience ?? 'customer',
+          id: '11111111-2222-4333-8444-555555555555',
+        }),
+      })
+    })
+
     await page.goto('/waitlist')
     await expect(page.getByRole('heading', { name: /יש תקלה בבית/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
-    // Customer-only demand landing — pros use /pro/join (no audience tabs).
-    await expect(page.getByRole('tab')).toHaveCount(0)
-    await expect(page.getByRole('link', { name: /הצטרפו כאן/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /^לקוח/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
     await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.getByLabel(/טלפון/i).fill('0501234567')
     await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(page.getByText(/נרשמתם בהצלחה/i)).toBeVisible({ timeout: 10_000 })
   })
 
-  test('pro join page is outreach destination', async ({ page }) => {
+  test('waitlist shows error when save is rejected', async ({ page }) => {
+    await page.route('**/api/waitlist', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue()
+        return
+      }
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'שמירה נכשלה — מסד הנתונים לא מוגדר' }),
+      })
+    })
+
+    await page.goto('/waitlist')
+    await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
+    await page.getByLabel(/טלפון/i).fill('0501234567')
+    await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText(/נרשמתם בהצלחה/i)).toHaveCount(0)
+  })
+
+  test('pro join redirects to unified waitlist', async ({ page }) => {
     await page.goto('/pro/join')
-    await expect(page.getByRole('heading', { name: /הצטרפות ל-Fixly|Join Fixly/i })).toBeVisible()
-    await expect(page.getByText(/לבעלי מקצוע/i)).toBeVisible()
-    await expect(page.getByRole('button', { name: /הירשם|Sign up/i })).toBeVisible()
-    await expect(
-      page.getByRole('link', { name: /הרשמה מוקדמת ללקוחות/i })
-    ).toBeVisible()
+    await expect(page).toHaveURL(/\/waitlist\?audience=professional/)
+    await expect(page.getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
   })
 
   test('robots and sitemap are public', async ({ request }) => {

@@ -6,18 +6,21 @@
 
 | מטרה | URL קנוני | למי | מה קורה |
 |------|-----------|-----|---------|
-| **קמפיין ביקוש / רשימת מעוניינים** | [`https://fixly.tech/waitlist`](https://fixly.tech/waitlist) | לקוחות / מתעניינים | דף נחיתה מעוצב (`PrelaunchLanding`) → `POST /api/waitlist` → טבלת `pro_waitlist` עם `audience=customer` |
-| **אנשי מקצוע (מנוע לידים / WhatsApp)** | [`https://fixly.tech/pro/join`](https://fixly.tech/pro/join) | בעלי מקצוע | טופס הצטרפות → `POST /api/pro/waitlist` → אותה טבלה, `audience=professional` |
-| **אפליקציית הדגמה (משקיעים / מוצר)** | [`https://fixly.tech/`](https://fixly.tech/) | גולשים פנימיים | `HomeScreen` כל עוד הדמו פעיל (`NEXT_PUBLIC_FF_DEMO_KILL` לא `true`) |
-| **סיור משקיע** | [`https://fixly.tech/demo`](https://fixly.tech/demo) | משקיעים | מתחיל demo tour |
+| **הרשמה ציבורית (לקוח + בעל מקצוע)** | [`https://fixly.tech/waitlist`](https://fixly.tech/waitlist) | כולם | דף אחד עם בחירת קהל → `POST /api/waitlist` → `pro_waitlist` עם `audience`, `source`, `attribution` |
+| **קישור ישיר לבעלי מקצוע** | [`https://fixly.tech/waitlist?audience=professional`](https://fixly.tech/waitlist?audience=professional) | בעלי מקצוע | אותו דף, טאב בעל מקצוע פתוח |
+| **`/pro/join`** | redirect | בעלי מקצוע | מפנה ל-`/waitlist?audience=professional` (נשמר לקישורי outreach ישנים) |
+| **אפליקציה / marketplace** | [`https://fixly.tech/`](https://fixly.tech/) | משתמשים בישראל | `HomeScreen` (nationwide) |
 
-## מה לא להשתמש בו
+## UTM קנוני (סיווג ערוצים ב-GA4)
 
-| URL | סטטוס |
-|-----|--------|
-| `https://fixly.tech/?utm_…` לקמפיין רשימה | **לא** — `/` הוא דמו מוצר; מפנים ל־`/waitlist` |
-| `/go/…` | מתים — מופנים ל־`/waitlist` |
-| טופס בעלי מקצוע בתוך `/waitlist` | הוסר — בעלי מקצוע רק ב־`/pro/join` |
+| ערוץ | `utm_source` | `utm_medium` | דוגמה |
+|------|--------------|--------------|--------|
+| Meta paid | `meta` | `paid` | `?utm_source=meta&utm_medium=paid&utm_campaign=weekend_waitlist` |
+| Google organic / GSC | `google` | `organic` | `?utm_source=google&utm_medium=organic` |
+| Share / referral | `share` | `share` | נוצר אוטומטית אחרי הרשמה |
+| Outreach WhatsApp | `outreach` | `referral` | `?utm_source=outreach&utm_medium=referral&utm_campaign=pro_leads` |
+
+**אל תשתמשו** ב-`utm_medium=whatsapp` / `cpc` סתמי — זה מבלבל את Default Channel Group.
 
 ## Meta / paid — קישור להעתקה
 
@@ -25,19 +28,25 @@
 https://fixly.tech/waitlist?utm_source=meta&utm_medium=paid&utm_campaign=weekend_waitlist&utm_content=feed_v1
 ```
 
-אנשי מקצוע ממודעות / WhatsApp של מנוע הלידים:
+אנשי מקצוע ממודעות / WhatsApp:
 
 ```
-https://fixly.tech/pro/join?utm_source=outreach&utm_medium=whatsapp&utm_campaign=pro_leads
+https://fixly.tech/waitlist?audience=professional&utm_source=outreach&utm_medium=referral&utm_campaign=pro_leads
 ```
 
-(`JOIN_URL` ב־`lib/prospects/config.ts` כבר מצביע ל־`/pro/join`.)
+## יעד חודשי (ספט׳–אוק׳ 2026)
+
+**10 נרשמים אמיתיים** ב-`pro_waitlist` עד 29/10/2026. מעקב ב-`/admin` (`signupGoal`). פירוט: [`MONTHLY_SIGNUP_GOAL.md`](./MONTHLY_SIGNUP_GOAL.md).
 
 ## איפה רואים את הרשימות
 
-- `/admin` — כל רשומות ההמתנה (`pro_waitlist`)
-- `/superadmin` — מנוע לידים / outreach לבעלי מקצוע
+- `/admin` — הרשמות אמיתיות (`pro_waitlist`) לפי `audience`
+- `/superadmin` — prospects חיצוניים בלבד (`professional_prospects`) — **לא מאוחדים** עם הרשמה
 
-## אחרי מימון / כיבוי דמו
+## הפרדה חשובה
 
-כש־`NEXT_PUBLIC_FF_DEMO_KILL=true` ו־prelaunch פעיל: גם `/` על `fixly.tech` מציג את דף הנחיתה. **עדיין** עדיף לשמור את ה־destination של המודעות על `/waitlist` (יציב, לא תלוי בדגלים).
+| טבלה | מה זה |
+|------|--------|
+| `pro_waitlist` | אדם שנרשם באתר (ליד אמיתי) |
+| `professional_prospects` | גילוי חיצוני / outreach — לא הרשמה |
+| `professionals` | פרופילים במערכת (כולל 4 seed דמו — לא לספור כלידים) |

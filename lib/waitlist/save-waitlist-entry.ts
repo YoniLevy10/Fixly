@@ -1,12 +1,11 @@
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { isSupabaseEnabled } from '@/lib/data/config'
-import {
-  addProWaitlistEntry,
-  type WaitlistAudience,
-  type WaitlistAttribution,
+import type {
+  WaitlistAudience,
+  WaitlistAttribution,
 } from '@/lib/data/pro-waitlist-store'
 import { trackError } from '@/lib/monitoring/track-error'
-import { tryLinkProspectAfterWaitlist } from '@/lib/prospects/waitlist-bridge'
+import { looksLikeSpamWaitlist } from '@/lib/waitlist/spam-guard'
 
 export type WaitlistSaveInput = {
   fullName: string
@@ -21,94 +20,83 @@ export type WaitlistSaveInput = {
 }
 
 export type WaitlistSaveResult =
-  | { ok: true; id: string; storage: 'supabase' | 'memory' }
+  | { ok: true; id: string; storage: 'supabase' }
   | { ok: false; error: string }
 
 /**
- * Persist waitlist so Operations Center (/admin) can see signups.
+ * Persist a real public registration into `pro_waitlist`.
  *
- * Bug fixed: `pro_waitlist` RLS allows INSERT but blocks SELECT for anon.
- * `.insert().select()` on the cookie/anon client fails RETURNING, and the
- * old routes silently wrote to process memory — UI showed success, admin
- * (which reads Supabase only) stayed empty.
+ * Rules:
+ * - Never report success without a returned Supabase row id
+ * - Never fall back to process memory in production paths
+ * - Never link / merge into professional_prospects (kept separate)
  */
 export async function saveWaitlistEntry(
   input: WaitlistSaveInput,
   route: string
 ): Promise<WaitlistSaveResult> {
-  const baseRow = {
-    full_name: input.fullName,
+  const spam = looksLikeSpamWaitlist({
+    fullName: input.fullName,
     phone: input.phone,
-    email: input.email || null,
-    category: input.category ?? null,
-    city: input.city ?? null,
-    referral_code: input.referralCode ?? null,
-    audience: input.audience,
-    source: input.source ?? null,
+    city: input.city,
+    category: input.category,
+  })
+  if (spam) {
+    return { ok: false, error: spam }
   }
 
-  if (isSupabaseEnabled()) {
-    const admin = getAdminSupabaseClient()
-    if (!admin) {
-      trackError(new Error('SUPABASE_SERVICE_ROLE_KEY missing for waitlist'), {
-        route,
-      })
-      return {
-        ok: false,
-        error: 'שמירה נכשלה — הגדרות מסד נתונים חסרות',
-      }
+  if (!input.audience || (input.audience !== 'customer' && input.audience !== 'professional')) {
+    return { ok: false, error: 'יש לבחור סוג הרשמה' }
+  }
+
+  if (!isSupabaseEnabled()) {
+    trackError(new Error('waitlist save refused: supabase disabled'), { route })
+    return {
+      ok: false,
+      error: 'שמירה נכשלה — מסד הנתונים לא מוגדר',
     }
+  }
 
-    const attempts = [
-      {
-        ...baseRow,
-        ...(input.attribution ? { attribution: input.attribution } : {}),
-      },
-      baseRow,
-      {
-        full_name: input.fullName,
-        phone: input.phone,
-        email: input.email || null,
-        category: input.category ?? null,
-        city: input.city ?? null,
-        referral_code: input.referralCode ?? null,
-      },
-    ]
-
-    let lastError: unknown = null
-    for (const row of attempts) {
-      const { data, error } = await admin
-        .from('pro_waitlist')
-        .insert(row)
-        .select('id')
-        .maybeSingle()
-
-      if (!error) {
-        const id = data?.id ?? crypto.randomUUID()
-        await tryLinkProspectAfterWaitlist({
-          phone: input.phone,
-          audience: input.audience,
-          waitlistId: data?.id ?? null,
-        })
-        return { ok: true, id, storage: 'supabase' }
-      }
-      lastError = error
+  const admin = getAdminSupabaseClient()
+  if (!admin) {
+    trackError(new Error('SUPABASE_SERVICE_ROLE_KEY missing for waitlist'), {
+      route,
+    })
+    return {
+      ok: false,
+      error: 'שמירה נכשלה — הגדרות מסד נתונים חסרות',
     }
+  }
 
-    trackError(lastError, { route })
+  const row = {
+    full_name: input.fullName.trim(),
+    phone: input.phone.trim(),
+    email: input.email?.trim() || null,
+    category: input.category?.trim() || null,
+    city: input.city?.trim() || null,
+    referral_code: input.referralCode?.trim() || null,
+    audience: input.audience,
+    source: input.source?.trim() || null,
+    attribution: input.attribution && Object.keys(input.attribution).length
+      ? input.attribution
+      : null,
+  }
+
+  const { data, error } = await admin
+    .from('pro_waitlist')
+    .insert(row)
+    .select('id')
+    .maybeSingle()
+
+  if (error) {
+    trackError(error, { route })
     return { ok: false, error: 'שגיאה בשמירת הרשמה — נסו שוב' }
   }
 
-  const entry = addProWaitlistEntry({
-    fullName: input.fullName,
-    phone: input.phone,
-    email: input.email,
-    category: input.category,
-    city: input.city,
-    referralCode: input.referralCode,
-    audience: input.audience,
-    source: input.source,
-    attribution: (input.attribution as WaitlistAttribution | undefined) ?? undefined,
-  })
-  return { ok: true, id: entry.id, storage: 'memory' }
+  if (!data?.id) {
+    trackError(new Error('waitlist insert returned no id'), { route })
+    return { ok: false, error: 'שגיאה בשמירת הרשמה — נסו שוב' }
+  }
+
+  return { ok: true, id: data.id, storage: 'supabase' }
 }

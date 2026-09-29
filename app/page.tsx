@@ -10,6 +10,8 @@ import {
 import {
   DEFAULT_DESCRIPTION_HE,
   DEFAULT_TITLE_HE,
+  WAITLIST_DESCRIPTION_HE,
+  WAITLIST_TITLE_HE,
   SITE_URL,
 } from '@/lib/site-config'
 
@@ -17,12 +19,12 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHostFromHeaders(await headers())
   if (shouldShowPrelaunchLanding(host)) {
     return {
-      title: DEFAULT_TITLE_HE,
-      description: DEFAULT_DESCRIPTION_HE,
+      title: WAITLIST_TITLE_HE,
+      description: WAITLIST_DESCRIPTION_HE,
       alternates: { canonical: SITE_URL },
       openGraph: {
-        title: DEFAULT_TITLE_HE,
-        description: DEFAULT_DESCRIPTION_HE,
+        title: WAITLIST_TITLE_HE,
+        description: WAITLIST_DESCRIPTION_HE,
         url: SITE_URL,
         siteName: 'Fixly',
         locale: 'he_IL',
@@ -30,19 +32,26 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       twitter: {
         card: 'summary_large_image',
-        title: DEFAULT_TITLE_HE,
-        description: DEFAULT_DESCRIPTION_HE,
+        title: WAITLIST_TITLE_HE,
+        description: WAITLIST_DESCRIPTION_HE,
       },
     }
   }
 
   return {
-    title: 'Fixly — תיקונים ואנשי מקצוע',
+    title: DEFAULT_TITLE_HE,
     description: DEFAULT_DESCRIPTION_HE,
-    // fixly.tech stays indexable; preview/localhost sandboxes stay noindex
     robots: isIndexablePublicHost(host)
       ? { index: true, follow: true }
       : { index: false, follow: true },
+    openGraph: {
+      title: DEFAULT_TITLE_HE,
+      description: DEFAULT_DESCRIPTION_HE,
+      url: SITE_URL,
+      siteName: 'Fixly',
+      locale: 'he_IL',
+      type: 'website',
+    },
   }
 }
 

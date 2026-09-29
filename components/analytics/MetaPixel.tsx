@@ -3,6 +3,7 @@
 import Script from 'next/script'
 import { useEffect, useState } from 'react'
 import { GEO_COOKIE_BLOCKED, GEO_COOKIE_NAME } from '@/lib/geo/israel-access'
+import { isAnalyticsHostAllowed } from '@/lib/analytics/allowed-host'
 
 function readGeoCookie(): string | null {
   if (typeof document === 'undefined') return null
@@ -15,14 +16,15 @@ function readGeoCookie(): string | null {
 
 /**
  * Loads Meta (Facebook) Pixel when NEXT_PUBLIC_META_PIXEL_ID is set.
- * Skips geo-blocked (non-Israel) visitors.
+ * Skips geo-blocked, localhost, and Vercel preview hosts.
  */
 export default function MetaPixel() {
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim()
   const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
-    setAllowed(readGeoCookie() !== GEO_COOKIE_BLOCKED)
+    const geoOk = readGeoCookie() !== GEO_COOKIE_BLOCKED
+    setAllowed(geoOk && isAnalyticsHostAllowed())
   }, [])
 
   if (!pixelId || !allowed) return null

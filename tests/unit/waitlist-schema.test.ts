@@ -9,25 +9,26 @@ import {
 } from '@/lib/marketing/utm'
 
 describe('waitlistSchema', () => {
-  it('defaults audience to professional when omitted', () => {
-    const parsed = waitlistSchema.parse({
-      fullName: 'יוני לוי',
-      phone: '0501234567',
-    })
-    assert.equal(parsed.audience, 'professional')
+  it('requires audience — no silent professional default', () => {
+    assert.throws(() =>
+      waitlistSchema.parse({
+        fullName: 'יוני לוי',
+        phone: '0501234567',
+      }),
+    )
   })
 
-  it('accepts customer audience for pre-launch landing', () => {
+  it('accepts customer audience for public landing', () => {
     const parsed = waitlistSchema.parse({
       fullName: 'לקוח לדוגמה',
       phone: '0527654321',
       email: 'user@example.com',
       city: 'תל אביב',
       audience: 'customer',
-      source: 'prelaunch_landing',
+      source: 'waitlist_landing_v5_customer',
     })
     assert.equal(parsed.audience, 'customer')
-    assert.equal(parsed.source, 'prelaunch_landing')
+    assert.equal(parsed.source, 'waitlist_landing_v5_customer')
   })
 
   it('accepts UTM attribution on signup', () => {
@@ -35,14 +36,15 @@ describe('waitlistSchema', () => {
       fullName: 'קמפיין',
       phone: '0509998877',
       audience: 'customer',
-      source: 'prelaunch_landing',
+      source: 'waitlist_landing_v5_customer',
       attribution: {
         utm_source: 'meta',
-        utm_medium: 'cpc',
+        utm_medium: 'paid',
         utm_campaign: 'prelaunch_il',
       },
     })
     assert.equal(parsed.attribution?.utm_source, 'meta')
+    assert.equal(parsed.attribution?.utm_medium, 'paid')
     assert.equal(parsed.attribution?.utm_campaign, 'prelaunch_il')
   })
 

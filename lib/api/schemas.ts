@@ -77,12 +77,13 @@ export const proWaitlistSchema = z.object({
   category: z.string().trim().max(100).optional(),
   city: z.string().trim().max(100).optional(),
   referralCode: z.string().trim().max(50).nullish(),
-  audience: waitlistAudienceSchema.optional().default('professional'),
+  /** Required — never silently default to professional (mislabels customers). */
+  audience: waitlistAudienceSchema,
   source: z.string().trim().max(100).optional(),
   attribution: waitlistAttributionSchema,
 })
 
-/** Alias for the unified pre-launch waitlist API */
+/** Alias for the unified public registration API */
 export const waitlistSchema = proWaitlistSchema
 
 export const proClaimSchema = z.object({

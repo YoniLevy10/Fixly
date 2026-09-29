@@ -7,7 +7,7 @@
 export const prelaunchCopy = {
   brand: 'Fixly',
   eyebrow: 'בקרוב בישראל',
-  badge: 'בקשה אחת במקום עשרות טלפונים',
+  badge: 'קבוצת 10 הראשונים בחודש הקרוב',
   /** Active headline — outcome + urgency without fake scarcity */
   headline: 'יש תקלה בבית?',
   headlineLine2: 'שולחים פעם אחת.',
@@ -19,7 +19,7 @@ export const prelaunchCopy = {
   primaryCta: 'הצטרפו בחינם',
   primaryCtaB: 'שמרו לי מקום',
   secondaryCta: 'איך זה עובד',
-  trustItems: ['בלי כרטיס אשראי', 'שם וטלפון בלבד', 'פתיחה לפי צפיפות באזור'],
+  trustItems: ['בלי כרטיס אשראי', 'שם וטלפון בלבד', 'יעד: 10 נרשמים החודש'],
   categories: ['אינסטלטור', 'חשמלאי', 'מזגנים', 'שיפוצים קטנים', 'הובלות', 'איטום'],
   differentiators: [
     {
@@ -55,8 +55,8 @@ export const prelaunchCopy = {
       text: 'סטטוסים ברורים — מאישור, בדרך, בביצוע ועד סיום.',
     },
   ],
-  midCtaTitle: 'רוצים להיות באזור הראשון שנפתח?',
-  midCtaLead: 'השאירו שם וטלפון — זה לוקח פחות מחצי דקה.',
+  midCtaTitle: 'רוצים להיות בין 10 הראשונים החודש?',
+  midCtaLead: 'שם וטלפון — פחות מחצי דקה. נעדכן כשהאזור נפתח.',
   customerTitle: 'לא צריך לרדוף אחרי בעלי מקצוע',
   customerLead: 'כשהאזור שלכם נפתח — שולחים בקשה אחת ועוקבים עד שהתקלה נסגרת.',
   customerBullets: [
@@ -70,16 +70,16 @@ export const prelaunchCopy = {
   proCta: 'אני בעל/ת מקצוע — הצטרפו',
   waitlistTitle: 'שמרו מקום לפני הפתיחה באזור',
   waitlistLead:
-    'אוספים עכשיו את קבוצת ההשקה. שם וטלפון מספיקים — נעדכן כשיש צפיפות מספקת באזור שלכם.',
+    'אוספים עכשיו את קבוצת 10 הנרשמים הראשונים לחודש. שם וטלפון מספיקים.',
   customerHint: 'ללקוחות — חינם, נפתח לפי עיר',
-  proHint: 'לבעלי מקצוע — עדיפות בפיילוט + 3 לידים ראשונים',
+  proHint: 'לבעלי מקצוע — עדיפות בפיילוט',
   submitCustomer: 'שמרו לי מקום',
   submitPro: 'הצטרפו כבעלי מקצוע',
   successTitle: 'נרשמתם בהצלחה',
   successCustomer: 'נעדכן אתכם ברגע ש-Fixly נפתחת באזור שלכם לפי צפיפות.',
   successPro: 'נעדכן אתכם עם פרטי הצטרפות לבעלי מקצוע כשהפיילוט נפתח.',
-  successShareTitle: 'עזרו לחברים לגלות אותנו',
-  successShareLead: 'שיתוף בוואטסאפ לוקח שנייה — ומקרב את הפתיחה באזור שלכם.',
+  successShareTitle: 'עזרו לנו להגיע ל-10',
+  successShareLead: 'שיתוף בוואטסאפ מקרב את היעד — ומקרב את הפתיחה באזור שלכם.',
   successShareWhatsApp: 'שתפו בוואטסאפ',
   successShareNative: 'שתפו קישור',
   successShareCopied: 'הקישור הועתק',

@@ -3,6 +3,12 @@ import { requireAdminAccess } from '@/lib/admin/require-admin-api'
 import { listProWaitlistEntries } from '@/lib/data/pro-waitlist-store'
 import { isSupabaseEnabled } from '@/lib/data/config'
 import { trackError } from '@/lib/monitoring/track-error'
+import {
+  MONTHLY_SIGNUP_GOAL,
+  getMonthlyGoalWindow,
+  isCountableGoalSignup,
+  summarizeGoalProgress,
+} from '@/lib/growth/monthly-signup-goal'
 
 export const dynamic = 'force-dynamic'
 
@@ -31,6 +37,7 @@ export async function GET() {
     if (!access.ok) return access.response
 
     const { admin } = access
+    const { start, end } = getMonthlyGoalWindow()
 
     const [
       professionals,
@@ -48,6 +55,7 @@ export async function GET() {
       prospectContacted,
       customerWaitlist,
       professionalWaitlist,
+      goalWindowRows,
     ] = await Promise.all([
       admin.from('professionals').select('*', { count: 'exact', head: true }),
       admin.from('requests').select('*', { count: 'exact', head: true }),
@@ -100,6 +108,11 @@ export async function GET() {
         .from('pro_waitlist')
         .select('*', { count: 'exact', head: true })
         .eq('audience', 'professional'),
+      admin
+        .from('pro_waitlist')
+        .select('id, full_name, phone, audience, source, created_at')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString()),
     ])
 
     let waitlistRows = recentWaitlist.data ?? []
@@ -107,13 +120,16 @@ export async function GET() {
     let storage: 'supabase' | 'memory' | 'mixed' = 'supabase'
 
     const memory = mapMemoryWaitlist()
-    // Only surface memory when Supabase is intentionally off (local/demo).
-    // Never mask a real empty Supabase table with process-local leftovers.
     if (!isSupabaseEnabled() && memory.length > 0) {
       waitlistRows = memory
       waitlistCount = memory.length
       storage = 'memory'
     }
+
+    const goalRows = (goalWindowRows.data ?? []).filter(isCountableGoalSignup)
+    const goalCustomers = goalRows.filter((r) => r.audience === 'customer').length
+    const goalPros = goalRows.filter((r) => r.audience === 'professional').length
+    const goalProgress = summarizeGoalProgress(goalRows.length)
 
     return NextResponse.json({
       via: access.via,
@@ -132,6 +148,14 @@ export async function GET() {
         prospects: prospects.count ?? 0,
         prospectsNew: prospectNew.count ?? 0,
         prospectsContacted: prospectContacted.count ?? 0,
+      },
+      signupGoal: {
+        label: MONTHLY_SIGNUP_GOAL.labelHe,
+        start: MONTHLY_SIGNUP_GOAL.startIso,
+        end: MONTHLY_SIGNUP_GOAL.endIso,
+        ...goalProgress,
+        customers: goalCustomers,
+        professionals: goalPros,
       },
       recentWaitlist: waitlistRows,
       recentBilling: recentBilling.data ?? [],

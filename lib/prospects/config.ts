@@ -92,7 +92,8 @@ export const DISCOVERY_FINALIZE_BUFFER_MS = 10_000
 /** Share of query budget reserved for experimental / low-stats queries. */
 export const DISCOVERY_QUERY_EXPLORE_RATIO = 0.15
 
-export const JOIN_URL = 'https://fixly.tech/pro/join'
+export const JOIN_URL =
+  'https://fixly.tech/waitlist?audience=professional'
 
 /** Fit scorer weights (0–100 scale contributions). */
 export const FIT_WEIGHTS = {
