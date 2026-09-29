@@ -1,29 +1,34 @@
 name: assemble-opsbrain-fixly
 on:
-  workflow_dispatch:
   push:
+    branches: [cursor/opsbrain-lead-webhook-369c]
     paths:
-      - '.opsbrain-restore/fixly-service.z64'
-permissions:
-  contents: write
+      - '.opsbrain-restore/**'
+      - '.github/workflows/assemble-opsbrain-fixly.yml'
 jobs:
   assemble:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           ref: cursor/opsbrain-lead-webhook-369c
+          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Decompress and commit service.ts
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import base64, zlib, hashlib, pathlib
-          z = pathlib.Path('.opsbrain-restore/fixly-service.z64').read_text().strip()
-          data = zlib.decompress(base64.b64decode(z))
+          import zlib, hashlib, pathlib
+          parts = sorted(pathlib.Path('.opsbrain-restore').glob('p*.hex'))
+          assert parts, 'no hex parts'
+          hx = ''.join(p.read_text().strip() for p in parts)
+          data = zlib.decompress(bytes.fromhex(hx))
           expect = '0ae696f15480f41f5e85bd1810240c1c1d25793be50846c0b73020688186e78f'
-          assert hashlib.sha256(data).hexdigest() == expect, hashlib.sha256(data).hexdigest()
+          got = hashlib.sha256(data).hexdigest()
+          assert got == expect, got
           pathlib.Path('lib/prospects/service.ts').write_bytes(data)
-          print('wrote', len(data))
+          print('wrote', len(data), got)
           PY
           rm -rf .opsbrain-restore
           rm -f .github/workflows/assemble-opsbrain-fixly.yml
