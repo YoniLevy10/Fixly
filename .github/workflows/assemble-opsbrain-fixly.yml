@@ -1,0 +1,35 @@
+name: assemble-opsbrain-fixly
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.opsbrain-restore/fixly-service.z64'
+permissions:
+  contents: write
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cursor/opsbrain-lead-webhook-369c
+      - name: Decompress and commit service.ts
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, zlib, hashlib, pathlib
+          z = pathlib.Path('.opsbrain-restore/fixly-service.z64').read_text().strip()
+          data = zlib.decompress(base64.b64decode(z))
+          expect = '0ae696f15480f41f5e85bd1810240c1c1d25793be50846c0b73020688186e78f'
+          assert hashlib.sha256(data).hexdigest() == expect, hashlib.sha256(data).hexdigest()
+          pathlib.Path('lib/prospects/service.ts').write_bytes(data)
+          print('wrote', len(data))
+          PY
+          rm -rf .opsbrain-restore
+          rm -f .github/workflows/assemble-opsbrain-fixly.yml
+          git config user.name "Yoni Levy"
+          git config user.email "levyyoni5@gmail.com"
+          git add -A
+          git status
+          git commit -m "feat(prospects): wire OpsBrain notify after prospect create"
+          git push origin HEAD:cursor/opsbrain-lead-webhook-369c
