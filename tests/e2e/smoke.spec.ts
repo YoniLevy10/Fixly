@@ -64,7 +64,9 @@ test.describe('public pages', () => {
     await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.getByLabel(/טלפון/i).fill('0501234567')
     await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
-    await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 })
+    await expect(
+      page.getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
+    ).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText(/נרשמתם בהצלחה/i)).toHaveCount(0)
   })
 
