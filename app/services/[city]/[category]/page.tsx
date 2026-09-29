@@ -8,7 +8,7 @@ import {
   getCategoryBySlug,
   getCityBySlug,
 } from '@/lib/seo/marketplace-pages'
-import { listProfessionals } from '@/lib/data/professionals-service'
+import { listRealProfessionalsForSeo } from '@/lib/data/professionals-service'
 import { routes } from '@/lib/routes'
 import ProListCard from '@/components/professionals/ProListCard'
 import FixlyGuaranteeBanner from '@/components/shared/FixlyGuaranteeBanner'
@@ -32,12 +32,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const catMeta = getCategoryBySlug(category)
   if (!cityMeta || !catMeta) return { title: 'Fixly' }
 
+  const realPros = await listRealProfessionalsForSeo({
+    categorySlug: category,
+    query: cityMeta.query,
+  })
+  const hasRealValue = realPros.length > 0
+
   return {
     title: `${catMeta.nameHe} ב${cityMeta.nameHe} | Fixly`,
-    description: `מצא ${catMeta.nameHe} מומלץ ב${cityMeta.nameHe}. בקשה מהירה, מעקב חי, ביקורות אמיתיות — Fixly.`,
+    description: hasRealValue
+      ? `מצא ${catMeta.nameHe} מומלץ ב${cityMeta.nameHe}. בקשה מהירה ומעקב עד סיום — Fixly.`
+      : `${catMeta.nameHe} ב${cityMeta.nameHe} — Fixly נפתחת לפי צפיפות. הירשמו לעדכון.`,
+    robots: hasRealValue
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     openGraph: {
       title: `${catMeta.nameHe} ב${cityMeta.nameHe}`,
-      description: `אנשי מקצוע מאומתים ב${cityMeta.nameHe}`,
+      description: hasRealValue
+        ? `אנשי מקצוע אמיתיים ב${cityMeta.nameHe}`
+        : `הרשמה ל-${catMeta.nameHe} ב${cityMeta.nameHe}`,
     },
   }
 }
@@ -51,7 +64,7 @@ export default async function ServiceLandingPage({ params }: PageProps) {
     return <main className="p-6">Not found</main>
   }
 
-  const pros = await listProfessionals({
+  const pros = await listRealProfessionalsForSeo({
     categorySlug: category,
     query: cityMeta.query,
   })
@@ -64,33 +77,50 @@ export default async function ServiceLandingPage({ params }: PageProps) {
           {catMeta.nameHe} ב{cityMeta.nameHe}
         </h1>
         <p className="text-muted-foreground mt-2">
-          {pros.length} אנשי מקצוע זמינים • בקשה חינם • מעקב חי
+          {pros.length > 0
+            ? `${pros.length} אנשי מקצוע זמינים • בקשה חינם • מעקב חי`
+            : 'נפתח לפי צפיפות אמיתית באזור — בלי פרופילי דמו'}
         </p>
       </div>
 
-      <FixlyGuaranteeBanner compact />
-
-      <div className="space-y-3">
-        {pros.slice(0, 12).map((pro) => (
-          <ProListCard key={pro.id} professional={pro} />
-        ))}
-      </div>
-
-      {pros.length === 0 && (
-        <p className="text-center text-muted-foreground py-8">
-          עדיין אין מקצוענים —{' '}
-          <Link href={routes.proJoin} className="text-primary font-bold">
-            הצטרף כאיש מקצוע
+      {pros.length > 0 ? (
+        <>
+          <FixlyGuaranteeBanner compact />
+          <div className="space-y-3">
+            {pros.slice(0, 12).map((pro) => (
+              <ProListCard key={pro.id} professional={pro} />
+            ))}
+          </div>
+          <Link
+            href={routes.newRequest}
+            className="block text-center bg-primary text-white py-3 rounded-xl font-bold"
+          >
+            שלח בקשה עכשיו
           </Link>
-        </p>
+        </>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-4">
+          <p className="text-muted-foreground">
+            עדיין אין בעלי מקצוע אמיתיים מאומתים ב{cityMeta.nameHe} לתחום הזה.
+            אנחנו לא מציגים פרופילי דמו בדפי חיפוש.
+          </p>
+          <Link
+            href={`${routes.waitlist}?audience=customer`}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white"
+          >
+            הירשמו לעדכון כשלקוחות נפתחים באזור
+          </Link>
+          <p className="text-xs text-muted-foreground">
+            בעל/ת מקצוע?{' '}
+            <Link
+              href={`${routes.waitlist}?audience=professional`}
+              className="font-bold text-primary underline"
+            >
+              הצטרפו לרשימה
+            </Link>
+          </p>
+        </div>
       )}
-
-      <Link
-        href={routes.newRequest}
-        className="block text-center bg-primary text-white py-3 rounded-xl font-bold"
-      >
-        שלח בקשה עכשיו
-      </Link>
     </main>
   )
 }

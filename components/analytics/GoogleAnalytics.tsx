@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { useEffect, useState } from 'react'
 import { GEO_COOKIE_BLOCKED, GEO_COOKIE_NAME } from '@/lib/geo/israel-access'
 import { featureFlags } from '@/lib/feature-flags'
+import { isAnalyticsHostAllowed } from '@/lib/analytics/allowed-host'
 
 /** Production GA4 property — public client ID (safe to ship in the browser). */
 export const GA_MEASUREMENT_ID =
@@ -20,14 +21,14 @@ function readGeoCookie(): string | null {
 
 /**
  * Loads Google Analytics 4 when analytics flag is on.
- * Skips visitors blocked by the Israel-only geo gate so foreign traffic
- * does not pollute marketplace funnel metrics.
+ * Skips: geo-blocked visitors, localhost, and Vercel preview hosts.
  */
 export default function GoogleAnalytics() {
   const [allowed, setAllowed] = useState(false)
 
   useEffect(() => {
-    setAllowed(readGeoCookie() !== GEO_COOKIE_BLOCKED)
+    const geoOk = readGeoCookie() !== GEO_COOKIE_BLOCKED
+    setAllowed(geoOk && isAnalyticsHostAllowed())
   }, [])
 
   if (!featureFlags.analytics || !GA_MEASUREMENT_ID || !allowed) return null
@@ -43,7 +44,10 @@ export default function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}', { send_page_view: true });
+          gtag('config', '${GA_MEASUREMENT_ID}', {
+            send_page_view: true,
+            cookie_flags: 'SameSite=None;Secure'
+          });
         `}
       </Script>
     </>

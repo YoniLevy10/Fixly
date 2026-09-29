@@ -111,7 +111,7 @@ export default function RootLayout({
     potentialAction: {
       '@type': 'JoinAction',
       target: `${SITE_URL}/waitlist`,
-      name: 'הרשמה מוקדמת ל-Fixly',
+      name: 'הרשמה ל-Fixly',
     },
   }
 

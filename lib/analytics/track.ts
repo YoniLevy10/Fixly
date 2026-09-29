@@ -1,4 +1,5 @@
 import { featureFlags } from '@/lib/feature-flags'
+import { isAnalyticsHostAllowed } from '@/lib/analytics/allowed-host'
 
 export type AnalyticsEvent =
   | 'request_created'
@@ -36,17 +37,25 @@ declare global {
 }
 
 export function track(event: AnalyticsEvent, props?: Record<string, string | number | boolean>) {
-  if (featureFlags.analytics && typeof window !== 'undefined' && 'gtag' in window) {
+  if (typeof window === 'undefined') return
+
+  // Never emit from localhost / Vercel preview even if a Script somehow loaded.
+  if (!isAnalyticsHostAllowed()) {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('[analytics:host-blocked]', event, props)
+    }
+    return
+  }
+
+  if (featureFlags.analytics && 'gtag' in window) {
     window.gtag?.('event', event, props)
   }
 
-  // Meta Pixel fires when loaded — independent of GA flag (needed for paid ads).
-  if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+  if (typeof window.fbq === 'function') {
     const metaEvent = META_STANDARD_EVENTS[event]
     if (metaEvent) {
       window.fbq('track', metaEvent, props ?? {})
     } else if (event.startsWith('waitlist_')) {
-      // Funnel customs only — avoid flooding Events Manager with scroll/etc.
       window.fbq('trackCustom', event, props ?? {})
     }
   }

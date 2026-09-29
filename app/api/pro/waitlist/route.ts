@@ -4,17 +4,24 @@ import { parseJsonBody } from '@/lib/api/parse-body'
 import { proWaitlistSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
 import { saveWaitlistEntry } from '@/lib/waitlist/save-waitlist-entry'
-import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 
+/**
+ * Legacy endpoint for outreach tools. Prefer POST /api/waitlist with
+ * audience=professional. Still requires explicit audience in body (or we force it).
+ */
 export async function POST(request: Request) {
   const limited = await enforceRateLimit(request, 'pro-waitlist', 10, 60_000)
   if (limited) return limited
 
   try {
-    const parsed = await parseJsonBody(request, proWaitlistSchema)
+    const parsed = await parseJsonBody(
+      request,
+      proWaitlistSchema.extend({
+        audience: proWaitlistSchema.shape.audience.optional(),
+      }),
+    )
     if (!parsed.success) return parsed.response
     const body = parsed.data
-    const audience = (body.audience ?? 'professional') as WaitlistAudience
 
     const saved = await saveWaitlistEntry(
       {
@@ -24,8 +31,9 @@ export async function POST(request: Request) {
         category: body.category,
         city: body.city,
         referralCode: body.referralCode ?? undefined,
-        audience,
-        source: body.source ?? 'pro_join',
+        audience: 'professional',
+        source: body.source ?? 'pro_join_api',
+        attribution: body.attribution ?? null,
       },
       'POST /api/pro/waitlist'
     )
@@ -34,7 +42,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: saved.error }, { status: 503 })
     }
 
-    return NextResponse.json({ ok: true, id: saved.id }, { status: 201 })
+    return NextResponse.json(
+      { ok: true, audience: 'professional', id: saved.id },
+      { status: 201 },
+    )
   } catch (error) {
     trackError(error, { route: 'POST /api/pro/waitlist' })
     return NextResponse.json({ error: 'שגיאה בשליחת הטופס' }, { status: 500 })

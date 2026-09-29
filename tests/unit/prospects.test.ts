@@ -115,7 +115,10 @@ describe('recruit message', () => {
     assert.match(msg, /דני/)
     assert.match(msg, /אינסטלטור/)
     assert.match(msg, /ירושלים/)
-    assert.match(msg, new RegExp(JOIN_URL.replace(/\./g, '\\.')))
+    assert.match(
+      msg,
+      new RegExp(JOIN_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    )
     assert.equal(msg.includes('בקשות פעילות'), false)
   })
 
