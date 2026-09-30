@@ -30,9 +30,15 @@ export default function LegalPageLayout({
       <article className="prose-legal space-y-4 text-sm text-foreground leading-relaxed">
         {children}
       </article>
-      <p className="mt-10 text-center">
+      <p className="mt-10 text-center space-x-3 space-x-reverse">
         <Link href={routes.home} className="text-primary font-medium text-sm">
           Fixly
+        </Link>
+        <Link href={routes.waitlist} className="text-primary font-medium text-sm">
+          הרשמה
+        </Link>
+        <Link href={routes.about} className="text-primary font-medium text-sm">
+          אודות
         </Link>
       </p>
     </div>

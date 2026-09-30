@@ -53,6 +53,9 @@ export const he: MessageTree = {
     lessCategories: 'פחות קטגוריות',
     featuredPros: 'אנשי מקצוע מומלצים',
     showAll: 'הצג הכל',
+    waitlistCtaTitle: 'רוצים עדכון כשהאזור נפתח?',
+    waitlistCtaLead: 'הצטרפו לרשימת Fixly — לקוחות ובעלי מקצוע',
+    waitlistCta: 'להרשמה',
   },
   professionals: {
     title: 'חיפוש אנשי מקצוע',
@@ -321,6 +324,17 @@ export const he: MessageTree = {
     repeatRequest: 'שלח שוב לאותו מקצוע',
     loadMore: 'טען עוד',
     about: 'אודות',
+    aboutLead:
+      'Fixly מחברת לקוחות ובעלי מקצוע מאומתים בישראל — בקשה אחת, התאמה לפי תחום ואזור, ומעקב עד שהעבודה נסגרת.',
+    aboutHowTitle: 'איך זה עובד',
+    aboutHow1: 'שולחים בקשה אחת במקום עשרות טלפונים',
+    aboutHow2: 'מתאימים בעל מקצוע לפי תחום, אזור, זמינות וביצועים',
+    aboutHow3: 'עוקבים עד שהתיקון בבית נסגר',
+    aboutIntentTitle: 'תיקונים ובעל מקצוע עד הבית',
+    aboutIntentBody:
+      'אינסטלטור, חשמלאי, מיזוג ועוד — Fixly נפתחת עיר־עיר לפי צפיפות אמיתית, בלי פרופילי דמו ובלי אינדקס ריק.',
+    aboutWaitlistCta: 'הצטרפו לרשימת ההמתנה',
+    aboutProCta: 'אני בעל/ת מקצוע',
     version: 'גרסה',
     proJoin: 'הצטרף כאיש מקצוע',
     proJoinTitle: 'הצטרפות ל-Fixly',

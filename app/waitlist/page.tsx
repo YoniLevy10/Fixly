@@ -2,18 +2,29 @@ import type { Metadata } from 'next'
 import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
 import { prelaunchCopy } from '@/lib/marketing/prelaunch-copy'
 import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
-import { SITE_URL } from '@/lib/site-config'
-
-const WAITLIST_DESCRIPTION =
-  'הרשמה אחת ל-Fixly — ללקוחות ולבעלי מקצוע. שם וטלפון בלבד, שמירה מאובטחת, ועדכון כשהאזור נפתח.'
+import {
+  SITE_URL,
+  WAITLIST_DESCRIPTION_HE,
+  WAITLIST_TITLE_HE,
+} from '@/lib/site-config'
 
 export const metadata: Metadata = {
-  title: 'הרשמה | Fixly',
-  description: WAITLIST_DESCRIPTION,
+  title: { absolute: WAITLIST_TITLE_HE },
+  description: WAITLIST_DESCRIPTION_HE,
+  keywords: [
+    'Fixly',
+    'הרשמה ל-Fixly',
+    'בעל מקצוע עד הבית',
+    'הזמנת בעל מקצוע',
+    'תיקונים בבית',
+    'פלטפורמה לבעלי מקצוע',
+    'אינסטלטור',
+    'חשמלאי',
+  ],
   alternates: { canonical: `${SITE_URL}/waitlist` },
   openGraph: {
-    title: 'הרשמה | Fixly — לקוחות ובעלי מקצוע',
-    description: WAITLIST_DESCRIPTION,
+    title: WAITLIST_TITLE_HE,
+    description: WAITLIST_DESCRIPTION_HE,
     url: `${SITE_URL}/waitlist`,
     siteName: 'Fixly',
     locale: 'he_IL',

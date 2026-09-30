@@ -148,6 +148,26 @@ export default function HomeScreen() {
 
       <DemoPlatformStats />
 
+      <div className="px-3 lg:px-8 mb-4 lg:mb-6">
+        <Link
+          href={`${routes.waitlist}?utm_source=fixly&utm_medium=organic&utm_campaign=home_cta`}
+          className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-primary/15 bg-primary/5 px-4 py-3 active:scale-[0.99] transition-transform"
+          data-testid="home-waitlist-cta"
+        >
+          <div className="min-w-0 text-start">
+            <p className="text-sm font-black text-foreground leading-tight">
+              {t('home.waitlistCtaTitle')}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+              {t('home.waitlistCtaLead')}
+            </p>
+          </div>
+          <span className="flex-shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white">
+            {t('home.waitlistCta')}
+          </span>
+        </Link>
+      </div>
+
       <div className="px-3 lg:px-8">
         {featureFlags.quickRequest && (
           <div className="flex gap-2 mb-4 animate-ios-slide-up">
