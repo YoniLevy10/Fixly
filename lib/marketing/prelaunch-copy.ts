@@ -17,7 +17,7 @@ export const prelaunchCopy = {
   primaryCta: 'הצטרפו בחינם',
   primaryCtaB: 'שמרו לי מקום',
   secondaryCta: 'איך זה עובד',
-  trustItems: ['בחינם', 'בלי כרטיס אשראי', 'שם וטלפון'],
+  trustItems: ['בחינם', 'בלי כרטיס אשראי', 'בלי עמלות', 'שם וטלפון'],
   categoriesLabel: 'התחומים שנפתחים',
   categories: [
     { label: 'אינסטלציה', profession: 'אינסטלטורים' },

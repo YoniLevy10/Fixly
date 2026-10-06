@@ -4,20 +4,18 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
-  BadgeCheck,
   Check,
   CheckCircle2,
   ChevronDown,
   Clock3,
   Home,
   Lock,
-  MapPin,
+  Percent,
   Search,
   Share2,
   ShieldCheck,
   Sparkles,
   Users,
-  Wrench,
   X,
   Zap,
 } from 'lucide-react'
@@ -231,26 +229,6 @@ export default function PrelaunchLanding({
     }
   }
 
-  const selectProfession = (profession: string) => {
-    markSignupStarted()
-    track('waitlist_cta_click', {
-      placement: 'category_chip',
-      category: profession,
-      variant: VARIANT,
-    })
-    setForm((current) => {
-      if (current.categories.includes(profession)) return current
-      if (current.categories.length >= WAITLIST_MAX_PROFESSIONS) return current
-      return {
-        ...current,
-        categories: [...current.categories, profession].sort((a, b) =>
-          a.localeCompare(b, 'he'),
-        ),
-      }
-    })
-    document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
-
   const formProps: WaitlistFormProps = {
     form,
     loading,
@@ -328,7 +306,7 @@ export default function PrelaunchLanding({
             </p>
             <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate-500 sm:mt-5">
               {copy.trustItems.map((item, i) => {
-                const Icon = [ShieldCheck, Clock3, Users][i] ?? ShieldCheck
+                const Icon = [ShieldCheck, Clock3, Percent, Users][i] ?? ShieldCheck
                 return (
                   <li key={item} className="inline-flex items-center gap-1.5">
                     <Icon className="h-4 w-4 text-[#123563]" aria-hidden />
@@ -356,34 +334,6 @@ export default function PrelaunchLanding({
           </div>
         </section>
 
-        {/* Desire: product flow demo (not competing with hero CTA) */}
-        <section className="border-t border-[#123563]/8 bg-white/60 px-5 py-12 sm:px-8 sm:py-16" aria-label="איך זה נראה">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <h2 className="text-2xl font-black text-[#123563] sm:text-3xl">{copy.previewTitle}</h2>
-              <p className="mt-3 max-w-md text-base font-medium leading-7 text-slate-600">
-                {copy.previewLead}
-              </p>
-            </div>
-            <HeroFlowMock />
-          </div>
-        </section>
-
-        {/* Interest: what Fixly is not */}
-        <section className="border-y border-[#123563]/10 bg-[#10233f] text-white" aria-label="למה Fixly">
-          <div className="mx-auto grid max-w-6xl gap-6 px-5 py-8 sm:grid-cols-3 sm:px-8">
-            {copy.differentiators.map((item) => (
-              <div key={item.num} className="flex gap-4">
-                <span className="text-sm font-black text-[#F59E0B]">{item.num}</span>
-                <div>
-                  <p className="font-black">{item.title}</p>
-                  <p className="mt-1 text-sm font-medium leading-6 text-white/90">{item.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section id="how" className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
           <h2 className="text-2xl font-black text-[#123563] sm:text-4xl">{copy.howTitle}</h2>
           <p className="mt-3 max-w-2xl text-base font-medium text-slate-600 sm:text-lg">{copy.howLead}</p>
@@ -406,32 +356,6 @@ export default function PrelaunchLanding({
               )
             })}
           </ol>
-        </section>
-
-        {/* Search intent — actionable category chips */}
-        <section className="mx-auto max-w-6xl px-5 pb-6 sm:px-8" aria-label="תחומים">
-          <p className="mb-3 text-sm font-bold text-slate-500">{copy.categoriesLabel}</p>
-          <div className="flex flex-wrap gap-2">
-            {copy.categories.map((category) => {
-              const selected = form.categories.includes(category.profession)
-              return (
-                <button
-                  key={category.profession}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => selectProfession(category.profession)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition ${
-                    selected
-                      ? 'border-[#123563] bg-[#123563] text-white'
-                      : 'border-[#123563]/12 bg-white text-[#40546e] hover:border-[#123563]/35 hover:text-[#123563]'
-                  }`}
-                >
-                  {selected ? <Check className="h-3.5 w-3.5" aria-hidden /> : null}
-                  {category.label}
-                </button>
-              )
-            })}
-          </div>
         </section>
 
         {/* Desire: professionals */}
@@ -887,113 +811,5 @@ function Field({
         className="w-full rounded-xl border border-[#123563]/15 bg-white px-3 py-2.5 text-base font-medium text-[#0f2342] outline-none transition placeholder:text-slate-400 focus:border-[#123563] focus:ring-4 focus:ring-[#123563]/15"
       />
     </label>
-  )
-}
-
-function HeroFlowMock() {
-  return (
-    <div
-      className="relative mx-auto w-full max-w-md py-2 sm:py-0 lg:max-w-none"
-      aria-label="הדגמה: עבודה שנכנסת לבעל מקצוע"
-    >
-      <div className="absolute inset-x-8 top-8 hidden h-[75%] rounded-[2.5rem] bg-[#123563]/12 blur-3xl sm:block" />
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/80 bg-white p-4 shadow-[0_20px_50px_rgba(18,53,99,0.12)] sm:rounded-[1.75rem] sm:p-6 sm:shadow-[0_28px_70px_rgba(18,53,99,0.16)]">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 sm:pb-4">
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-slate-400">עבודה לדוגמה</p>
-            <p dir="ltr" className="mt-1 text-base font-black text-[#123563] sm:text-lg">
-              Fixly<span className="text-[#F59E0B]">.</span>
-            </p>
-          </div>
-          <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
-            עבודה חדשה
-          </span>
-        </div>
-
-        <div className="mt-4 rounded-2xl bg-[#f5f8fb] p-3.5 sm:mt-5 sm:p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-slate-400">נכנסה אליכם</p>
-              <p className="mt-1 text-base font-black leading-snug text-[#10233f] sm:text-lg">
-                אינסטלציה · ירושלים
-              </p>
-            </div>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#123563] shadow-sm sm:h-11 sm:w-11">
-              <Wrench className="h-5 w-5" aria-hidden />
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-2 text-xs font-bold text-slate-500">
-            <MapPin className="h-4 w-4 shrink-0 text-[#F59E0B]" aria-hidden />
-            סתימה בכיור · היום
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
-          <StatusRow done title="העבודה נכנסה" subtitle="בתחום ובאזור שלכם" />
-          <StatusRow done title="שובצתם" subtitle="אתם ההתאמה לעבודה הזו" />
-          <StatusRow active title="בדרך לסגירה" subtitle="הסטטוס מתעדכן עד הסוף" />
-        </div>
-
-        <div className="mt-5 rounded-2xl bg-[#10233f] p-3.5 text-white sm:mt-6 sm:p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 sm:h-11 sm:w-11">
-                <BadgeCheck className="h-5 w-5 text-[#ffd07a]" aria-hidden />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white/85">העבודה אצלכם</p>
-                <p className="mt-0.5 truncate text-sm font-black">אינסטלציה · ירושלים</p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/80">
-              פתוחה
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function StatusRow({
-  done,
-  active,
-  title,
-  subtitle,
-}: {
-  done?: boolean
-  active?: boolean
-  title: string
-  subtitle: string
-}) {
-  return (
-    <div className="grid grid-cols-[28px_1fr] gap-3">
-      <div className="relative flex justify-center">
-        <div
-          className={`z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 ${
-            done
-              ? 'border-emerald-500 bg-emerald-500 text-white'
-              : active
-                ? 'border-[#F59E0B] bg-[#fff7e8] text-[#F59E0B]'
-                : 'border-slate-200 bg-white text-slate-300'
-          }`}
-        >
-          {done ? (
-            <CheckCircle2 className="h-4 w-4" aria-hidden />
-          ) : (
-            <span className="h-2 w-2 rounded-full bg-current" />
-          )}
-        </div>
-      </div>
-      <div>
-        <p className="text-sm font-black text-[#10233f]">{title}</p>
-        <p className="mt-0.5 text-xs font-medium text-slate-500">{subtitle}</p>
-        {active ? (
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#fff1cf]">
-            <div className="prelaunch-progress h-full rounded-full bg-[#F59E0B]" />
-          </div>
-        ) : null}
-      </div>
-    </div>
   )
 }
