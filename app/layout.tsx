@@ -137,6 +137,13 @@ export default function RootLayout({
             ].join(''),
           }}
         />
+        {/* Safety: never leave public pages stuck under the boot splash if auth hangs. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'setTimeout(function(){try{document.documentElement.classList.remove("fixly-booting");var n=document.querySelectorAll(".fixly-app-splash");for(var i=0;i<n.length;i++)n[i].remove();}catch(e){}},3000);',
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -70,17 +70,33 @@ export const waitlistAttributionSchema = z
   })
   .optional()
 
-export const proWaitlistSchema = z.object({
+export const proWaitlistFieldsSchema = z.object({
   fullName: z.string().trim().min(2).max(200),
   phone: z.string().trim().min(7).max(30),
   email: z.union([z.string().trim().email().max(200), z.literal('')]).optional(),
-  category: z.string().trim().max(100).optional(),
+  /** Legacy single free-text / joined multi-select string (stored on pro_waitlist.category). */
+  category: z.string().trim().max(500).optional(),
+  /** Preferred: multi-select Midrag-style professions (joined server-side). */
+  categories: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
   city: z.string().trim().max(100).optional(),
   referralCode: z.string().trim().max(50).nullish(),
   /** Required — never silently default to professional (mislabels customers). */
   audience: waitlistAudienceSchema,
   source: z.string().trim().max(100).optional(),
   attribution: waitlistAttributionSchema,
+})
+
+export const proWaitlistSchema = proWaitlistFieldsSchema.superRefine((data, ctx) => {
+  if (data.audience !== 'professional') return
+  const hasJoined = Boolean(data.category?.trim())
+  const hasMulti = Boolean(data.categories?.length)
+  if (!hasJoined && !hasMulti) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'בחרו לפחות תחום מקצוע אחד',
+      path: ['categories'],
+    })
+  }
 })
 
 /** Alias for the unified public registration API */

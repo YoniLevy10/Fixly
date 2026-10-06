@@ -31,6 +31,27 @@ describe('waitlistSchema', () => {
     assert.equal(parsed.source, 'waitlist_landing_v5_customer')
   })
 
+  it('requires at least one profession for professionals', () => {
+    assert.throws(() =>
+      waitlistSchema.parse({
+        fullName: 'בעל מקצוע',
+        phone: '0501112233',
+        audience: 'professional',
+      }),
+    )
+  })
+
+  it('accepts multi-select categories for professionals', () => {
+    const parsed = waitlistSchema.parse({
+      fullName: 'בעל מקצוע',
+      phone: '0501112233',
+      audience: 'professional',
+      categories: ['חשמלאים', 'טכנאי מזגנים'],
+      source: 'waitlist_landing_v5_professional',
+    })
+    assert.deepEqual(parsed.categories, ['חשמלאים', 'טכנאי מזגנים'])
+  })
+
   it('accepts UTM attribution on signup', () => {
     const parsed = waitlistSchema.parse({
       fullName: 'קמפיין',
