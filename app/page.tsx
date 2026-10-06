@@ -57,8 +57,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const host = requestHostFromHeaders(await headers())
+  // Recruitment / waitlist-first: marketing hosts always show the landing.
+  // Product UI stays on preview / localhost / PRODUCT_HOST (see shouldShowPrelaunchLanding).
   if (shouldShowPrelaunchLanding(host)) {
-    return <PrelaunchLanding />
+    return <PrelaunchLanding initialAudience="professional" />
   }
   return <HomeScreen />
 }

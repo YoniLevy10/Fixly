@@ -79,6 +79,13 @@ describe('site-hosts', () => {
     assert.equal(shouldShowPrelaunchLanding('fixly.vercel.app'), false)
   })
 
+  it('defaults to waitlist on marketing hosts when prelaunch env is unset', () => {
+    process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
+    delete process.env.NEXT_PUBLIC_FF_PRELAUNCH
+    assert.equal(shouldShowPrelaunchLanding('fixly.tech'), true)
+    assert.equal(shouldShowPrelaunchLanding('localhost'), false)
+  })
+
   it('respects NEXT_PUBLIC_PRODUCT_HOST override', () => {
     process.env.NEXT_PUBLIC_FF_DEMO_KILL = 'true'
     process.env.NEXT_PUBLIC_FF_PRELAUNCH = 'true'

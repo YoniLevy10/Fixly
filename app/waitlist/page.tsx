@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import PrelaunchLanding from '@/components/marketing/PrelaunchLanding'
 import { prelaunchCopy } from '@/lib/marketing/prelaunch-copy'
-import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 import {
   SITE_URL,
   WAITLIST_DESCRIPTION_HE,
@@ -32,15 +31,7 @@ export const metadata: Metadata = {
   },
 }
 
-type PageProps = {
-  searchParams: Promise<{ audience?: string }>
-}
-
-export default async function WaitlistPage({ searchParams }: PageProps) {
-  const sp = await searchParams
-  const initialAudience: WaitlistAudience =
-    sp.audience === 'professional' ? 'professional' : 'customer'
-
+export default async function WaitlistPage() {
   const faqLd = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -60,7 +51,7 @@ export default async function WaitlistPage({ searchParams }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
       />
-      <PrelaunchLanding initialAudience={initialAudience} />
+      <PrelaunchLanding initialAudience="professional" />
     </>
   )
 }
