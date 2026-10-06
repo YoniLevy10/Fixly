@@ -25,6 +25,12 @@ async function handleWaitlist(request: Request, route: string) {
     const parsed = await parseJsonBody(request, waitlistSchema)
     if (!parsed.success) return parsed.response
     const body = parsed.data
+    if (body.audience !== 'professional') {
+      return NextResponse.json(
+        { error: 'כרגע ההרשמה פתוחה לבעלי מקצוע בלבד' },
+        { status: 400 },
+      )
+    }
     const attribution = compactAttribution(body.attribution)
     const category =
       joinWaitlistProfessions(body.categories) ??
@@ -39,7 +45,7 @@ async function handleWaitlist(request: Request, route: string) {
         category,
         city: body.city,
         referralCode: body.referralCode ?? undefined,
-        audience: body.audience,
+        audience: 'professional',
         source: body.source ?? 'waitlist_landing',
         attribution,
       },
