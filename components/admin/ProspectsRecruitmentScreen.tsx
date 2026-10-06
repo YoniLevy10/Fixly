@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Sparkles } from 'lucide-react'
+import SuperadminChrome from '@/components/admin/SuperadminChrome'
 import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import Input from '@/components/ui/Input'
@@ -712,39 +714,43 @@ export default function ProspectsRecruitmentScreen() {
     (target?.categorySlugs.length ?? 10) * (target?.perCategory ?? 10)
 
   return (
-    <main
-      className="p-3 sm:p-4 md:p-6 pb-28 space-y-5 max-w-6xl mx-auto overflow-x-hidden"
-      dir="rtl"
+    <SuperadminChrome
+      cta={
+        <Link
+          href="/superadmin/sms"
+          className="inline-flex min-h-10 items-center rounded-2xl bg-[#123563] px-3.5 text-sm font-black text-white shadow-md shadow-[#123563]/25 transition hover:-translate-y-0.5 hover:bg-[#10233f] sm:px-4"
+        >
+          <span className="sm:hidden">שליחת SMS</span>
+          <span className="hidden sm:inline">כתיבת הודעה ושליחת SMS</span>
+        </Link>
+      }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="min-w-0">
-          <Link href="/admin" className="text-sm text-muted-foreground hover:underline">
-            ← Operations
-          </Link>
-          <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
-          <Link href="/superadmin/sms" className="inline-flex mt-3 rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-bold">
-            כתיבת הודעה ושליחת SMS לכל אנשי המקצוע
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1 break-words">
+          <p className="mb-2 inline-flex items-center gap-2 text-xs font-extrabold text-[#123563] sm:text-sm">
+            <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
+            מנוע גיוס
+          </p>
+          <h1 className="max-w-xl text-[clamp(1.7rem,4vw,2.6rem)] font-extrabold leading-tight text-[#1a2f4d]">
             גיוס אנשי מקצוע
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 break-words">
+          <p className="mt-2 max-w-lg text-sm font-medium leading-6 text-slate-600 sm:text-base">
             גילוי חינמי בלבד (OSM + מאגר מדבירים) · יעד {targetTotal} בירושלים
           </p>
           {!authLoading && (
-            <p className="text-xs mt-2 break-all" dir="ltr">
+            <p className="mt-3 inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-slate-500">
               {user.isAnonymous || !user.email || user.email === 'אורח'
-                ? 'לא מחובר עם Google — לך ל־/profile והתחבר'
+                ? 'לא מחובר עם Google'
                 : `מחובר כ־${user.email}`}
             </p>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <button
             type="button"
             onClick={runDiscovery}
             disabled={discovering}
-            className="w-full rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-bold disabled:opacity-50 relative overflow-hidden"
+            className="relative w-full overflow-hidden rounded-2xl bg-[#123563] px-4 py-3 text-sm font-black text-white shadow-md shadow-[#123563]/25 transition hover:-translate-y-0.5 hover:bg-[#10233f] disabled:translate-y-0 disabled:opacity-50"
             aria-live="polite"
           >
             {discovering ? (
@@ -772,7 +778,7 @@ export default function ProspectsRecruitmentScreen() {
             type="button"
             onClick={unlockDiscovery}
             disabled={discovering}
-            className="w-full rounded-xl border border-rose-500 text-rose-800 px-4 py-2.5 text-sm font-semibold disabled:opacity-40"
+            className="w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-800 disabled:opacity-40"
             title="משחרר ריצת גילוי שנתקעה אחרי timeout של השרת"
           >
             שחרר נעילה
@@ -780,21 +786,12 @@ export default function ProspectsRecruitmentScreen() {
           <button
             type="button"
             onClick={exportCsv}
-            className="w-full rounded-xl border px-4 py-2.5 text-sm font-semibold"
+            className="w-full rounded-2xl border border-[#123563]/12 bg-white px-4 py-3 text-sm font-bold text-[#123563]"
           >
             ייצוא CSV
           </button>
-          <button
-            type="button"
-            onClick={rejectCompanyLike}
-            disabled={companyLikeOnPage.length === 0}
-            className="w-full rounded-xl border border-amber-600 text-amber-900 px-4 py-2.5 text-sm font-semibold disabled:opacity-40 sm:col-span-3"
-            title="דוחה לידים בעמוד הנוכחי שנראים כמו חברה ולא אדם פרטי"
-          >
-            דחה חברות ({companyLikeOnPage.length})
-          </button>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <label className="flex items-start gap-2 text-xs text-muted-foreground leading-snug">
             <input
               type="checkbox"
@@ -807,13 +804,22 @@ export default function ProspectsRecruitmentScreen() {
           <button
             type="button"
             onClick={() => setFitClass('needs_review')}
-            className="rounded-xl border border-sky-600 text-sky-900 px-4 py-2 text-sm font-semibold whitespace-nowrap"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-[#123563]/15 bg-white px-4 py-2 text-sm font-bold text-[#123563]"
           >
             תור בדיקה (
             {counters?.needsReviewCount ??
               counters?.byFitClass?.needs_review ??
               0}
             )
+          </button>
+          <button
+            type="button"
+            onClick={rejectCompanyLike}
+            disabled={companyLikeOnPage.length === 0}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-4 py-2 text-sm font-bold text-[#9a3412] disabled:opacity-40"
+            title="דוחה לידים בעמוד הנוכחי שנראים כמו חברה ולא אדם פרטי"
+          >
+            דחה חברות ({companyLikeOnPage.length})
           </button>
         </div>
       </div>
@@ -960,16 +966,16 @@ export default function ProspectsRecruitmentScreen() {
       )}
 
       {counters && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
-            <p className="text-sm text-muted-foreground">סה״כ לידים</p>
-            <p className="text-2xl font-extrabold">{counters.total}</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <Card className="bg-white/90">
+            <p className="text-xs font-black text-[#F59E0B]">סה״כ לידים</p>
+            <p className="mt-1 text-3xl font-black tabular-nums text-[#123563]">{counters.total}</p>
           </Card>
-          <Card>
-            <p className="text-sm text-muted-foreground">
+          <Card className="bg-white/90">
+            <p className="text-xs font-black text-[#F59E0B]">
               עברו אימות ב{target?.city}
             </p>
-            <p className="text-2xl font-extrabold">
+            <p className="mt-1 text-3xl font-black tabular-nums text-[#123563]">
               {target?.verifiedCount ?? 0}
               <span className="text-base font-medium text-muted-foreground">
                 /{(target?.categorySlugs.length ?? 10) * (target?.perCategory ?? 10)}
@@ -980,9 +986,9 @@ export default function ProspectsRecruitmentScreen() {
             </p>
           </Card>
           {PROSPECT_STATUSES.slice(0, 4).map((s) => (
-            <Card key={s}>
-              <p className="text-sm text-muted-foreground">{STATUS_LABELS[s]}</p>
-              <p className="text-2xl font-extrabold">{counters.byStatus[s] ?? 0}</p>
+            <Card key={s} className="bg-white/90">
+              <p className="text-xs font-bold text-slate-500">{STATUS_LABELS[s]}</p>
+              <p className="mt-1 text-3xl font-black tabular-nums text-[#123563]">{counters.byStatus[s] ?? 0}</p>
             </Card>
           ))}
         </div>
@@ -995,7 +1001,7 @@ export default function ProspectsRecruitmentScreen() {
             {counters.byCategory.map((c) => (
               <span
                 key={c.categoryId ?? c.name}
-                className="rounded-full border px-3 py-1"
+                className="rounded-full border border-[#123563]/12 bg-white px-3.5 py-1.5 text-xs font-bold text-[#40546e]"
               >
                 {c.name}: {c.count}
               </span>
@@ -1004,7 +1010,7 @@ export default function ProspectsRecruitmentScreen() {
         </Card>
       )}
 
-      <div className="rounded-2xl border border-border/70 bg-white p-2.5 space-y-2">
+      <div className="apple-glass-strong space-y-2 rounded-[var(--radius-xl)] p-3 sm:p-4">
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -1013,7 +1019,7 @@ export default function ProspectsRecruitmentScreen() {
         />
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
           <select
-            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            className="h-10 w-full rounded-xl border border-[#123563]/12 bg-white px-2 text-xs font-medium text-[#10233f]"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             aria-label="סטטוס"
@@ -1026,7 +1032,7 @@ export default function ProspectsRecruitmentScreen() {
             ))}
           </select>
           <select
-            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            className="h-10 w-full rounded-xl border border-[#123563]/12 bg-white px-2 text-xs font-medium text-[#10233f]"
             value={fitClass}
             onChange={(e) => setFitClass(e.target.value)}
             aria-label="התאמה"
@@ -1039,7 +1045,7 @@ export default function ProspectsRecruitmentScreen() {
             ))}
           </select>
           <select
-            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            className="h-10 w-full rounded-xl border border-[#123563]/12 bg-white px-2 text-xs font-medium text-[#10233f]"
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
             aria-label="קטגוריה"
@@ -1058,7 +1064,7 @@ export default function ProspectsRecruitmentScreen() {
             className="h-9 text-xs"
           />
           <select
-            className="h-9 w-full rounded-lg border px-2 text-xs bg-white"
+            className="h-10 w-full rounded-xl border border-[#123563]/12 bg-white px-2 text-xs font-medium text-[#10233f]"
             value={sourceName}
             onChange={(e) => setSourceName(e.target.value)}
             aria-label="מקור"
@@ -1112,11 +1118,11 @@ export default function ProspectsRecruitmentScreen() {
           <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
             זה מספר הלידים במסד — לא מספר התוצאות שנסרקו ב־Places בריצה האחרונה.
           </p>
-          <ul className="divide-y">
+          <ul className="space-y-3">
             {items.map((item) => (
               <li
                 key={item.id}
-                className="py-3 flex flex-col gap-2 min-w-0"
+                className="flex min-w-0 flex-col gap-2 rounded-2xl border border-[#123563]/10 bg-[#f8fafc] p-3"
               >
                 <div className="flex gap-3 items-start min-w-0">
                   <input
@@ -1157,7 +1163,7 @@ export default function ProspectsRecruitmentScreen() {
                     item.status !== 'do_not_contact' && (
                       <button
                         type="button"
-                        className="text-xs font-semibold rounded-lg bg-green-600 text-white px-3 py-1.5"
+                        className="rounded-full bg-[#123563] px-3 py-1.5 text-xs font-black text-white"
                         onClick={() => openWhatsApp(item)}
                         title="פותח קישור בלבד — לא מסמן נוצר קשר"
                       >
@@ -1328,7 +1334,7 @@ export default function ProspectsRecruitmentScreen() {
           onClick={() => setShowManualAdd((v) => !v)}
           className="w-full flex items-center justify-between gap-2 text-start"
         >
-          <span className="font-bold text-lg">+ הוספה ידנית / CSV</span>
+          <span className="text-lg font-black text-[#123563]">+ הוספה ידנית / CSV</span>
           <span className="text-sm text-muted-foreground">
             {showManualAdd ? 'הסתר' : 'הצג'}
           </span>
@@ -1452,6 +1458,6 @@ export default function ProspectsRecruitmentScreen() {
           </div>
         )}
       </Card>
-    </main>
+    </SuperadminChrome>
   )
 }
