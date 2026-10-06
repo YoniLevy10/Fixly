@@ -39,7 +39,7 @@ type PageProps = {
 export default async function WaitlistPage({ searchParams }: PageProps) {
   const sp = await searchParams
   const initialAudience: WaitlistAudience =
-    sp.audience === 'professional' ? 'professional' : 'customer'
+    sp.audience === 'customer' ? 'customer' : 'professional'
 
   const faqLd = {
     '@context': 'https://schema.org',

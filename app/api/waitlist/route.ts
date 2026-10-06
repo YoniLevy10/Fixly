@@ -3,6 +3,7 @@ import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
 import { waitlistSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
+import { joinWaitlistProfessions } from '@/lib/waitlist/profession-options'
 import { saveWaitlistEntry } from '@/lib/waitlist/save-waitlist-entry'
 
 function compactAttribution(
@@ -25,13 +26,17 @@ async function handleWaitlist(request: Request, route: string) {
     if (!parsed.success) return parsed.response
     const body = parsed.data
     const attribution = compactAttribution(body.attribution)
+    const category =
+      joinWaitlistProfessions(body.categories) ??
+      body.category?.trim() ??
+      undefined
 
     const saved = await saveWaitlistEntry(
       {
         fullName: body.fullName,
         phone: body.phone,
         email: body.email,
-        category: body.category,
+        category,
         city: body.city,
         referralCode: body.referralCode ?? undefined,
         audience: body.audience,

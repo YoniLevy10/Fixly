@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { enforceRateLimit } from '@/lib/api/rate-limit'
 import { parseJsonBody } from '@/lib/api/parse-body'
-import { proWaitlistSchema } from '@/lib/api/schemas'
+import { proWaitlistFieldsSchema } from '@/lib/api/schemas'
 import { trackError } from '@/lib/monitoring/track-error'
+import { joinWaitlistProfessions } from '@/lib/waitlist/profession-options'
 import { saveWaitlistEntry } from '@/lib/waitlist/save-waitlist-entry'
 
 /**
@@ -16,19 +17,23 @@ export async function POST(request: Request) {
   try {
     const parsed = await parseJsonBody(
       request,
-      proWaitlistSchema.extend({
-        audience: proWaitlistSchema.shape.audience.optional(),
+      proWaitlistFieldsSchema.extend({
+        audience: proWaitlistFieldsSchema.shape.audience.optional(),
       }),
     )
     if (!parsed.success) return parsed.response
     const body = parsed.data
+    const category =
+      joinWaitlistProfessions(body.categories) ??
+      body.category?.trim() ??
+      undefined
 
     const saved = await saveWaitlistEntry(
       {
         fullName: body.fullName,
         phone: body.phone,
         email: body.email,
-        category: body.category,
+        category,
         city: body.city,
         referralCode: body.referralCode ?? undefined,
         audience: 'professional',

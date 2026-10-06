@@ -48,11 +48,12 @@ export const featureFlags = {
     return process.env.NEXT_PUBLIC_FF_LIVE_TRACKING !== 'false'
   },
   /**
-   * Pre-launch waitlist on marketing hosts. Opt-in only.
-   * Nationwide production keeps this false so fixly.tech serves the app.
-   */
+ * Pre-launch waitlist on marketing hosts. Default ON for recruitment /
+ * waitlist-first mode. Set NEXT_PUBLIC_FF_PRELAUNCH=false to serve the full app
+ * on fixly.tech again.
+ */
   get prelaunch() {
-    return process.env.NEXT_PUBLIC_FF_PRELAUNCH === 'true'
+    return process.env.NEXT_PUBLIC_FF_PRELAUNCH !== 'false'
   },
   /**
    * Open consumer create-request for every city in Israel.

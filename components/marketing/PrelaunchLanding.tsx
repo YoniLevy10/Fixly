@@ -5,7 +5,9 @@ import Link from 'next/link'
 import {
   ArrowLeft,
   BadgeCheck,
+  Check,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Home,
   Lock,
@@ -16,6 +18,7 @@ import {
   Sparkles,
   Users,
   Wrench,
+  X,
   Zap,
 } from 'lucide-react'
 import {
@@ -31,19 +34,23 @@ import {
   buildWaitlistWhatsAppShareUrl,
 } from '@/lib/marketing/waitlist-share'
 import { PRODUCT_URL } from '@/lib/site-config'
+import {
+  WAITLIST_MAX_PROFESSIONS,
+  WAITLIST_PROFESSION_OPTIONS,
+} from '@/lib/waitlist/profession-options'
 
 type FormState = {
   fullName: string
   phone: string
   city: string
-  category: string
+  categories: string[]
 }
 
 const emptyForm: FormState = {
   fullName: '',
   phone: '',
   city: '',
-  category: '',
+  categories: [],
 }
 
 /** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
@@ -172,8 +179,12 @@ export default function PrelaunchLanding({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError(null)
+    if (audience === 'professional' && form.categories.length === 0) {
+      setError('בחרו לפחות תחום מקצוע אחד')
+      return
+    }
+    setLoading(true)
     markSignupStarted()
     try {
       const attribution = getStoredAttribution()
@@ -185,9 +196,9 @@ export default function PrelaunchLanding({
           fullName: form.fullName,
           phone: form.phone,
           city: form.city || undefined,
-          category:
-            audience === 'professional' && form.category
-              ? form.category
+          categories:
+            audience === 'professional' && form.categories.length
+              ? form.categories
               : undefined,
           audience,
           source:
@@ -600,9 +611,26 @@ function WaitlistFormCard({
   onShare,
   onResetDone,
 }: WaitlistFormProps) {
-  const setField = (key: keyof FormState, value: string) => {
+  const setField = (key: 'fullName' | 'phone' | 'city', value: string) => {
     onSignupStarted()
     onFormChange((f) => ({ ...f, [key]: value }))
+  }
+
+  const toggleCategory = (name: string) => {
+    onSignupStarted()
+    onFormChange((f) => {
+      const selected = f.categories.includes(name)
+      if (selected) {
+        return { ...f, categories: f.categories.filter((c) => c !== name) }
+      }
+      if (f.categories.length >= WAITLIST_MAX_PROFESSIONS) return f
+      return {
+        ...f,
+        categories: [...f.categories, name].sort((a, b) =>
+          a.localeCompare(b, 'he'),
+        ),
+      }
+    })
   }
 
   return (
@@ -708,12 +736,10 @@ function WaitlistFormCard({
             onChange={(v) => setField('phone', v)}
           />
           {audience === 'professional' ? (
-            <Field
-              label="תחום (אופציונלי)"
-              name="category"
-              placeholder="למשל אינסטלציה"
-              value={form.category}
-              onChange={(v) => setField('category', v)}
+            <ProfessionMultiSelect
+              selected={form.categories}
+              onToggle={toggleCategory}
+              onRemove={toggleCategory}
             />
           ) : null}
           {audience === 'professional' || !compact ? (
@@ -749,6 +775,162 @@ function WaitlistFormCard({
           </p>
         </form>
       )}
+    </div>
+  )
+}
+
+function ProfessionMultiSelect({
+  selected,
+  onToggle,
+  onRemove,
+}: {
+  selected: string[]
+  onToggle: (name: string) => void
+  onRemove: (name: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const rootRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const el = rootRef.current
+      if (!el) return
+      if (event.target instanceof Node && !el.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('touchstart', onPointerDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('touchstart', onPointerDown)
+    }
+  }, [open])
+
+  const filtered = query.trim()
+    ? WAITLIST_PROFESSION_OPTIONS.filter((name) =>
+        name.includes(query.trim()),
+      )
+    : WAITLIST_PROFESSION_OPTIONS
+
+  const atLimit = selected.length >= WAITLIST_MAX_PROFESSIONS
+
+  return (
+    <div ref={rootRef} className="block">
+      <span className="mb-1.5 block text-sm font-bold text-[#123563]">
+        תחומי מקצוע
+        <span className="mr-1 font-semibold text-slate-400">(חובה · עד {WAITLIST_MAX_PROFESSIONS})</span>
+      </span>
+
+      {selected.length > 0 ? (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {selected.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onRemove(name)}
+              className="inline-flex max-w-full items-center gap-1 rounded-lg bg-[#123563]/10 px-2.5 py-1 text-xs font-bold text-[#123563]"
+            >
+              <span className="truncate">{name}</span>
+              <X className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="sr-only">הסר {name}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full min-h-[46px] items-center justify-between gap-2 rounded-xl border border-[#123563]/15 bg-white px-3 py-2.5 text-start text-base font-medium text-[#0f2342] outline-none transition focus:border-[#123563] focus:ring-4 focus:ring-[#123563]/15"
+      >
+        <span className={selected.length ? 'text-[#123563]' : 'text-slate-400'}>
+          {selected.length
+            ? `${selected.length} תחומים נבחרו`
+            : 'בחרו תחומים — למשל מזגנים, חשמל…'}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        />
+      </button>
+
+      {open ? (
+        <div className="mt-2 overflow-hidden rounded-xl border border-[#123563]/12 bg-white shadow-[0_12px_32px_rgba(18,53,99,0.12)]">
+          <div className="border-b border-slate-100 p-2">
+            <label className="relative block">
+              <Search
+                className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                aria-hidden
+              />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="חיפוש תחום…"
+                className="w-full rounded-lg border border-slate-200 bg-[#f8fafc] py-2 pe-3 ps-9 text-sm font-medium outline-none focus:border-[#123563]"
+              />
+            </label>
+          </div>
+          <ul
+            role="listbox"
+            aria-multiselectable="true"
+            className="max-h-56 overflow-y-auto overscroll-contain p-1.5"
+          >
+            {filtered.length === 0 ? (
+              <li className="px-3 py-4 text-center text-sm font-medium text-slate-500">
+                לא נמצא תחום מתאים
+              </li>
+            ) : (
+              filtered.map((name) => {
+                const isOn = selected.includes(name)
+                const disabled = !isOn && atLimit
+                return (
+                  <li key={name} role="option" aria-selected={isOn}>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => onToggle(name)}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-sm font-bold transition ${
+                        isOn
+                          ? 'bg-[#123563]/10 text-[#123563]'
+                          : disabled
+                            ? 'cursor-not-allowed text-slate-300'
+                            : 'text-[#40546e] hover:bg-[#f3f6fa]'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                          isOn
+                            ? 'border-[#123563] bg-[#123563] text-white'
+                            : 'border-slate-300 bg-white'
+                        }`}
+                        aria-hidden
+                      >
+                        {isOn ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
+                      </span>
+                      {name}
+                    </button>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+          {atLimit ? (
+            <p className="border-t border-slate-100 px-3 py-2 text-xs font-semibold text-amber-700">
+              הגעתם למקסימום {WAITLIST_MAX_PROFESSIONS} תחומים
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <p className="mt-1.5 text-xs font-medium text-slate-500">
+        אפשר לבחור כמה תחומים — למשל מזגנים וגם חשמל.
+      </p>
     </div>
   )
 }
