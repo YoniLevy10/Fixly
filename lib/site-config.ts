@@ -22,9 +22,9 @@ export const DEFAULT_TITLE_HE = 'Fixly — תיקונים ואנשי מקצוע 
 
 /** Waitlist / registration landing copy (use on /waitlist only). */
 export const WAITLIST_DESCRIPTION_HE =
-  'הרשמה ל-Fixly — הזמנת בעל מקצוע עד הבית ותיקונים בישראל. ללקוחות ולבעלי מקצוע: שם וטלפון בלבד, בלי כרטיס אשראי.'
+  'הצטרפו ל-Fixly בחינם. עבודות אמיתיות לפי תחום ואזור — שם וטלפון, בלי כרטיס אשראי.'
 
-export const WAITLIST_TITLE_HE = 'הרשמה ל-Fixly — לקוחות ובעלי מקצוע | תיקונים עד הבית'
+export const WAITLIST_TITLE_HE = 'Fixly — עבודות לבעלי מקצוע | הרשמה מוקדמת'
 
 export const ABOUT_TITLE_HE = 'אודות Fixly — פלטפורמה לבעלי מקצוע ותיקונים בישראל'
 

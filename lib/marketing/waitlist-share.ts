@@ -30,7 +30,7 @@ export function buildWaitlistShareUrl(audience: 'customer' | 'professional'): st
 export function buildWaitlistShareMessage(audience: 'customer' | 'professional'): string {
   const link = buildWaitlistShareUrl(audience)
   if (audience === 'professional') {
-    return `נרשמתי ל-Fixly כבעל מקצוע — פלטפורמה לעבודות אמיתיות בישראל. כדאי להירשם:\n${link}`
+    return `נרשמתי ל-Fixly — עבודות אמיתיות, קרובות הביתה. שווה להצטרף:\n${link}`
   }
   return `יש תקלה בבית? Fixly מחברת לבעל מקצוע — בלי עשרות טלפונים. נרשמתי בחינם:\n${link}`
 }

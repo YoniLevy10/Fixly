@@ -14,6 +14,7 @@ import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { routes } from '@/lib/routes'
+import EntryNotice from '@/components/marketing/EntryNotice'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -59,6 +60,7 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     pathname.startsWith('/request') ||
     pathname.startsWith('/chat') ||
     pathname.startsWith('/demo') ||
+    pathname.startsWith('/superadmin') ||
     pathname === '/login'
   // Pro console only (`/pro` or `/pro/...`) — NOT `/professionals` / `/profile`
   // (those also start with "/pro" and must keep the customer bottom nav).
@@ -73,6 +75,7 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
 
   return (
     <div className="app-shell min-h-screen ios27-atmosphere">
+      <EntryNotice />
       {showDesktopChrome && <DesktopSidebar />}
 
       <div className={shouldHideChrome ? '' : 'lg:mr-64 native-shell-column'}>

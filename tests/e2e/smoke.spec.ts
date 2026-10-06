@@ -42,7 +42,7 @@ test.describe('public pages', () => {
     })
 
     await page.goto('/waitlist')
-    await expect(page.getByRole('heading', { name: /יש תקלה בבית/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /עבודות אמיתיות/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
     const form = page.locator('#waitlist.opacity-100').first()
     await expect(form).toBeVisible()
