@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test'
 
+// Production PWA workers forward API requests outside page.route interception.
+// Block them in this mocked-provider suite so requests cannot escape fixtures.
+test.use({ serviceWorkers: 'block' })
+
 const audience = { count: 12, total: 16, excluded: 3, duplicates: 1, snapshot: 'a'.repeat(64), configured: true }
 
 test('SMS composer sends once, shows provider acceptance, and retains campaign after reload', async ({ page }) => {
