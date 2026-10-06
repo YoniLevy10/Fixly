@@ -722,6 +722,9 @@ export default function ProspectsRecruitmentScreen() {
             ← Operations
           </Link>
           <p className="text-sm text-muted-foreground mt-2">Fixly Superadmin</p>
+          <Link href="/superadmin/sms" className="inline-flex mt-3 rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-bold">
+            כתיבת הודעה ושליחת SMS לכל אנשי המקצוע
+          </Link>
           <h1 className="text-2xl sm:text-3xl font-bold mt-1 break-words">
             גיוס אנשי מקצוע
           </h1>
