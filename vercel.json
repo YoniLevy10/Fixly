@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/signup-sms-notifications",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-outreach-sheet",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

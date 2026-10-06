@@ -31,9 +31,19 @@ describe('recruitment SMS audience', () => {
     assert.equal(selectSmsRecipients(rows).snapshot, selectSmsRecipients([...rows].reverse()).snapshot)
     assert.notEqual(selectSmsRecipients(rows).snapshot, selectSmsRecipients(rows.slice(1)).snapshot)
   })
+  it('excludes rejected leads and phones that already registered', () => {
+    const audience = selectSmsRecipients(
+      [row('a', '0501234567', 'rejected'), row('b', '0521234567'), row('c', '0531234567', 'discovered', null)],
+      ['0531234567'],
+    )
+    assert.deepEqual(audience.recipients, ['0521234567'])
+  })
   it('loads beyond the Supabase default response limit', async () => {
     const ranges: number[][] = []
     const admin = { from: (table: string) => {
+      if (table === 'pro_waitlist') {
+        return { select: () => ({ order: () => ({ range: async () => ({ data: [], error: null }) }) }) }
+      }
       assert.equal(table, 'professional_prospects')
       return { select: () => ({ order: () => ({ range: async (start: number, end: number) => {
         ranges.push([start, end])

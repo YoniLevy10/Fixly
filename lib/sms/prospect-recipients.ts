@@ -7,6 +7,7 @@ export type SmsProspect = {
   phone: string | null
   whatsapp_phone: string | null
   status: string
+  waitlist_id?: string | null
 }
 
 function mobile(raw: string | null): string | null {
@@ -15,16 +16,21 @@ function mobile(raw: string | null): string | null {
     ? `0${normalized.slice(3)}` : null
 }
 
-export function selectSmsRecipients(rows: SmsProspect[]) {
-  // A do-not-contact entry also suppresses duplicates using the same number.
-  const blocked = new Set(rows.filter(r => r.status === 'do_not_contact')
+export function selectSmsRecipients(rows: SmsProspect[], blockedPhones: string[] = []) {
+  // Opt-out, not-relevant, and already-registered numbers suppress every duplicate.
+  const blocked = new Set(rows.filter(r =>
+    r.status === 'do_not_contact' || r.status === 'rejected' || r.waitlist_id)
     .flatMap(r => [mobile(r.phone), mobile(r.whatsapp_phone)]).filter(Boolean))
+  for (const phone of blockedPhones) {
+    const normalized = mobile(phone)
+    if (normalized) blocked.add(normalized)
+  }
   const phones = new Set<string>()
   let excluded = 0
   let duplicates = 0
   for (const row of rows) {
     const phone = mobile(row.phone) ?? mobile(row.whatsapp_phone)
-    if (row.status === 'do_not_contact' || !phone || blocked.has(phone)) {
+    if (row.status === 'do_not_contact' || row.status === 'rejected' || row.waitlist_id || !phone || blocked.has(phone)) {
       excluded++
     } else if (phones.has(phone)) {
       duplicates++
@@ -43,15 +49,26 @@ export function selectSmsRecipients(rows: SmsProspect[]) {
   }
 }
 
-export async function loadSmsRecipients(admin: SupabaseClient) {
-  const rows: SmsProspect[] = []
-  // Supabase's default 1,000-row response limit must not truncate the audience.
+async function loadPaged(admin: SupabaseClient, table: 'professional_prospects' | 'pro_waitlist', columns: string) {
+  const rows: Array<Record<string, unknown>> = []
   for (let offset = 0; ; offset += 500) {
-    const { data, error } = await admin.from('professional_prospects')
-      .select('id, phone, whatsapp_phone, status').order('id').range(offset, offset + 499)
-    if (error) throw new Error('טעינת אנשי המקצוע נכשלה')
-    rows.push(...(data ?? []))
+    const { data, error } = await admin.from(table).select(columns).order('id').range(offset, offset + 499)
+    if (error) throw new Error(table === 'pro_waitlist' ? 'טעינת הנרשמים נכשלה' : 'טעינת אנשי המקצוע נכשלה')
+    const page = (data ?? []) as unknown as Array<Record<string, unknown>>
+    rows.push(...page)
     if (!data || data.length < 500) break
   }
-  return selectSmsRecipients(rows)
+  return rows
+}
+
+export async function loadSmsRecipients(admin: SupabaseClient) {
+  // Supabase's default 1,000-row response limit must not truncate the audience.
+  const [prospects, waitlist] = await Promise.all([
+    loadPaged(admin, 'professional_prospects', 'id, phone, whatsapp_phone, status, waitlist_id'),
+    loadPaged(admin, 'pro_waitlist', 'id, phone'),
+  ])
+  return selectSmsRecipients(
+    prospects as SmsProspect[],
+    waitlist.map((row) => String(row.phone ?? '')),
+  )
 }

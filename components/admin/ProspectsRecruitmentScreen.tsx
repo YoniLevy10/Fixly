@@ -39,6 +39,7 @@ type ProspectItem = {
   categoryName: string | null
   categoryNameHe: string | null
   categorySlug: string | null
+  services?: string[] | null
   sourceName: string
   sourceUrl: string | null
   status: ProspectStatus
@@ -215,6 +216,7 @@ export default function ProspectsRecruitmentScreen() {
   const [creating, setCreating] = useState(false)
   const [showManualAdd, setShowManualAdd] = useState(false)
   const [discovering, setDiscovering] = useState(false)
+  const [syncingSheet, setSyncingSheet] = useState(false)
   const [discoveryPercent, setDiscoveryPercent] = useState(0)
   const [discoveryProgressLabel, setDiscoveryProgressLabel] = useState('')
   const [runs, setRuns] = useState<DiscoveryRun[]>([])
@@ -648,6 +650,25 @@ export default function ProspectsRecruitmentScreen() {
     window.open(`/api/admin/prospects/export?${queryString}`, '_blank')
   }
 
+  const syncSheet = async () => {
+    setSyncingSheet(true)
+    setActionMsg(null)
+    try {
+      const res = await fetch('/api/admin/prospects/sheet-sync', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setActionMsg(data.error ?? 'סנכרון הגיליון נכשל')
+        return
+      }
+      setActionMsg(data.message ?? 'הגיליון סונכרן')
+      await loadList()
+    } catch {
+      setActionMsg('סנכרון הגיליון נכשל')
+    } finally {
+      setSyncingSheet(false)
+    }
+  }
+
   const runDiscovery = async () => {
     setDiscovering(true)
     setDiscoveryPercent(1)
@@ -789,6 +810,14 @@ export default function ProspectsRecruitmentScreen() {
             className="w-full rounded-2xl border border-[#123563]/12 bg-white px-4 py-3 text-sm font-bold text-[#123563]"
           >
             ייצוא CSV
+          </button>
+          <button
+            type="button"
+            onClick={syncSheet}
+            disabled={syncingSheet}
+            className="w-full rounded-2xl border border-[#123563]/12 bg-white px-4 py-3 text-sm font-bold text-[#123563] disabled:opacity-50 sm:col-span-3"
+          >
+            {syncingSheet ? 'מסנכרן את גיליון הלידים…' : 'סנכרון דו־כיווני עם גיליון הלידים'}
           </button>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -1150,7 +1179,7 @@ export default function ProspectsRecruitmentScreen() {
                     </div>
                     <div className="text-sm text-muted-foreground break-words">
                       {item.businessName ? `${item.businessName} · ` : ''}
-                      {item.categoryNameHe || item.categoryName || '—'} · {item.city}
+                      {item.categoryNameHe || item.categoryName || item.services?.[0] || '—'} · {item.city}
                     </div>
                     <div className="text-sm break-all" dir="ltr">
                       {item.phone || item.whatsappPhone || 'ללא טלפון'}
