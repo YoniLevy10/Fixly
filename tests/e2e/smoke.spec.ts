@@ -20,14 +20,16 @@ test.describe('public pages', () => {
     await expect(waitlistCta.or(search)).toBeVisible()
   })
 
-  test('waitlist page collects signups for customers and pros', async ({ page }) => {
+  test('waitlist registers professionals with multiple professions', async ({ page }) => {
     // CI has no Supabase — route proves UI success only after a real API id.
     await page.route('**/api/waitlist', async (route) => {
       if (route.request().method() !== 'POST') {
         await route.continue()
         return
       }
-      const body = route.request().postDataJSON() as { audience?: string }
+      const body = route.request().postDataJSON() as { audience?: string; categories?: string[] }
+      expect(body.audience).toBe('professional')
+      expect(body.categories).toEqual(['אינסטלטורים', 'חשמלאים'])
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -44,8 +46,10 @@ test.describe('public pages', () => {
     await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
     const form = page.locator('#waitlist.opacity-100').first()
     await expect(form).toBeVisible()
-    await expect(form.getByRole('button', { name: /^לקוח/i })).toBeVisible()
-    await expect(page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
+    await form.getByRole('button', { name: /בחרו תחומים/ }).click()
+    await form.getByRole('button', { name: 'אינסטלטורים', exact: true }).click()
+    await form.getByRole('button', { name: 'חשמלאים', exact: true }).click()
+    await form.getByRole('button', { name: '2 תחומים נבחרו', exact: true }).click()
     await page.locator('#waitlist.opacity-100').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
     await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
@@ -66,7 +70,11 @@ test.describe('public pages', () => {
     })
 
     await page.goto('/waitlist')
-    await page.locator('#waitlist.opacity-100').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
+    const form = page.locator('#waitlist.opacity-100').first()
+    await form.getByRole('button', { name: /בחרו תחומים/ }).click()
+    await form.getByRole('button', { name: 'אינסטלטורים', exact: true }).click()
+    await form.getByRole('button', { name: '1 תחומים נבחרו', exact: true }).click()
+    await form.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
     await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(
@@ -78,7 +86,7 @@ test.describe('public pages', () => {
   test('pro join redirects to unified waitlist', async ({ page }) => {
     await page.goto('/pro/join')
     await expect(page).toHaveURL(/\/waitlist\?audience=professional/)
-    await expect(page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
+    await expect(page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /בחרו תחומים/ })).toBeVisible()
   })
 
   test('robots and sitemap are public', async ({ request }) => {
