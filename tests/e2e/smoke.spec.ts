@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
 
+// Keep mocked API traffic in Playwright rather than the production PWA worker.
+test.use({ serviceWorkers: 'block' })
+
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
 
 test.describe('public pages', () => {
@@ -39,12 +42,14 @@ test.describe('public pages', () => {
     await page.goto('/waitlist')
     await expect(page.getByRole('heading', { name: /יש תקלה בבית/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /^לקוח/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
-    await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
-    await page.getByLabel(/טלפון/i).fill('0501234567')
-    await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
-    await expect(page.getByText(/נרשמתם בהצלחה/i)).toBeVisible({ timeout: 10_000 })
+    const form = page.locator('#waitlist.opacity-100').first()
+    await expect(form).toBeVisible()
+    await expect(form.getByRole('button', { name: /^לקוח/i })).toBeVisible()
+    await expect(page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
+    await page.locator('#waitlist.opacity-100').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
+    await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
+    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await expect(page.locator('#waitlist.opacity-100').first().getByText(/נרשמתם בהצלחה/i)).toBeVisible({ timeout: 10_000 })
   })
 
   test('waitlist shows error when save is rejected', async ({ page }) => {
@@ -61,11 +66,11 @@ test.describe('public pages', () => {
     })
 
     await page.goto('/waitlist')
-    await page.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
-    await page.getByLabel(/טלפון/i).fill('0501234567')
-    await page.getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await page.locator('#waitlist.opacity-100').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
+    await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
+    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(
-      page.getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
+      page.locator('#waitlist.opacity-100').first().getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
     ).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText(/נרשמתם בהצלחה/i)).toHaveCount(0)
   })
@@ -73,7 +78,7 @@ test.describe('public pages', () => {
   test('pro join redirects to unified waitlist', async ({ page }) => {
     await page.goto('/pro/join')
     await expect(page).toHaveURL(/\/waitlist\?audience=professional/)
-    await expect(page.getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
+    await expect(page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /בעל\/ת מקצוע/i })).toBeVisible()
   })
 
   test('robots and sitemap are public', async ({ request }) => {
