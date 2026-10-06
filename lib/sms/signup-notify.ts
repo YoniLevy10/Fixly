@@ -14,12 +14,17 @@ export function buildSignupAlert(row: SignupAlert) {
   ].filter(Boolean).join('\n').slice(0, 1005)
 }
 
+export function signupNotificationsEnabled() {
+  return process.env.SMS_SIGNUP_NOTIFICATIONS_ENABLED === 'true'
+}
+
 export function signupNotifyPhone() {
   const normalized = normalizePhone(process.env.SMS_SIGNUP_NOTIFY_PHONE ?? '0552819086')
   return normalized && /^9725\d{8}$/.test(normalized) ? `0${normalized.slice(3)}` : null
 }
 
 export async function deliverSignupNotification(admin: SupabaseClient, id: string) {
+  if (!signupNotificationsEnabled()) return { status: 'disabled' }
   const to = signupNotifyPhone()
   if (!sms019Configured() || !to) return { status: 'not_configured' }
   const signup = await admin.from('pro_waitlist').select('full_name, phone, audience, city').eq('id', id).single()

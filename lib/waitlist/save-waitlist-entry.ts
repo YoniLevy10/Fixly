@@ -1,5 +1,5 @@
 import { after } from 'next/server'
-import { deliverSignupNotification } from '@/lib/sms/signup-notify'
+import { deliverSignupNotification, signupNotificationsEnabled } from '@/lib/sms/signup-notify'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { isSupabaseEnabled } from '@/lib/data/config'
 import type {
@@ -102,7 +102,7 @@ export async function saveWaitlistEntry(
 
   // The database queues the notification atomically. Send after responding;
   // the cron can pick up pending work if this callback does not run.
-  after(async () => {
+  if (signupNotificationsEnabled()) after(async () => {
     try { await deliverSignupNotification(admin, data.id) }
     catch (error) { trackError(error, { route: 'signup-sms-notification' }) }
   })

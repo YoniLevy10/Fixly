@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
-import { deliverSignupNotification } from '@/lib/sms/signup-notify'
+import { deliverSignupNotification, signupNotificationsEnabled } from '@/lib/sms/signup-notify'
 import { sms019Configured } from '@/lib/sms/019'
 import { trackError } from '@/lib/monitoring/track-error'
 
@@ -12,6 +12,7 @@ export async function GET(request: Request) {
   if (!secret || request.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  if (!signupNotificationsEnabled()) return NextResponse.json({ status: 'disabled' })
   if (!sms019Configured()) return NextResponse.json({ status: 'not_configured' })
   const admin = getAdminSupabaseClient()
   if (!admin) return NextResponse.json({ error: 'Admin client unavailable' }, { status: 503 })

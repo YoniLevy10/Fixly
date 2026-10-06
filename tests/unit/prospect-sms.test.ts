@@ -114,6 +114,7 @@ describe('owner signup alerts', () => {
     assert.equal(signupNotifyPhone(), '0501234567')
     process.env.SMS_SIGNUP_NOTIFY_PHONE = 'invalid'
     assert.equal(signupNotifyPhone(), null)
+    process.env.SMS_SIGNUP_NOTIFICATIONS_ENABLED = 'true'
     delete process.env.SMS_019_TOKEN
     assert.deepEqual(await deliverSignupNotification({} as SupabaseClient, 'id'), { status: 'not_configured' })
   })
@@ -124,5 +125,17 @@ describe('owner signup alerts', () => {
       return Response.json({ status: 0, shipment_id: 'owner-alert' })
     }
     assert.equal((await send019Campaign('owner-alert', 'הרשמה חדשה', ['0552819086'], false)).status, 'accepted')
+  })
+})
+
+
+describe('signup notification activation gate', () => {
+  it('remains disabled even when 019 is configured, without accessing data or sending SMS', async () => {
+    configure()
+    delete process.env.SMS_SIGNUP_NOTIFICATIONS_ENABLED
+    const { signupNotificationsEnabled, deliverSignupNotification } = await import('../../lib/sms/signup-notify')
+    assert.equal(signupNotificationsEnabled(), false)
+    globalThis.fetch = async () => { throw new Error('must not contact provider') }
+    assert.deepEqual(await deliverSignupNotification({} as SupabaseClient, 'id'), { status: 'disabled' })
   })
 })

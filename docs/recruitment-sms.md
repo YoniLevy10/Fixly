@@ -37,6 +37,12 @@ Ambiguous delivery is held for manual inspection rather than retried.
 
 Approved sender: `SMS_019_SENDER=0552819086`. Alerts go to `0552819086` by default;
 override with server-only `SMS_SIGNUP_NOTIFY_PHONE`. Alerts include name, phone,
-audience and city. They do not include an unsubscribe link. Alerts remain queued
-while 019 credentials are missing. This covers public registration forms, not
+audience and city. They do not include an unsubscribe link. Alerts are disabled by default, even when 019 credentials are configured.
+After explicit owner approval of destination and payload, apply the signup
+notification migration and set `SMS_SIGNUP_NOTIFICATIONS_ENABLED=true`.
+Alerts remain queued while 019 credentials are missing. This covers public registration forms, not
 Google sign-in alone.
+
+The campaign ledger migration has been applied to Fixly. The signup notification
+migration has not been applied: activation awaits explicit approval of the owner
+phone and personal-data payload. Publishing the UI does not activate alerts.
