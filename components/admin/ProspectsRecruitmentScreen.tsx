@@ -8,7 +8,6 @@ import Card from '@/components/ui/Card'
 import EmptyState from '@/components/ui/EmptyState'
 import Input from '@/components/ui/Input'
 import Label from '@/components/ui/Label'
-import { useAuth } from '@/lib/auth/auth-provider'
 import { shouldKeepAsSoloProspect } from '@/lib/prospects/person-score'
 import {
   contactabilityLabelHe,
@@ -189,7 +188,6 @@ function placesFunnelForRun(run: DiscoveryRun): {
 }
 
 export default function ProspectsRecruitmentScreen() {
-  const { user, isLoading: authLoading } = useAuth()
   const [items, setItems] = useState<ProspectItem[]>([])
   const [total, setTotal] = useState(0)
   const [counters, setCounters] = useState<Counters | null>(null)
@@ -252,7 +250,7 @@ export default function ProspectsRecruitmentScreen() {
         throw new Error(
           typeof data.error === 'string'
             ? data.error
-            : 'אין הרשאת מנהל — התחבר עם Google והוסף את המייל ל־ADMIN_EMAILS',
+            : 'אין הרשאת מנהל. הזינו את סיסמת הכניסה.',
         )
       }
       if (!res.ok) {
@@ -758,13 +756,6 @@ export default function ProspectsRecruitmentScreen() {
           <p className="mt-2 max-w-lg text-sm font-medium leading-6 text-slate-600 sm:text-base">
             גילוי חינמי בלבד (OSM + מאגר מדבירים) · יעד {targetTotal} בירושלים
           </p>
-          {!authLoading && (
-            <p className="mt-3 inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-bold text-slate-500">
-              {user.isAnonymous || !user.email || user.email === 'אורח'
-                ? 'לא מחובר עם Google'
-                : `מחובר כ־${user.email}`}
-            </p>
-          )}
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <button
