@@ -7,6 +7,7 @@ import { PROFESSIONALS_FILTER_CATEGORIES } from '@/mock/categories'
 import ProListCard from '@/components/professionals/ProListCard'
 import { getCategoryLabel } from '@/lib/i18n/category-label'
 import { useLocale } from '@/lib/i18n/locale-provider'
+import { track } from '@/lib/analytics/track'
 import { cn } from '@/lib/utils/cn'
 import type { Professional } from '@/types/professional'
 
@@ -64,7 +65,15 @@ export default function ProfessionalsScreen() {
       })
       .then((data) => {
         if (!controller.signal.aborted) {
-          setProfessionals(Array.isArray(data) ? data : [])
+          const list = Array.isArray(data) ? data : []
+          setProfessionals(list)
+          if (debouncedQuery || selectedCategory) {
+            track('search_professional', {
+              q: debouncedQuery || '',
+              category: selectedCategory || '',
+              results: list.length,
+            })
+          }
         }
       })
       .catch((err) => {

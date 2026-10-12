@@ -97,7 +97,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const jsonLd = {
+  const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Fixly',
@@ -112,6 +112,21 @@ export default function RootLayout({
       '@type': 'JoinAction',
       target: `${SITE_URL}/waitlist`,
       name: 'הרשמה ל-Fixly',
+    },
+  }
+  const websiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Fixly',
+    url: SITE_URL,
+    inLanguage: 'he-IL',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/professionals?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
     },
   }
 
@@ -146,7 +161,11 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
         <AppProviders>
           <AppLayout>{children}</AppLayout>

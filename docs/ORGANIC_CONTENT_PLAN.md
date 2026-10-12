@@ -9,9 +9,11 @@
 
 1. `/` מציג marketplace עם מטא «תיקונים ואנשי מקצוע» — לא «הרשמה מוקדמת».
 2. `/waitlist` הוא דף ההרשמה הקנוני (לקוח + בעל מקצוע).
-3. `/services/...` עם 0 בעלי מקצוע אמיתיים **ו־** פחות מ־3 הרשמות לקוח לעיר → `noindex` + CTA להרשמה (בלי mock). שער: `lib/seo/has-seo-value.ts`.
-4. Googlebot עובר את שערי ה-geo (`isSearchCrawler`).
-5. Sitemap נשאר; דפים ריקים לא אמורים להרוויח אינדקס.
+3. Canonical programmatic SEO: `/professionals/[category]/[city]` (למשל `/professionals/plumbing/tel-aviv`).  
+   `/services/[city]/[category]` מפנה לשם (308) לתאימות GSC ישן.
+4. עמוד עיר×מקצוע עם 0 בעלי מקצוע אמיתיים **ו־** פחות מ־3 הרשמות לקוח לעיר → `noindex` + CTA להרשמה (בלי mock). שער: `lib/seo/has-seo-value.ts`.
+5. Sitemap כולל **רק** זוגות indexable + hubs (`/professionals/[category]`, `/locations`, `/locations/[city]`, `/for-professionals`).
+6. Googlebot עובר את שערי ה-geo (`isSearchCrawler`).
 ## שלב א׳ — רק איפה שיש ערך
 
 אינדקס / קידום פעיל רק כשמתקיים אחד:
