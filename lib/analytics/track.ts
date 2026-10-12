@@ -15,6 +15,12 @@ export type AnalyticsEvent =
   | 'waitlist_scroll_depth'
   | 'waitlist_audience_switch'
   | 'waitlist_share_click'
+  | 'seo_landing_view'
+  | 'seo_cta_click'
+  | 'search_professional'
+  | 'signup_start'
+  | 'signup_complete'
+  | 'professional_signup'
   | 'language_changed'
   | 'share_request'
   | 'job_checkout_started'
@@ -25,8 +31,12 @@ export type AnalyticsEvent =
 /** Map product events → Meta standard events (Ads Manager optimization). */
 const META_STANDARD_EVENTS: Partial<Record<AnalyticsEvent, string>> = {
   waitlist_page_view: 'ViewContent',
+  seo_landing_view: 'ViewContent',
   waitlist_signup_started: 'InitiateCheckout',
+  signup_start: 'InitiateCheckout',
   waitlist_signup_completed: 'CompleteRegistration',
+  signup_complete: 'CompleteRegistration',
+  professional_signup: 'CompleteRegistration',
 }
 
 declare global {

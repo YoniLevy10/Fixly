@@ -41,7 +41,7 @@ flowchart LR
 | `/waitlist` מאוחד + שמירה אמינה | יעד ההמרה של כל תנועה אורגנית |
 | יעד 10 ב־`/admin` | KPI ראשי לחודש — אורגני חייב להזין אותו |
 | מטא `/` = marketplace (לא «הרשמה מוקדמת») | תואם למה ש־Googlebot רואה היום |
-| `/services/[city]/[category]` + noindex בלי ערך אמיתי | לא מרעילים אינדקס בדפי דמו — פותחים רק עם ערך |
+| `/professionals/[category]/[city]` + noindex בלי ערך אמיתי (legacy `/services/...` → 308) | לא מרעילים אינדקס בדפי דמו — פותחים רק עם ערך |
 | `ORGANIC_CONTENT_PLAN.md` | שלב א׳/ב׳ נשארים — עכשיו מחוברים לנתוני GSC |
 | UTM קנוני + חסימת localhost ב־GA | מדידה נקייה של organic → signup |
 | Geo gate + Googlebot allow | כבר עובד לבוט; לא לפתוח שוק חו״ל |
