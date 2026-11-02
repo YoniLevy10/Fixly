@@ -9,7 +9,7 @@ import DesktopHeader from '@/components/layout/DesktopHeader'
 import DesktopSidebar from '@/components/layout/DesktopSidebar'
 import NativeAwareMain from '@/components/layout/NativeAwareMain'
 import { useDemoTour } from '@/components/demo/DemoTourProvider'
-import { shouldShowPrelaunchLanding } from '@/lib/site-hosts'
+import { isMarketingHost, shouldShowPrelaunchLanding } from '@/lib/site-hosts'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { useLocale } from '@/lib/i18n/locale-provider'
@@ -49,10 +49,15 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
   }, [])
 
   const isMarketingHome = shouldShowPrelaunchLanding(host) && pathname === '/'
+  // On fixly.tech every allowlisted page stays chrome-less (no BottomNav / Home).
   const isMarketingRoute =
+    isMarketingHost(host) ||
     pathname.startsWith('/go/') ||
     pathname === '/waitlist' ||
     pathname === '/pro/join' ||
+    pathname === '/about' ||
+    pathname === '/privacy' ||
+    pathname === '/terms' ||
     isMarketingHome
   // Full-bleed booking / tracking / investor deep-link
   const isImmersiveRoute =

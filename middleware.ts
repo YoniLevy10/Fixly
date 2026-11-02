@@ -9,7 +9,8 @@ import {
   resolveRequestCountry,
 } from '@/lib/geo/israel-access'
 import {
-  isLegacyVercelProductionHost,
+  isMarketingHost,
+  isMarketingPublicPath,
   normalizeHost,
 } from '@/lib/site-hosts'
 
@@ -27,11 +28,11 @@ export async function middleware(request: NextRequest) {
     request.headers.get('x-forwarded-host') || request.headers.get('host'),
   )
 
-  // Keep public links on fixly.tech — bounce production Vercel aliases
-  if (isLegacyVercelProductionHost(host)) {
-    const dest = new URL(request.url)
-    dest.protocol = 'https:'
-    dest.host = 'fixly.tech'
+  // Purchased domain = registration/landing only — no marketplace product UI.
+  if (isMarketingHost(host) && !isMarketingPublicPath(request.nextUrl.pathname)) {
+    const dest = request.nextUrl.clone()
+    dest.pathname = '/waitlist'
+    dest.search = ''
     return NextResponse.redirect(dest, 308)
   }
 
