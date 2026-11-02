@@ -462,7 +462,12 @@ export default function PrelaunchLanding({
           {PRODUCT_URL ? (
             <>
               {' · '}
-              <a href={PRODUCT_URL} className="underline underline-offset-2" rel="noopener noreferrer">
+              <a
+                href={PRODUCT_URL}
+                className="underline underline-offset-2"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 כניסה למערכת
               </a>
             </>

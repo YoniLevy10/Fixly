@@ -11,17 +11,17 @@
 
 | דומיין / נתיב | מה מוצג |
 |---------------|---------|
-| `https://fixly.tech/waitlist` | **קנוני לקמפיין ביקוש** — דף נחיתה מעוצב |
-| `https://fixly.tech/pro/join` | הצטרפות בעלי מקצוע (מנוע לידים) |
-| `https://fixly.tech/` | דמו מוצר כל עוד הדמו פעיל; דף נחיתה רק אחרי כיבוי דמו + prelaunch |
-| `https://*.vercel.app` | המערכת המלאה (marketplace) |
+| `https://fixly.tech/` · `/waitlist` · `/pro/join` | **רק** נחיתה / הרשמה (אין marketplace) |
+| `https://fixly.tech/about` · `/privacy` · `/terms` | משפטי / אודות (ללא chrome של האפליקציה) |
+| `https://fixly.vercel.app` (ו־LEGACY aliases) | **המערכת המלאה** (HomeScreen, professionals, …) |
+| `https://*-git-*.vercel.app` | Preview — מערכת מלאה לבדיקות |
 | `localhost` | המערכת (פיתוח) |
 
-`/waitlist` זמין תמיד. אחרי השקה מלאה: `NEXT_PUBLIC_FF_PRELAUNCH=false`.
+`fixly.tech` נעול לנחיתה בלבד (middleware allowlist). מוצר = `NEXT_PUBLIC_PRODUCT_URL`.
 
 מומלץ להגדיר גם:
 - `NEXT_PUBLIC_APP_URL=https://fixly.tech` (SEO / GSC)
-- `NEXT_PUBLIC_PRODUCT_URL=https://YOUR-PROJECT.vercel.app` (קישור למערכת)
+- `NEXT_PUBLIC_PRODUCT_URL=https://fixly.vercel.app` (קישור למערכת)
 
 ## 1. חברו את הדומיין ב-Vercel
 
@@ -35,8 +35,8 @@
 | משתנה | ערך |
 |--------|------|
 | `NEXT_PUBLIC_APP_URL` | `https://fixly.tech` |
-| `NEXT_PUBLIC_PRODUCT_URL` | `https://YOUR-ALIAS.vercel.app` (אופציונלי) |
-| `NEXT_PUBLIC_FF_PRELAUNCH` | `true` (עד להשקה מלאה; vercel.app עדיין מציג את האפליקציה) |
+| `NEXT_PUBLIC_PRODUCT_URL` | `https://fixly.vercel.app` (ברירת מחדל בקוד אם לא מוגדר) |
+| `NEXT_PUBLIC_FF_PRELAUNCH` | לא פותח מוצר על fixly.tech — הדומיין הקנוי תמיד נחיתה בלבד |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | טוקן האימות מ-GSC (ראו למטה) |
 | `NEXT_PUBLIC_FF_ANALYTICS` | `true` |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | `G-…` (מומלץ יחד עם GSC) |
