@@ -13,7 +13,11 @@ import {
 import { isSeedDemoProfessionalId } from '@/lib/data/seed-professionals'
 import { routes } from '@/lib/routes'
 import { SITE_URL } from '@/lib/site-config'
-import { resolveSeoCityAndCategory } from '@/lib/seo/resolve-location'
+import {
+  resolveInternalLinkCitySlug,
+  resolveSeoCityAndCategory,
+} from '@/lib/seo/resolve-location'
+import { getCityBySlug } from '@/lib/seo/marketplace-pages'
 import {
   buildBreadcrumbListSchema,
   buildProfessionalServiceSchema,
@@ -70,7 +74,14 @@ export default async function ProfessionalPage({ params }: ProfessionalPageProps
     notFound()
   }
 
-  const { citySlug, categorySlug, city, category } = resolveSeoCityAndCategory(pro)
+  const resolved = resolveSeoCityAndCategory(pro)
+  // Prefer Jerusalem when pro location is missing/unknown (organic cluster).
+  const citySlug = pro.location?.trim()
+    ? resolved.citySlug
+    : resolveInternalLinkCitySlug(pro.location)
+  const categorySlug = resolved.categorySlug
+  const city = getCityBySlug(citySlug) ?? resolved.city
+  const category = resolved.category
   const servicesHref =
     categorySlug && citySlug ? routes.services(citySlug, categorySlug) : null
 

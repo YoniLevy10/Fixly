@@ -2,13 +2,13 @@ import Link from 'next/link'
 import { routes } from '@/lib/routes'
 import { SEO_CATEGORIES, SEO_CITIES, seoPagePath } from '@/lib/seo/marketplace-pages'
 
-/** Hot-intent city×category combos for light SEO footer links. */
+/** Hot-intent city×category combos — Jerusalem cluster first. */
 const HOT_INTENT = [
-  { city: 'tel-aviv', category: 'plumbing' },
-  { city: 'tel-aviv', category: 'electricity' },
-  { city: 'tel-aviv', category: 'ac' },
-  { city: 'haifa', category: 'plumbing' },
+  { city: 'jerusalem', category: 'plumbing' },
   { city: 'jerusalem', category: 'electricity' },
+  { city: 'jerusalem', category: 'ac' },
+  { city: 'tel-aviv', category: 'plumbing' },
+  { city: 'haifa', category: 'electricity' },
 ] as const
 
 type ServicesSeoFooterProps = {
