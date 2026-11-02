@@ -46,7 +46,7 @@ const emptyForm: FormState = {
 }
 
 /** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
-const VARIANT = 'landing_v7'
+const VARIANT = 'landing_v8'
 
 function forceHebrewRtl() {
   document.documentElement.lang = 'he'
@@ -119,9 +119,11 @@ export default function PrelaunchLanding({
   useEffect(() => {
     const el = waitlistRef.current
     if (!el || typeof IntersectionObserver === 'undefined') return
+    // Hide sticky as soon as any part of the form panel approaches the viewport
+    // so it never covers inputs / submit on short phones.
     const observer = new IntersectionObserver(
       ([entry]) => setShowSticky(!(entry?.isIntersecting ?? false)),
-      { rootMargin: '-12% 0px -40% 0px', threshold: 0.08 },
+      { rootMargin: '0px 0px -18% 0px', threshold: [0, 0.05, 0.15] },
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -241,25 +243,29 @@ export default function PrelaunchLanding({
 
   return (
     <div
-      className="prelaunch-root prelaunch-paper min-h-screen overflow-x-hidden text-foreground pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:pb-0"
+      className={`prelaunch-root prelaunch-paper min-h-screen overflow-x-hidden text-foreground md:pb-0 ${
+        showSticky ? 'has-sticky-cta' : 'pb-6'
+      }`}
       dir="rtl"
       lang="he"
     >
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_srgb,hsl(var(--background))_88%,transparent)] backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_srgb,hsl(var(--background))_92%,transparent)] backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
         <div
-          className="mx-auto flex items-center justify-between py-3.5"
+          className="mx-auto flex items-center justify-between py-3"
           style={{ maxWidth: 'var(--prelaunch-max)', paddingInline: 'var(--prelaunch-gutter)' }}
         >
-          <a href="#top" className="prelaunch-brand text-[1.35rem] font-extrabold text-primary" aria-label="Fixly" dir="ltr">
+          <a href="#top" className="prelaunch-brand text-[1.25rem] font-extrabold text-primary sm:text-[1.35rem]" aria-label="Fixly" dir="ltr">
             {copy.brand}
             <span className="text-secondary">.</span>
           </a>
+          {/* Mobile: compact header CTA; desktop keeps full label */}
           <a
             href="#waitlist"
             onClick={() => track('waitlist_cta_click', { placement: 'header', variant: VARIANT })}
-            className="prelaunch-cta prelaunch-cta-primary !min-h-10 px-4 text-sm"
+            className="prelaunch-cta prelaunch-cta-primary inline-flex !min-h-10 px-3.5 text-sm sm:px-4"
           >
-            {copy.primaryCta}
+            <span className="sm:hidden">הצטרפות</span>
+            <span className="hidden sm:inline">{copy.primaryCta}</span>
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
           </a>
         </div>
@@ -268,82 +274,96 @@ export default function PrelaunchLanding({
       <main id="top">
         {/* One composition: brand · headline · sub · CTA · product visual */}
         <section
-          className="mx-auto grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(300px,26rem)] lg:gap-14"
+          className="prelaunch-hero mx-auto grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(300px,26rem)] lg:gap-14"
           style={{
             maxWidth: 'var(--prelaunch-max)',
             paddingInline: 'var(--prelaunch-gutter)',
             paddingBlock: 'clamp(2rem, 6vw, 4.5rem) clamp(2.5rem, 5vw, 3.5rem)',
           }}
         >
-          <div className={mounted ? 'prelaunch-rise' : 'opacity-0'}>
+          <div className={`prelaunch-hero-copy ${mounted ? 'prelaunch-rise' : 'opacity-0'}`}>
             <p
               dir="ltr"
-              className="prelaunch-brand mb-5 text-[clamp(2.75rem,9vw,4.5rem)] font-extrabold leading-none text-primary"
+              className="prelaunch-brand prelaunch-hero-brand mb-5 text-[clamp(2.75rem,9vw,4.5rem)] font-extrabold leading-none text-primary"
             >
               {copy.brand}
               <span className="text-secondary">.</span>
             </p>
 
-            <h1 className="max-w-[18ch] text-[clamp(1.85rem,6.2vw,3.15rem)] font-extrabold leading-[1.12] text-foreground">
+            <h1 className="prelaunch-hero-title max-w-[18ch] text-[clamp(1.85rem,6.2vw,3.15rem)] font-extrabold leading-[1.12] text-foreground">
               <span className="block">{copy.headline}</span>
-              <span className="mt-1.5 block text-primary">{copy.headlineLine2}</span>
+              <span className="mt-1 block text-primary sm:mt-1.5">{copy.headlineLine2}</span>
             </h1>
 
-            <p className="mt-5 max-w-md text-[1.05rem] font-medium leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+            <p className="prelaunch-hero-sub mt-5 max-w-md text-[1.05rem] font-medium leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               {copy.subheadline}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <a
-                href="#waitlist"
-                onClick={() =>
-                  track('waitlist_cta_click', { placement: 'hero_primary', variant: VARIANT })
-                }
-                className="prelaunch-cta prelaunch-cta-primary text-base"
-              >
-                {copy.primaryCta}
-                <ArrowLeft className="h-4 w-4" aria-hidden />
-              </a>
-              <a href="#how" className="prelaunch-cta prelaunch-cta-secondary text-base">
+            {/* Mobile: text link only (header + form submit carry primary CTA). Desktop: both. */}
+            <div className="prelaunch-hero-actions mt-8">
+              <a href="#how" className="prelaunch-link sm:hidden">
                 {copy.secondaryCta}
               </a>
+              <div className="hidden flex-wrap items-center gap-3 sm:flex">
+                <a
+                  href="#waitlist"
+                  onClick={() =>
+                    track('waitlist_cta_click', { placement: 'hero_primary', variant: VARIANT })
+                  }
+                  className="prelaunch-cta prelaunch-cta-primary inline-flex text-base"
+                >
+                  {copy.primaryCta}
+                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                </a>
+                <a
+                  href="#how"
+                  className="prelaunch-cta prelaunch-cta-secondary inline-flex text-base"
+                >
+                  {copy.secondaryCta}
+                </a>
+              </div>
             </div>
           </div>
 
           <div
             id="waitlist"
             ref={waitlistRef}
-            className={`scroll-mt-28 ${mounted ? 'prelaunch-rise prelaunch-rise-delay' : 'opacity-0'}`}
+            className={`scroll-mt-24 ${mounted ? 'prelaunch-rise prelaunch-rise-delay' : 'opacity-0'}`}
           >
             <div className="prelaunch-product overflow-hidden">
-              <div className="border-b border-border/80 bg-background/60 px-5 py-4 sm:px-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+              <div className="prelaunch-product-head border-b border-border/80 bg-background/60 px-5 py-4 sm:px-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
                     <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
                       {copy.formEyebrow}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-foreground">{copy.formLead}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-foreground">{copy.formLead}</p>
                   </div>
                   <span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
                     {copy.proHint}
                   </span>
                 </div>
               </div>
-              <div className="px-5 py-5 sm:px-6 sm:py-6">
+              <div className="prelaunch-product-body px-5 py-5 sm:px-6 sm:py-6">
                 <WaitlistFormCard {...formProps} />
               </div>
-              <DemoOpportunityCard />
+              <div className="hidden sm:block">
+                <DemoOpportunityCard />
+              </div>
+            </div>
+            {/* Demo below the form on phones so the form stays the hero visual */}
+            <div className="mt-3 sm:hidden">
+              <div className="prelaunch-product overflow-hidden">
+                <DemoOpportunityCard standalone />
+              </div>
             </div>
           </div>
         </section>
 
-        <div
-          className="mx-auto border-y border-border/80"
-          style={{ maxWidth: 'var(--prelaunch-max)', marginInline: 'auto' }}
-        >
+        <div className="border-y border-border/80">
           <ul
-            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-5 text-sm font-semibold text-muted-foreground"
-            style={{ paddingInline: 'var(--prelaunch-gutter)' }}
+            className="prelaunch-trust mx-auto justify-start text-sm font-semibold text-muted-foreground sm:flex-wrap sm:justify-center sm:overflow-visible sm:whitespace-normal"
+            style={{ maxWidth: 'var(--prelaunch-max)' }}
           >
             {copy.trustItems.map((item) => (
               <li key={item} className="inline-flex items-center gap-2">
@@ -421,7 +441,7 @@ export default function PrelaunchLanding({
               onClick={() =>
                 track('waitlist_cta_click', { placement: 'value_band', variant: VARIANT })
               }
-              className="prelaunch-cta prelaunch-cta-primary mt-10 text-sm"
+              className="prelaunch-cta prelaunch-cta-primary inline-flex mt-10 text-sm"
             >
               {copy.proCta}
               <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -510,13 +530,13 @@ export default function PrelaunchLanding({
       </footer>
 
       {showSticky ? (
-        <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] z-50 md:hidden">
+        <div className="prelaunch-sticky fixed z-50 md:hidden">
           <a
             href="#waitlist"
             onClick={() =>
               track('waitlist_cta_click', { placement: 'mobile_sticky', variant: VARIANT })
             }
-            className="prelaunch-cta prelaunch-cta-primary flex w-full min-h-14 text-base shadow-[0_16px_40px_-8px_rgba(245,158,11,0.55)]"
+            className="prelaunch-cta prelaunch-cta-primary inline-flex w-full min-h-14 text-base shadow-[0_16px_40px_-8px_rgba(245,158,11,0.55)]"
           >
             {copy.stickyCta}
             <ArrowLeft className="h-5 w-5" aria-hidden />
@@ -527,10 +547,10 @@ export default function PrelaunchLanding({
   )
 }
 
-function DemoOpportunityCard() {
+function DemoOpportunityCard({ standalone = false }: { standalone?: boolean }) {
   return (
     <aside
-      className="border-t border-border/80 bg-background/50 px-5 py-4 sm:px-6"
+      className={`${standalone ? 'bg-card' : 'border-t border-border/80 bg-background/50'} px-4 py-3.5 sm:px-6 sm:py-4`}
       aria-label={copy.previewTitle}
     >
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -655,7 +675,7 @@ function WaitlistFormCard({
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit} onFocus={onSignupStarted} id="waitlist-panel">
+    <form className="space-y-3.5 sm:space-y-4" onSubmit={onSubmit} onFocus={onSignupStarted} id="waitlist-panel">
       <Field
         label="שם מלא"
         name="fullName"
@@ -700,7 +720,7 @@ function WaitlistFormCard({
       <button
         type="submit"
         disabled={loading}
-        className="prelaunch-cta prelaunch-cta-primary w-full text-base disabled:opacity-60"
+        className="prelaunch-cta prelaunch-cta-primary inline-flex w-full text-base disabled:opacity-60"
       >
         {loading ? 'שולחים…' : copy.submitPro}
         {!loading ? <ArrowLeft className="h-4 w-4" aria-hidden /> : null}

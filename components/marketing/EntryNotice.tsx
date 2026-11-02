@@ -89,7 +89,7 @@ export default function EntryNotice() {
           ref={actionRef}
           type="button"
           onClick={closeNotice}
-          className="prelaunch-cta prelaunch-cta-primary mt-6 w-full text-base"
+          className="prelaunch-cta prelaunch-cta-primary inline-flex mt-6 w-full text-base"
         >
           {copy.noticeCta}
         </button>

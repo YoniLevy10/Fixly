@@ -244,7 +244,8 @@ html.native-app [contenteditable='true'] {
 /* ——— Marketing landing (fixly.tech) ——— */
 .prelaunch-root {
   --prelaunch-max: 68rem;
-  --prelaunch-gutter: clamp(1.25rem, 4vw, 2.5rem);
+  --prelaunch-gutter: clamp(1.15rem, 4vw, 2.5rem);
+  --prelaunch-sticky-h: calc(4.25rem + env(safe-area-inset-bottom, 0px));
   letter-spacing: -0.01em;
 }
 
@@ -304,8 +305,9 @@ html.native-app [contenteditable='true'] {
   box-shadow: 0 0 0 4px color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
 }
 
+/* display left to Tailwind (inline-flex / hidden / flex) so responsive
+   visibility utilities are not overridden by unlayered CSS. */
 .prelaunch-cta {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -343,6 +345,115 @@ html.native-app [contenteditable='true'] {
 .prelaunch-cta-secondary:hover {
   border-color: color-mix(in srgb, hsl(var(--primary)) 28%, hsl(var(--border)));
   background: color-mix(in srgb, hsl(var(--primary)) 4%, transparent);
+}
+
+.prelaunch-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in srgb, hsl(var(--primary)) 35%, transparent);
+}
+
+.prelaunch-link:hover {
+  text-decoration-color: hsl(var(--primary));
+}
+
+.prelaunch-trust {
+  display: flex;
+  gap: 0.75rem 1.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-block: 1rem;
+  padding-inline: var(--prelaunch-gutter);
+}
+
+.prelaunch-trust::-webkit-scrollbar {
+  display: none;
+}
+
+.prelaunch-trust li {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Mobile-first landing rhythm — one clear composition, no CTA pile-up */
+@media (max-width: 767px) {
+  .prelaunch-root {
+    --prelaunch-gutter: 1rem;
+  }
+
+  .prelaunch-hero {
+    padding-top: 1.1rem !important;
+    padding-bottom: 1.25rem !important;
+    gap: 1.15rem !important;
+  }
+
+  .prelaunch-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prelaunch-hero-brand {
+    margin-bottom: 0.65rem !important;
+    font-size: clamp(2.2rem, 11vw, 2.65rem) !important;
+  }
+
+  .prelaunch-hero-title {
+    font-size: clamp(1.65rem, 7.2vw, 2rem) !important;
+    line-height: 1.14 !important;
+    max-width: none !important;
+  }
+
+  .prelaunch-hero-sub {
+    margin-top: 0.7rem !important;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .prelaunch-hero-actions {
+    margin-top: 0.55rem !important;
+  }
+
+  .prelaunch-hero-actions .prelaunch-link {
+    align-self: flex-start;
+  }
+
+  .prelaunch-product {
+    border-radius: 1.05rem;
+    box-shadow:
+      0 1px 0 color-mix(in srgb, hsl(var(--foreground)) 3%, transparent),
+      0 18px 36px -24px color-mix(in srgb, hsl(var(--primary)) 32%, transparent);
+  }
+
+  .prelaunch-product-head {
+    padding: 0.95rem 1rem !important;
+  }
+
+  .prelaunch-product-body {
+    padding: 1rem !important;
+  }
+
+  .prelaunch-input {
+    min-height: 3.1rem;
+    font-size: 16px; /* avoid iOS zoom */
+  }
+
+  .prelaunch-sticky {
+    inset-inline: 0.75rem;
+    bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .prelaunch-root.has-sticky-cta {
+    padding-bottom: calc(var(--prelaunch-sticky-h) + 0.5rem);
+  }
 }
 
 @keyframes prelaunch-rise {
