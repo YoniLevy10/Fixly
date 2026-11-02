@@ -205,7 +205,15 @@ export default function ProfessionalsScreen() {
           </div>
         )}
         {professionals.map((pro) => (
-          <ProListCard key={pro.id} professional={pro} />
+          <ProListCard
+            key={pro.id}
+            professional={pro}
+            locale={locale}
+            labels={{
+              profile: t('common.profile'),
+              chat: t('common.chat'),
+            }}
+          />
         ))}
       </div>
     </div>

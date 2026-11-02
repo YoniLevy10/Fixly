@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import ReviewsList from '@/components/reviews/ReviewsList'
 import VerifiedBadge from '@/components/shared/VerifiedBadge'
@@ -19,13 +20,20 @@ export default function ProfessionalProfileView({ pro }: ProfessionalProfileView
     <div className="min-h-screen bg-gray-50 pb-6">
       <div className="bg-primary text-white px-4 pt-6 pb-16 relative lg:rounded-2xl lg:mx-8 lg:mt-6">
         <div className="flex justify-center">
-          <div
-            className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg bg-cover bg-center bg-white/20 flex items-center justify-center text-3xl font-bold"
-            style={{
-              backgroundImage: pro.avatarUrl ? `url(${pro.avatarUrl})` : undefined,
-            }}
-          >
-            {!pro.avatarUrl && pro.name.charAt(0)}
+          <div className="relative w-24 h-24 rounded-2xl border-4 border-white shadow-lg bg-white/20 overflow-hidden flex items-center justify-center text-3xl font-bold">
+            {pro.avatarUrl ? (
+              <Image
+                src={pro.avatarUrl}
+                alt=""
+                width={96}
+                height={96}
+                sizes="96px"
+                className="object-cover"
+                priority
+              />
+            ) : (
+              pro.name.charAt(0)
+            )}
           </div>
         </div>
       </div>

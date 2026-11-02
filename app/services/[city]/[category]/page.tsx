@@ -7,12 +7,21 @@ import {
   SEO_CITIES,
   getCategoryBySlug,
   getCityBySlug,
+  seoPagePath,
 } from '@/lib/seo/marketplace-pages'
 import { listRealProfessionalsForSeo } from '@/lib/data/professionals-service'
 import { resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
+import {
+  buildBreadcrumbListSchema,
+  buildProfessionalsItemListSchema,
+} from '@/lib/seo/schema'
 import { routes } from '@/lib/routes'
+import { SITE_URL } from '@/lib/site-config'
 import ProListCard from '@/components/professionals/ProListCard'
 import FixlyGuaranteeBanner from '@/components/shared/FixlyGuaranteeBanner'
+import JsonLd from '@/components/seo/JsonLd'
+import SeoBreadcrumbs from '@/components/seo/SeoBreadcrumbs'
+import ServicesSeoFooter from '@/components/seo/ServicesSeoFooter'
 
 type PageProps = {
   params: Promise<{ city: string; category: string }>
@@ -37,12 +46,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     cityQuery: cityMeta.query,
     categorySlug: category,
   })
+  const canonicalPath = seoPagePath(city, category)
+  const canonical = `${SITE_URL}${canonicalPath}`
+  const title = `${catMeta.nameHe} ב${cityMeta.nameHe} | Fixly`
+  const description = seo.hasValue
+    ? `מצא ${catMeta.nameHe} מומלץ ב${cityMeta.nameHe}. בקשה מהירה ומעקב עד סיום — Fixly.`
+    : `${catMeta.nameHe} ב${cityMeta.nameHe} — Fixly נפתחת לפי צפיפות. הירשמו לעדכון.`
 
   return {
-    title: `${catMeta.nameHe} ב${cityMeta.nameHe} | Fixly`,
-    description: seo.hasValue
-      ? `מצא ${catMeta.nameHe} מומלץ ב${cityMeta.nameHe}. בקשה מהירה ומעקב עד סיום — Fixly.`
-      : `${catMeta.nameHe} ב${cityMeta.nameHe} — Fixly נפתחת לפי צפיפות. הירשמו לעדכון.`,
+    title,
+    description,
+    alternates: { canonical },
     robots: seo.hasValue
       ? { index: true, follow: true }
       : { index: false, follow: true },
@@ -51,6 +65,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: seo.hasValue
         ? `אנשי מקצוע אמיתיים ב${cityMeta.nameHe}`
         : `הרשמה ל-${catMeta.nameHe} ב${cityMeta.nameHe}`,
+      url: canonical,
+      locale: 'he_IL',
+      type: 'website',
     },
   }
 }
@@ -61,7 +78,7 @@ export default async function ServiceLandingPage({ params }: PageProps) {
   const catMeta = getCategoryBySlug(category)
 
   if (!cityMeta || !catMeta) {
-    return <main className="p-6">Not found</main>
+    return <article className="p-6">Not found</article>
   }
 
   const seo = await resolveSeoIndexValue({
@@ -76,9 +93,35 @@ export default async function ServiceLandingPage({ params }: PageProps) {
         })
       : []
 
+  const path = seoPagePath(city, category)
+  const listPros = pros.slice(0, 12)
+  const breadcrumbItems = [
+    { name: 'Fixly', href: routes.home },
+    { name: 'קטגוריות', href: '/categories' },
+    { name: cityMeta.nameHe, href: `/categories#${city}` },
+    { name: catMeta.nameHe },
+  ]
+  const breadcrumbLd = buildBreadcrumbListSchema([
+    { name: 'Fixly', path: routes.home },
+    { name: 'קטגוריות', path: '/categories' },
+    { name: `${catMeta.nameHe} ב${cityMeta.nameHe}`, path },
+  ])
+  const itemListLd =
+    listPros.length > 0
+      ? buildProfessionalsItemListSchema(listPros, {
+          name: `${catMeta.nameHe} ב${cityMeta.nameHe}`,
+          description: `אנשי מקצוע ב-${catMeta.nameHe} באזור ${cityMeta.nameHe}`,
+        })
+      : null
+
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-6">
-      <div>
+    <article className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-6">
+      <JsonLd data={breadcrumbLd} />
+      {itemListLd ? <JsonLd data={itemListLd} /> : null}
+
+      <SeoBreadcrumbs items={breadcrumbItems} />
+
+      <header>
         <p className="text-sm text-muted-foreground">Fixly</p>
         <h1 className="text-3xl font-black">
           {catMeta.nameHe} ב{cityMeta.nameHe}
@@ -90,25 +133,35 @@ export default async function ServiceLandingPage({ params }: PageProps) {
               ? `ביקוש מאומת באזור — נפתח כשיש אספקה. בינתיים אפשר להירשם.`
               : 'נפתח לפי צפיפות אמיתית באזור — בלי פרופילי דמו'}
         </p>
-      </div>
+      </header>
 
       {pros.length > 0 ? (
-        <>
+        <section aria-labelledby="pros-heading" className="space-y-3">
+          <h2 id="pros-heading" className="text-xl font-bold">
+            אנשי מקצוע מומלצים ב{cityMeta.nameHe}
+          </h2>
           <FixlyGuaranteeBanner compact />
           <div className="space-y-3">
-            {pros.slice(0, 12).map((pro) => (
+            {listPros.map((pro) => (
               <ProListCard key={pro.id} professional={pro} />
             ))}
           </div>
+          <h2 className="text-lg font-bold pt-2">שלחו בקשה עכשיו</h2>
           <Link
             href={routes.newRequest}
             className="block text-center bg-primary text-white py-3 rounded-xl font-bold"
           >
             שלח בקשה עכשיו
           </Link>
-        </>
+        </section>
       ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-4">
+        <section
+          aria-labelledby="waitlist-heading"
+          className="rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-4"
+        >
+          <h2 id="waitlist-heading" className="text-lg font-bold">
+            נפתח בקרוב ב{cityMeta.nameHe}
+          </h2>
           <p className="text-muted-foreground">
             עדיין אין בעלי מקצוע אמיתיים מאומתים ב{cityMeta.nameHe} לתחום הזה.
             אנחנו לא מציגים פרופילי דמו בדפי חיפוש.
@@ -128,8 +181,10 @@ export default async function ServiceLandingPage({ params }: PageProps) {
               הצטרפו לרשימה
             </Link>
           </p>
-        </div>
+        </section>
       )}
-    </main>
+
+      <ServicesSeoFooter currentPath={path} />
+    </article>
   )
 }

@@ -13,7 +13,16 @@ import { featureFlags } from '@/lib/feature-flags'
 import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
+import { SEO_CATEGORIES } from '@/lib/seo/marketplace-pages'
+import { resolveSeoCitySlug } from '@/lib/seo/resolve-location'
 import type { Professional } from '@/types/professional'
+
+function categoryHref(categorySlug: string, citySlug: string): string {
+  if (SEO_CATEGORIES.some((c) => c.slug === categorySlug)) {
+    return routes.services(citySlug, categorySlug)
+  }
+  return `${routes.professionals}?category=${categorySlug}`
+}
 
 const DemoPlatformStats = dynamic(
   () => import('@/components/demo/DemoPlatformStats'),
@@ -45,6 +54,7 @@ export default function HomeScreen() {
   const router = useRouter()
   const firstName = user.fullName.split(' ')[0] || t('common.guest')
   const ChevronAll = dir === 'rtl' ? ChevronLeft : ChevronRight
+  const defaultCitySlug = resolveSeoCitySlug(user.location)
 
   useEffect(() => {
     fetch('/api/professionals?featured=true')
@@ -187,7 +197,7 @@ export default function HomeScreen() {
               {seasonalCats.map((cat) => (
                 <Link
                   key={cat.slug}
-                  href={`${routes.professionals}?category=${cat.slug}`}
+                  href={categoryHref(cat.slug, defaultCitySlug)}
                   className={`flex-shrink-0 px-3 py-2 rounded-full border text-xs font-bold apple-glass-pill ${getCategoryAccent(cat.slug).chip}`}
                 >
                   {cat.icon} {cat.name}
@@ -216,7 +226,7 @@ export default function HomeScreen() {
                   return (
                     <Link
                       key={cat.slug}
-                      href={`${routes.professionals}?category=${cat.slug}`}
+                      href={categoryHref(cat.slug, defaultCitySlug)}
                       className={`ios27-surface p-3 flex flex-col items-center gap-2 transition-all active:scale-95 duration-[var(--dur-1)] ${accent.card}`}
                     >
                       <span
