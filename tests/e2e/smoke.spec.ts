@@ -55,17 +55,17 @@ test.describe('public pages', () => {
     await page.goto('/waitlist')
     await dismissEntryNotice(page)
     await expect(page.getByRole('heading', { name: /יותר הזדמנויות עבודה|עבודות אמיתיות/i })).toBeVisible()
-    await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
-    const form = page.locator('#waitlist.opacity-100').first()
+    await expect(page.locator('#waitlist').getByText(/הרשמה מוקדמת/i).first()).toBeVisible()
+    const form = page.locator('#waitlist').first()
     await expect(form).toBeVisible()
     await form.getByRole('button', { name: /בחרו תחומים/ }).click()
     await form.getByRole('button', { name: 'אינסטלטורים', exact: true }).click()
     await form.getByRole('button', { name: 'חשמלאים', exact: true }).click()
     await form.getByRole('button', { name: '2 תחומים נבחרו', exact: true }).click()
-    await page.locator('#waitlist.opacity-100').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
-    await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
-    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
-    await expect(page.locator('#waitlist.opacity-100').first().getByText('נרשמתם', { exact: true })).toBeVisible({ timeout: 10_000 })
+    await page.locator('#waitlist').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
+    await page.locator('#waitlist').first().getByLabel(/טלפון/i).fill('0501234567')
+    await page.locator('#waitlist').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await expect(page.locator('#waitlist').first().getByText('נרשמתם', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 
   test('waitlist shows error when save is rejected', async ({ page }) => {
@@ -83,15 +83,15 @@ test.describe('public pages', () => {
 
     await page.goto('/waitlist')
     await dismissEntryNotice(page)
-    const form = page.locator('#waitlist.opacity-100').first()
+    const form = page.locator('#waitlist').first()
     await form.getByRole('button', { name: /בחרו תחומים/ }).click()
     await form.getByRole('button', { name: 'אינסטלטורים', exact: true }).click()
     await form.getByRole('button', { name: '1 תחומים נבחרו', exact: true }).click()
     await form.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
-    await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
-    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await page.locator('#waitlist').first().getByLabel(/טלפון/i).fill('0501234567')
+    await page.locator('#waitlist').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(
-      page.locator('#waitlist.opacity-100').first().getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
+      page.locator('#waitlist').first().getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
     ).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('נרשמתם', { exact: true })).toHaveCount(0)
   })
@@ -99,7 +99,7 @@ test.describe('public pages', () => {
   test('pro join redirects to unified waitlist', async ({ page }) => {
     await page.goto('/pro/join')
     await expect(page).toHaveURL(/\/waitlist\?audience=professional/)
-    await expect(page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /בחרו תחומים/ })).toBeVisible()
+    await expect(page.locator('#waitlist').first().getByRole('button', { name: /בחרו תחומים/ })).toBeVisible()
   })
 
   test('robots and sitemap are public', async ({ request }) => {

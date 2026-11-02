@@ -241,13 +241,140 @@ html.native-app [contenteditable='true'] {
   }
 }
 
+/* ——— Marketing landing (fixly.tech) ——— */
+.prelaunch-root {
+  --prelaunch-max: 68rem;
+  --prelaunch-gutter: clamp(1.25rem, 4vw, 2.5rem);
+  letter-spacing: -0.01em;
+}
+
+.prelaunch-root h1,
+.prelaunch-root h2,
+.prelaunch-root .prelaunch-brand {
+  letter-spacing: -0.035em;
+}
+
+.prelaunch-paper {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, hsl(var(--primary)) 4%, hsl(var(--background))) 0%,
+      hsl(var(--background)) 42%,
+      hsl(var(--background)) 100%
+    );
+}
+
+.prelaunch-product {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 1.25rem;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, hsl(var(--foreground)) 4%, transparent),
+    0 24px 48px -28px color-mix(in srgb, hsl(var(--primary)) 28%, transparent);
+}
+
+.prelaunch-input {
+  width: 100%;
+  min-height: 3.25rem;
+  border-radius: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  outline: none;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
+}
+
+.prelaunch-input::placeholder {
+  color: color-mix(in srgb, hsl(var(--muted-foreground)) 75%, transparent);
+}
+
+.prelaunch-input:hover {
+  border-color: color-mix(in srgb, hsl(var(--primary)) 22%, hsl(var(--border)));
+}
+
+.prelaunch-input:focus {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--card));
+  box-shadow: 0 0 0 4px color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
+}
+
+.prelaunch-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: 0.875rem;
+  font-weight: 800;
+  transition:
+    transform var(--dur-1) var(--ease),
+    filter var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+
+.prelaunch-cta:active {
+  transform: scale(0.985);
+}
+
+.prelaunch-cta-primary {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  box-shadow: 0 10px 28px -12px color-mix(in srgb, hsl(var(--secondary)) 70%, transparent);
+}
+
+.prelaunch-cta-primary:hover {
+  filter: brightness(1.04);
+}
+
+.prelaunch-cta-secondary {
+  background: transparent;
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--border));
+}
+
+.prelaunch-cta-secondary:hover {
+  border-color: color-mix(in srgb, hsl(var(--primary)) 28%, hsl(var(--border)));
+  background: color-mix(in srgb, hsl(var(--primary)) 4%, transparent);
+}
+
+@keyframes prelaunch-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prelaunch-rise {
+  animation: prelaunch-rise 0.7s var(--ease) both;
+}
+
+.prelaunch-rise-delay {
+  animation-delay: 90ms;
+}
+
+.prelaunch-rise-delay-2 {
+  animation-delay: 160ms;
+}
+
 @keyframes prelaunch-float {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-6px);
   }
 }
 
@@ -266,12 +393,12 @@ html.native-app [contenteditable='true'] {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(12px, -10px, 0) scale(1.03);
+    transform: translate3d(8px, -6px, 0) scale(1.02);
   }
 }
 
 .prelaunch-float {
-  animation: prelaunch-float 5.5s ease-in-out infinite;
+  animation: prelaunch-float 6s ease-in-out infinite;
 }
 
 .prelaunch-progress {
@@ -279,7 +406,7 @@ html.native-app [contenteditable='true'] {
 }
 
 .prelaunch-drift {
-  animation: prelaunch-drift 9s ease-in-out infinite;
+  animation: prelaunch-drift 12s ease-in-out infinite;
 }
 
 /* Bamakor / OpticalCenter AppSplashScreen — logo pop + sweeping progress line */
@@ -397,6 +524,7 @@ html[dir='rtl'] .fixly-splash-bar {
   .prelaunch-float,
   .prelaunch-progress,
   .prelaunch-drift,
+  .prelaunch-rise,
   .fixly-splash-bar,
   .fixly-splash-mark-pop,
   .animate-ios-fade,
