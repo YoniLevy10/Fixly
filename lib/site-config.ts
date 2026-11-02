@@ -1,4 +1,4 @@
-/** Canonical public app URL — always fixly.tech in production */
+/** Canonical public marketing URL — fixly.tech (SEO, waitlist, legal). */
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://fixly.tech'
 ).replace(/\/$/, '')
@@ -7,14 +7,15 @@ export const SITE_NAME = 'Fixly'
 export const SITE_DOMAIN = 'fixly.tech'
 
 /**
- * Public product URL. Defaults to SITE_URL (fixly.tech).
- * Prefer not pointing users at *.vercel.app aliases.
+ * Full product / marketplace URL (Vercel production alias by default).
+ * Marketing domain (SITE_URL) stays registration-only; deep product links
+ * and “כניסה למערכת” point here. Override with NEXT_PUBLIC_PRODUCT_URL.
  */
 export const PRODUCT_URL = (
-  process.env.NEXT_PUBLIC_PRODUCT_URL?.trim() || SITE_URL
+  process.env.NEXT_PUBLIC_PRODUCT_URL?.trim() || 'https://fixly.vercel.app'
 ).replace(/\/$/, '')
 
-/** Marketplace homepage — matches live `/` (nationwide product, not waitlist). */
+/** Marketplace homepage — matches live `/` on the product host. */
 export const DEFAULT_DESCRIPTION_HE =
   'Fixly מחברת לקוחות ובעלי מקצוע בישראל — בקשה אחת, התאמה לפי תחום ואזור, ומעקב עד שהעבודה נסגרת.'
 
