@@ -1,12 +1,14 @@
-/** Canonical city slugs for SEO landing pages */
+/** Canonical city slugs for SEO landing pages — Jerusalem first (primary intent cluster). */
 export const SEO_CITIES = [
+  { slug: 'jerusalem', nameHe: 'ירושלים', nameEn: 'Jerusalem', query: 'ירושלים' },
   { slug: 'tel-aviv', nameHe: 'תל אביב', nameEn: 'Tel Aviv', query: 'תל אביב' },
   { slug: 'haifa', nameHe: 'חיפה', nameEn: 'Haifa', query: 'חיפה' },
-  { slug: 'jerusalem', nameHe: 'ירושלים', nameEn: 'Jerusalem', query: 'ירושלים' },
   { slug: 'beer-sheva', nameHe: 'באר שבע', nameEn: 'Beer Sheva', query: 'באר שבע' },
   { slug: 'petah-tikva', nameHe: 'פתח תקווה', nameEn: 'Petah Tikva', query: 'פתח תקווה' },
   { slug: 'rishon-lezion', nameHe: 'ראשון לציון', nameEn: 'Rishon LeZion', query: 'ראשון לציון' },
 ] as const
+
+export const PRIMARY_SEO_CITY_SLUG = 'jerusalem' as const
 
 export const SEO_CATEGORIES = [
   { slug: 'plumbing', nameHe: 'אינסטלטור', nameEn: 'Plumber' },

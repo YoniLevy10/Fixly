@@ -42,7 +42,7 @@ export default function CategoriesPage() {
     <article className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-8">
       <JsonLd data={buildCategoriesCollectionSchema(links)} />
 
-      <header className="space-y-2">
+      <header className="space-y-2" dir="rtl">
         <p className="text-sm text-muted-foreground">
           <Link href={routes.home} className="hover:text-primary underline-offset-2 hover:underline">
             Fixly
@@ -52,33 +52,60 @@ export default function CategoriesPage() {
         </p>
         <h1 className="text-3xl font-black">שירותים לפי עיר וקטגוריה</h1>
         <p className="text-muted-foreground">
-          {links.length} דפי כוונה — דפים בלי אספקה או ביקוש נשארים מחוץ לאינדקס
-          (noindex) אבל נגישים מכאן.
+          {links.length} דפי כוונה — ירושלים בראש הרשימה. דפים בלי אספקה או ביקוש
+          נשארים מחוץ לאינדקס (noindex) אבל נגישים מכאן.
         </p>
       </header>
 
-      {SEO_CITIES.map((city) => (
-        <section key={city.slug} id={city.slug} aria-labelledby={`city-${city.slug}`} className="space-y-3">
-          <h2 id={`city-${city.slug}`} className="text-xl font-bold">
-            {city.nameHe}
-          </h2>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {SEO_CATEGORIES.map((cat) => {
-              const path = seoPagePath(city.slug, cat.slug)
-              return (
-                <li key={path}>
-                  <Link
-                    href={path}
-                    className="block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors"
-                  >
-                    {cat.nameHe} ב{city.nameHe}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      ))}
+      {SEO_CITIES.map((city) => {
+        const isPrimary = city.slug === 'jerusalem'
+        return (
+          <section
+            key={city.slug}
+            id={city.slug}
+            aria-labelledby={`city-${city.slug}`}
+            className={
+              isPrimary
+                ? 'space-y-3 rounded-2xl border border-primary/25 bg-primary/[0.04] p-4 sm:p-5'
+                : 'space-y-3'
+            }
+            dir="rtl"
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 id={`city-${city.slug}`} className="text-xl font-bold">
+                {city.nameHe}
+              </h2>
+              {isPrimary ? (
+                <span className="text-xs font-bold text-primary">עיר מובילה</span>
+              ) : null}
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {SEO_CATEGORIES.map((cat) => {
+                const path = seoPagePath(city.slug, cat.slug)
+                const isPriorityIntent =
+                  isPrimary &&
+                  (cat.slug === 'plumbing' ||
+                    cat.slug === 'electricity' ||
+                    cat.slug === 'ac')
+                return (
+                  <li key={path}>
+                    <Link
+                      href={path}
+                      className={
+                        isPriorityIntent
+                          ? 'block rounded-xl border border-primary/35 bg-white px-4 py-3 text-sm font-bold text-primary hover:border-primary transition-colors'
+                          : 'block rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:border-primary/40 hover:text-primary transition-colors'
+                      }
+                    >
+                      {cat.nameHe} ב{city.nameHe}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
+        )
+      })}
 
       <p className="text-sm text-muted-foreground">
         מחפשים משהו אחר?{' '}

@@ -14,7 +14,8 @@ import { getSeasonalCategorySlugs } from '@/lib/seasonal-categories'
 import { getCategoryAccent } from '@/lib/ui/category-colors'
 import { useLocale } from '@/lib/i18n/locale-provider'
 import { SEO_CATEGORIES } from '@/lib/seo/marketplace-pages'
-import { resolveSeoCitySlug } from '@/lib/seo/resolve-location'
+import { jerusalemPriorityLinks } from '@/lib/seo/jerusalem-copy'
+import { resolveInternalLinkCitySlug } from '@/lib/seo/resolve-location'
 import type { Professional } from '@/types/professional'
 
 function categoryHref(categorySlug: string, citySlug: string): string {
@@ -54,7 +55,10 @@ export default function HomeScreen() {
   const router = useRouter()
   const firstName = user.fullName.split(' ')[0] || t('common.guest')
   const ChevronAll = dir === 'rtl' ? ChevronLeft : ChevronRight
-  const defaultCitySlug = resolveSeoCitySlug(user.location)
+  const defaultCitySlug = resolveInternalLinkCitySlug(user.location, {
+    isAnonymous: user.isAnonymous,
+  })
+  const jerusalemLinks = jerusalemPriorityLinks()
 
   useEffect(() => {
     fetch('/api/professionals?featured=true')
@@ -158,7 +162,7 @@ export default function HomeScreen() {
 
       <DemoPlatformStats />
 
-      <div className="px-3 lg:px-8 mb-4 lg:mb-6">
+      <div className="px-3 lg:px-8 mb-4 lg:mb-6 space-y-3">
         <Link
           href={`${routes.waitlist}?utm_source=fixly&utm_medium=organic&utm_campaign=home_cta`}
           className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-primary/15 bg-primary/5 px-4 py-3 active:scale-[0.99] transition-transform"
@@ -176,6 +180,29 @@ export default function HomeScreen() {
             {t('home.waitlistCta')}
           </span>
         </Link>
+
+        <nav
+          aria-label="שירותים בירושלים"
+          data-testid="home-jerusalem-seo-links"
+          className="rounded-[var(--radius-lg)] border border-slate-200/80 bg-white/70 px-4 py-3"
+          dir="rtl"
+        >
+          <p className="text-sm font-black text-foreground mb-2">
+            שירותים מבוקשים בירושלים
+          </p>
+          <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            {jerusalemLinks.map((link) => (
+              <li key={link.path}>
+                <Link
+                  href={link.path}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
       <div className="px-3 lg:px-8">

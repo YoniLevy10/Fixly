@@ -1,15 +1,24 @@
 import {
+  PRIMARY_SEO_CITY_SLUG,
   SEO_CATEGORIES,
   SEO_CITIES,
   getCategoryBySlug,
   getCityBySlug,
 } from '@/lib/seo/marketplace-pages'
 
-const DEFAULT_CITY_SLUG = 'tel-aviv'
+/** Default SEO city when location is missing/unknown — Jerusalem intent cluster. */
+const DEFAULT_CITY_SLUG = PRIMARY_SEO_CITY_SLUG
+
+/** Synthetic guest / unset product defaults — treat as unknown for SEO links. */
+const UNKNOWN_LOCATION_MARKERS = [
+  'תל אביב-יפו',
+  'tel aviv-yafo',
+  'tel-aviv-yafo',
+]
 
 /**
  * Map a free-text Israeli location (e.g. user.location / pro.location)
- * onto an SEO city slug. Falls back to Tel Aviv.
+ * onto an SEO city slug. Falls back to Jerusalem.
  */
 export function resolveSeoCitySlug(location?: string | null): string {
   const text = (location ?? '').trim()
@@ -41,6 +50,27 @@ export function resolveSeoCitySlug(location?: string | null): string {
   }
 
   return DEFAULT_CITY_SLUG
+}
+
+/**
+ * City slug for internal SEO links (home tiles, related services).
+ * Keeps a real detected city; maps empty / anonymous guest defaults → Jerusalem.
+ */
+export function resolveInternalLinkCitySlug(
+  location?: string | null,
+  options?: { isAnonymous?: boolean },
+): string {
+  const text = (location ?? '').trim()
+  if (!text) return DEFAULT_CITY_SLUG
+
+  if (options?.isAnonymous) {
+    const lower = text.toLowerCase()
+    if (UNKNOWN_LOCATION_MARKERS.some((m) => lower === m || text === m)) {
+      return DEFAULT_CITY_SLUG
+    }
+  }
+
+  return resolveSeoCitySlug(text)
 }
 
 const CATEGORY_NEEDLES: { slug: (typeof SEO_CATEGORIES)[number]['slug']; needles: string[] }[] = [

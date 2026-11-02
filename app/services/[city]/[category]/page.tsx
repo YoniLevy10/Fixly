@@ -9,6 +9,7 @@ import {
   getCityBySlug,
   seoPagePath,
 } from '@/lib/seo/marketplace-pages'
+import { getJerusalemCategoryIntro } from '@/lib/seo/jerusalem-copy'
 import { listRealProfessionalsForSeo } from '@/lib/data/professionals-service'
 import { resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
 import {
@@ -95,6 +96,8 @@ export default async function ServiceLandingPage({ params }: PageProps) {
 
   const path = seoPagePath(city, category)
   const listPros = pros.slice(0, 12)
+  const jerusalemIntro =
+    city === 'jerusalem' ? getJerusalemCategoryIntro(category) : null
   const breadcrumbItems = [
     { name: 'Fixly', href: routes.home },
     { name: 'קטגוריות', href: '/categories' },
@@ -114,8 +117,15 @@ export default async function ServiceLandingPage({ params }: PageProps) {
         })
       : null
 
+  const defaultLead =
+    pros.length > 0
+      ? `${pros.length} אנשי מקצוע זמינים • בקשה חינם • מעקב חי`
+      : seo.reason === 'waitlist_demand'
+        ? `ביקוש מאומת באזור — נפתח כשיש אספקה. בינתיים אפשר להירשם.`
+        : 'נפתח לפי צפיפות אמיתית באזור — בלי פרופילי דמו'
+
   return (
-    <article className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-6">
+    <article className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-6" dir="rtl">
       <JsonLd data={breadcrumbLd} />
       {itemListLd ? <JsonLd data={itemListLd} /> : null}
 
@@ -126,14 +136,32 @@ export default async function ServiceLandingPage({ params }: PageProps) {
         <h1 className="text-3xl font-black">
           {catMeta.nameHe} ב{cityMeta.nameHe}
         </h1>
-        <p className="text-muted-foreground mt-2">
-          {pros.length > 0
-            ? `${pros.length} אנשי מקצוע זמינים • בקשה חינם • מעקב חי`
-            : seo.reason === 'waitlist_demand'
-              ? `ביקוש מאומת באזור — נפתח כשיש אספקה. בינתיים אפשר להירשם.`
-              : 'נפתח לפי צפיפות אמיתית באזור — בלי פרופילי דמו'}
+        <p className="text-muted-foreground mt-2 leading-relaxed">
+          {jerusalemIntro?.lead ?? defaultLead}
         </p>
+        {jerusalemIntro ? (
+          <p className="text-sm text-muted-foreground mt-2">{defaultLead}</p>
+        ) : null}
       </header>
+
+      {jerusalemIntro ? (
+        <section aria-labelledby="jerusalem-intent-heading" className="space-y-2">
+          <h2 id="jerusalem-intent-heading" className="text-xl font-bold">
+            {jerusalemIntro.h2}
+          </h2>
+          <p className="text-muted-foreground leading-relaxed">{jerusalemIntro.body}</p>
+          <Link
+            href={
+              pros.length > 0
+                ? routes.newRequest
+                : `${routes.waitlist}?audience=customer&utm_source=fixly&utm_medium=organic&utm_campaign=services_${city}_${category}`
+            }
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white mt-2"
+          >
+            {pros.length > 0 ? 'שלחו בקשה עכשיו' : 'הירשמו לעדכון בירושלים'}
+          </Link>
+        </section>
+      ) : null}
 
       {pros.length > 0 ? (
         <section aria-labelledby="pros-heading" className="space-y-3">
