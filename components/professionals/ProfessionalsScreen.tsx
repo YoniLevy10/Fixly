@@ -98,7 +98,7 @@ export default function ProfessionalsScreen() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t('professionals.searchPlaceholder')}
-          className="w-full apple-glass rounded-2xl pe-10 ps-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/25"
+          className="w-full rounded-xl border border-border bg-card pe-10 ps-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
           aria-busy={loading}
         />
       </div>
@@ -197,8 +197,8 @@ export default function ProfessionalsScreen() {
           </div>
         )}
         {!loading && professionals.length === 0 && (
-          <div className="text-center py-8 space-y-1 ios27-surface">
-            <p className="text-sm font-medium">{t('professionals.emptyTitle')}</p>
+          <div className="text-center py-10 space-y-1 rounded-[var(--radius-lg)] border border-border bg-card px-4">
+            <p className="text-sm font-extrabold text-foreground">{t('professionals.emptyTitle')}</p>
             <p className="text-xs text-muted-foreground">
               {t('professionals.emptyHint')}
             </p>

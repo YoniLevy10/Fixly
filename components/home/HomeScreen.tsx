@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, ChevronLeft, ChevronRight, ChevronDown, MapPin } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, ChevronDown, MapPin, Wrench } from 'lucide-react'
 import { routes } from '@/lib/routes'
 import { useAuth } from '@/lib/auth/auth-provider'
 import { getCategoryLabel } from '@/lib/i18n/category-label'
@@ -109,14 +109,14 @@ export default function HomeScreen() {
           <p className="font-bold text-sm text-foreground">
             {t('home.greeting')}, {firstName}
           </p>
-          <p className="flex items-center gap-1 text-xs text-foreground/70 justify-center mt-0.5">
+          <p className="flex items-center gap-1 text-xs text-muted-foreground justify-center mt-0.5">
             <MapPin size={11} className="text-primary" />
             {user.location ?? t('common.defaultLocation')}
           </p>
         </div>
         <Link
           href={routes.profile}
-          className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-md shadow-primary/25"
+          className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-md shadow-primary/20"
         >
           {firstName.charAt(0)}
         </Link>
@@ -124,15 +124,15 @@ export default function HomeScreen() {
 
       <div
         data-testid="home-hero"
-        className="mx-3 mt-3 mb-5 rounded-[var(--radius-xl)] bg-primary overflow-hidden relative lg:mx-8 lg:mt-6 lg:min-h-[180px] shadow-lg shadow-primary/20 animate-ios-scale-in"
+        className="mx-3 mt-3 mb-5 rounded-[var(--radius-lg)] bg-primary overflow-hidden relative lg:mx-8 lg:mt-6 lg:min-h-[180px] shadow-lg shadow-primary/15 animate-ios-scale-in"
         style={{ minHeight: 145 }}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(255,255,255,0.18),transparent_55%)]" />
-        <div className="p-5 pe-36 relative z-10">
-          <h2 className="text-white font-black text-xl leading-tight mb-1 tracking-tight">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(255,255,255,0.14),transparent_55%)]" />
+        <div className="p-5 pe-28 relative z-10 sm:pe-36">
+          <h2 className="text-primary-foreground font-extrabold text-xl leading-tight mb-1 tracking-tight">
             {t('home.heroTitle')}
           </h2>
-          <p className="text-white/90 text-sm leading-relaxed mb-3">
+          <p className="text-primary-foreground/90 text-sm leading-relaxed mb-3">
             {t('home.heroSubtitle')}
             <br />
             {t('home.heroSubtitle2')}
@@ -140,23 +140,21 @@ export default function HomeScreen() {
           <form onSubmit={handleSearch}>
             <div className="relative">
               <Search
-                className="absolute start-3 top-1/2 -translate-y-1/2 text-foreground/40"
+                className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 size={15}
               />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('home.searchPlaceholder')}
-                className="w-full apple-glass-pill rounded-2xl px-4 ps-9 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground/45"
+                className="w-full rounded-xl border border-white/20 bg-card/95 px-4 ps-9 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground shadow-sm"
               />
             </div>
           </form>
         </div>
-        <div className="absolute top-0 end-0 bottom-0 w-32 flex items-end justify-center overflow-hidden">
-          <div className="w-28 h-32 bg-white/10 rounded-full blur-2xl absolute" />
-          <span className="text-7xl pb-2 relative z-10" role="img" aria-hidden>
-            👷
-          </span>
+        <div className="absolute top-0 end-0 bottom-0 w-28 sm:w-32 flex items-center justify-center overflow-hidden pointer-events-none">
+          <div className="absolute inset-4 rounded-full bg-white/10" />
+          <Wrench className="relative z-10 h-14 w-14 text-white/35" strokeWidth={1.25} aria-hidden />
         </div>
       </div>
 
@@ -165,18 +163,18 @@ export default function HomeScreen() {
       <div className="px-3 lg:px-8 mb-4 lg:mb-6 space-y-3">
         <Link
           href={`${routes.waitlist}?utm_source=fixly&utm_medium=organic&utm_campaign=home_cta`}
-          className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-primary/15 bg-primary/5 px-4 py-3 active:scale-[0.99] transition-transform"
+          className="flex items-center justify-between gap-3 rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3 active:scale-[0.99] transition-transform"
           data-testid="home-waitlist-cta"
         >
           <div className="min-w-0 text-start">
-            <p className="text-sm font-black text-foreground leading-tight">
+            <p className="text-sm font-extrabold text-foreground leading-tight">
               {t('home.waitlistCtaTitle')}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
               {t('home.waitlistCtaLead')}
             </p>
           </div>
-          <span className="flex-shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white">
+          <span className="flex-shrink-0 rounded-xl bg-secondary px-3 py-2 text-xs font-extrabold text-secondary-foreground">
             {t('home.waitlistCta')}
           </span>
         </Link>
@@ -184,10 +182,10 @@ export default function HomeScreen() {
         <nav
           aria-label="שירותים בירושלים"
           data-testid="home-jerusalem-seo-links"
-          className="rounded-[var(--radius-lg)] border border-slate-200/80 bg-white/70 px-4 py-3"
+          className="rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3"
           dir="rtl"
         >
-          <p className="text-sm font-black text-foreground mb-2">
+          <p className="text-sm font-extrabold text-foreground mb-2">
             שירותים מבוקשים בירושלים
           </p>
           <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
@@ -210,7 +208,7 @@ export default function HomeScreen() {
           <div className="flex gap-2 mb-4 animate-ios-slide-up">
             <Link
               href={routes.quickRequest}
-              className="flex-1 text-center py-3 rounded-2xl bg-secondary text-white text-sm font-bold shadow-md shadow-secondary/30 active:scale-[0.98] transition-transform"
+              className="flex-1 text-center py-3 rounded-xl bg-secondary text-secondary-foreground text-sm font-extrabold shadow-md shadow-secondary/25 active:scale-[0.98] transition-transform"
             >
               {t('improvements.quickRequest')}
             </Link>
@@ -225,7 +223,7 @@ export default function HomeScreen() {
                 <Link
                   key={cat.slug}
                   href={categoryHref(cat.slug, defaultCitySlug)}
-                  className={`flex-shrink-0 px-3 py-2 rounded-full border text-xs font-bold apple-glass-pill ${getCategoryAccent(cat.slug).chip}`}
+                  className={`flex-shrink-0 px-3 py-2 rounded-full border text-xs font-bold bg-card ${getCategoryAccent(cat.slug).chip}`}
                 >
                   {cat.icon} {cat.name}
                 </Link>
@@ -241,7 +239,7 @@ export default function HomeScreen() {
               ? Array.from({ length: 9 }).map((_, i) => (
                   <div
                     key={`cat-skel-${i}`}
-                    className="ios27-surface p-3 flex flex-col items-center gap-2 animate-pulse"
+                    className="rounded-[var(--radius-lg)] border border-border bg-card p-3 flex flex-col items-center gap-2 animate-pulse"
                     aria-hidden
                   >
                     <span className="w-12 h-12 rounded-2xl bg-muted" />
@@ -254,7 +252,7 @@ export default function HomeScreen() {
                     <Link
                       key={cat.slug}
                       href={categoryHref(cat.slug, defaultCitySlug)}
-                      className={`ios27-surface p-3 flex flex-col items-center gap-2 transition-all active:scale-95 duration-[var(--dur-1)] ${accent.card}`}
+                      className={`rounded-[var(--radius-lg)] border border-border bg-card p-3 flex flex-col items-center gap-2 transition-all active:scale-95 duration-[var(--dur-1)] hover:border-primary/30 ${accent.card}`}
                     >
                       <span
                         className={`text-3xl w-12 h-12 flex items-center justify-center rounded-2xl ${accent.iconBg}`}
@@ -271,7 +269,7 @@ export default function HomeScreen() {
           <button
             type="button"
             onClick={() => setShowAllCats(!showAllCats)}
-            className="mt-2.5 w-full apple-glass-pill rounded-2xl py-2.5 flex items-center justify-center gap-2 text-sm font-bold text-foreground hover:bg-primary/10 transition-colors"
+            className="mt-2.5 w-full rounded-xl border border-border bg-card py-2.5 flex items-center justify-center gap-2 text-sm font-bold text-foreground hover:bg-primary/5 transition-colors"
           >
             <ChevronDown
               size={15}

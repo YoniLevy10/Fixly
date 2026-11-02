@@ -23,7 +23,7 @@ test.describe('public pages', () => {
     // Prelaunch has multiple identical CTAs; marketplace has a search field.
     // Use .first() — locale boot can briefly leave duplicate nodes under strict mode.
     const waitlistCta = page
-      .getByRole('link', { name: /הצטרפו בחינם|הצטרפו לרשימה/i })
+      .getByRole('link', { name: /הצטרפות בחינם|הצטרפו בחינם|הצטרפו לרשימה/i })
       .first()
     const search = page
       .getByPlaceholder(/מה צריך לתקן|What needs fixing/i)
@@ -54,7 +54,7 @@ test.describe('public pages', () => {
 
     await page.goto('/waitlist')
     await dismissEntryNotice(page)
-    await expect(page.getByRole('heading', { name: /עבודות אמיתיות/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /יותר הזדמנויות עבודה|עבודות אמיתיות/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /הרשמה מוקדמת/i })).toBeVisible()
     const form = page.locator('#waitlist.opacity-100').first()
     await expect(form).toBeVisible()
@@ -64,7 +64,7 @@ test.describe('public pages', () => {
     await form.getByRole('button', { name: '2 תחומים נבחרו', exact: true }).click()
     await page.locator('#waitlist.opacity-100').first().getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
-    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(page.locator('#waitlist.opacity-100').first().getByText('נרשמתם', { exact: true })).toBeVisible({ timeout: 10_000 })
   })
 
@@ -89,7 +89,7 @@ test.describe('public pages', () => {
     await form.getByRole('button', { name: '1 תחומים נבחרו', exact: true }).click()
     await form.getByLabel(/שם מלא/i).fill('בדיקת מערכת')
     await page.locator('#waitlist.opacity-100').first().getByLabel(/טלפון/i).fill('0501234567')
-    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
+    await page.locator('#waitlist.opacity-100').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(
       page.locator('#waitlist.opacity-100').first().getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
     ).toBeVisible({ timeout: 10_000 })
