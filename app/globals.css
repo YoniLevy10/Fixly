@@ -1,48 +1,61 @@
+/*
+  Fixly design tokens
+  -------------------
+  Brand: navy primary #123563 · amber CTA #F59E0B
+  Surfaces: warm page bg #FAFAF8 · white cards · muted text #64748B · borders #E7EAF0
+  Type: Heebo (400/600/700/800) — prefer font-extrabold over font-black
+  Motion: CSS only (--dur-*, --ease*); respect prefers-reduced-motion
+  Glass: restrained for app chrome (.apple-glass*); marketing stays solid/minimal
+  Radii: marketing/surfaces prefer --radius-lg (~20px)
+*/
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Fixly brand — navy / orange (unchanged) */
-    --background: 220 25% 96%;
-    --foreground: 222 47% 11%;
+    /* Palette — navy / amber on warm paper */
+    --background: 60 20% 98%; /* #FAFAF8 */
+    --foreground: 218 70% 14%; /* deep navy ink */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --primary: 218 70% 22%;
+    --card-foreground: 218 70% 14%;
+    --primary: 218 70% 22%; /* #123563 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 28 95% 52%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 220 20% 92%;
-    --muted-foreground: 220 20% 32%;
-    --accent: 199 89% 42%;
+    --secondary: 38 92% 50%; /* #F59E0B amber CTA */
+    --secondary-foreground: 218 70% 14%;
+    --muted: 220 20% 95%;
+    --muted-foreground: 215 16% 47%; /* #64748B */
+    --accent: 199 89% 42%; /* cool cyan — info only */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 18% 82%;
-    --input: 220 18% 82%;
+    --border: 220 23% 92%; /* #E7EAF0 */
+    --input: 220 23% 92%;
     --ring: 218 70% 22%;
     --radius: 1rem;
     --success: 152 69% 38%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 11%;
+    --warning-foreground: 218 70% 14%;
     --info: 199 89% 42%;
     --info-foreground: 0 0% 100%;
     --fixly-demo-banner-h: 0px;
 
-    /* iOS 27 Liquid Glass — materials (brand hues stay primary/secondary) */
-    --glass-bg: color-mix(in srgb, hsl(var(--card)) 72%, transparent);
-    --glass-bg-strong: color-mix(in srgb, hsl(var(--card)) 88%, transparent);
-    --glass-blur: 28px;
-    --glass-saturate: 1.7;
-    --glass-edge: color-mix(in srgb, hsl(var(--foreground)) 12%, transparent);
-    --glass-specular: color-mix(in srgb, white 78%, transparent);
-    --glass-shadow: 0 10px 30px color-mix(in srgb, hsl(var(--foreground)) 8%, transparent);
+    /* Restrained glass — app chrome only; marketing avoids these */
+    --glass-bg: color-mix(in srgb, hsl(var(--card)) 82%, transparent);
+    --glass-bg-strong: color-mix(in srgb, hsl(var(--card)) 92%, transparent);
+    --glass-blur: 18px;
+    --glass-saturate: 1.35;
+    --glass-edge: color-mix(in srgb, hsl(var(--foreground)) 8%, transparent);
+    --glass-specular: color-mix(in srgb, white 55%, transparent);
+    --glass-shadow: 0 8px 24px color-mix(in srgb, hsl(var(--foreground)) 6%, transparent);
     --radius-sm: 10px;
     --radius-md: 14px;
     --radius-lg: 20px;
     --radius-xl: 28px;
+    --section-y: 3.5rem;
+    --section-y-lg: 5rem;
     --dur-1: 150ms;
     --dur-2: 280ms;
     --dur-3: 400ms;
@@ -86,7 +99,7 @@
 
 @layer components {
   .fixly-section-title {
-    @apply text-base font-black text-foreground lg:text-lg flex items-center gap-2;
+    @apply text-base font-extrabold text-foreground lg:text-lg flex items-center gap-2;
   }
 
   .fixly-section-title::before {
@@ -95,12 +108,16 @@
   }
 
   .fixly-page-title {
-    @apply text-2xl font-black text-foreground lg:text-3xl;
+    @apply text-2xl font-extrabold text-foreground lg:text-3xl;
   }
 
   .fixly-link-card {
-    @apply block rounded-[var(--radius-lg)] border border-border/60 bg-card/80 px-4 py-3 font-semibold text-foreground shadow-sm
+    @apply block rounded-[var(--radius-lg)] border border-border bg-card px-4 py-3 font-semibold text-foreground shadow-sm
       hover:border-primary/40 hover:bg-primary/5 transition-colors;
+  }
+
+  .fixly-section {
+    @apply py-14 sm:py-16;
   }
 
   /* Liquid Glass chrome — frosted nav/headers/sheets; content panels stay readable */
@@ -116,18 +133,18 @@
 
   .apple-glass-strong {
     background: var(--glass-bg-strong);
-    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(var(--glass-saturate));
-    backdrop-filter: blur(calc(var(--glass-blur) + 8px)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(calc(var(--glass-blur) + 6px)) saturate(var(--glass-saturate));
     box-shadow:
       inset 0 0.5px 0 var(--glass-specular),
       inset 0 0 0 0.5px var(--glass-edge),
-      0 12px 36px color-mix(in srgb, hsl(var(--foreground)) 10%, transparent);
+      0 10px 28px color-mix(in srgb, hsl(var(--foreground)) 8%, transparent);
   }
 
   .apple-glass-pill {
-    background: color-mix(in srgb, hsl(var(--card)) 70%, transparent);
-    -webkit-backdrop-filter: blur(20px) saturate(1.5);
-    backdrop-filter: blur(20px) saturate(1.5);
+    background: color-mix(in srgb, hsl(var(--card)) 78%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.25);
+    backdrop-filter: blur(14px) saturate(1.25);
     box-shadow:
       inset 0 0.5px 0 var(--glass-specular),
       inset 0 0 0 0.5px var(--glass-edge);
@@ -143,7 +160,7 @@
     position: absolute;
     inset: 2px 4px;
     border-radius: 16px;
-    background: color-mix(in srgb, hsl(var(--primary)) 12%, hsl(var(--card)));
+    background: color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--card)));
     z-index: 0;
   }
 
@@ -153,15 +170,15 @@
   }
 
   .ios27-surface {
-    @apply rounded-[var(--radius-lg)] border border-border/50 bg-card;
-    box-shadow: 0 1px 2px color-mix(in srgb, hsl(var(--foreground)) 4%, transparent),
-      0 4px 16px color-mix(in srgb, hsl(var(--foreground)) 5%, transparent);
+    @apply rounded-[var(--radius-lg)] border border-border bg-card;
+    box-shadow: 0 1px 2px color-mix(in srgb, hsl(var(--foreground)) 3%, transparent),
+      0 4px 14px color-mix(in srgb, hsl(var(--foreground)) 4%, transparent);
   }
 
   .ios27-atmosphere {
     background:
-      radial-gradient(ellipse 80% 50% at 10% -10%, color-mix(in srgb, hsl(var(--primary)) 8%, transparent), transparent 55%),
-      radial-gradient(ellipse 60% 40% at 90% 0%, color-mix(in srgb, hsl(var(--secondary)) 10%, transparent), transparent 50%),
+      radial-gradient(ellipse 70% 40% at 8% -8%, color-mix(in srgb, hsl(var(--primary)) 5%, transparent), transparent 55%),
+      radial-gradient(ellipse 50% 35% at 92% 0%, color-mix(in srgb, hsl(var(--secondary)) 6%, transparent), transparent 50%),
       hsl(var(--background));
   }
 }
@@ -224,13 +241,251 @@ html.native-app [contenteditable='true'] {
   }
 }
 
+/* ——— Marketing landing (fixly.tech) ——— */
+.prelaunch-root {
+  --prelaunch-max: 68rem;
+  --prelaunch-gutter: clamp(1.15rem, 4vw, 2.5rem);
+  --prelaunch-sticky-h: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  letter-spacing: -0.01em;
+}
+
+.prelaunch-root h1,
+.prelaunch-root h2,
+.prelaunch-root .prelaunch-brand {
+  letter-spacing: -0.035em;
+}
+
+.prelaunch-paper {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, hsl(var(--primary)) 4%, hsl(var(--background))) 0%,
+      hsl(var(--background)) 42%,
+      hsl(var(--background)) 100%
+    );
+}
+
+.prelaunch-product {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 1.25rem;
+  box-shadow:
+    0 1px 0 color-mix(in srgb, hsl(var(--foreground)) 4%, transparent),
+    0 24px 48px -28px color-mix(in srgb, hsl(var(--primary)) 28%, transparent);
+}
+
+.prelaunch-input {
+  width: 100%;
+  min-height: 3.25rem;
+  border-radius: 0.875rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  outline: none;
+  transition:
+    border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease);
+}
+
+.prelaunch-input::placeholder {
+  color: color-mix(in srgb, hsl(var(--muted-foreground)) 75%, transparent);
+}
+
+.prelaunch-input:hover {
+  border-color: color-mix(in srgb, hsl(var(--primary)) 22%, hsl(var(--border)));
+}
+
+.prelaunch-input:focus {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--card));
+  box-shadow: 0 0 0 4px color-mix(in srgb, hsl(var(--primary)) 12%, transparent);
+}
+
+/* display left to Tailwind (inline-flex / hidden / flex) so responsive
+   visibility utilities are not overridden by unlayered CSS. */
+.prelaunch-cta {
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.25rem;
+  padding: 0.75rem 1.35rem;
+  border-radius: 0.875rem;
+  font-weight: 800;
+  transition:
+    transform var(--dur-1) var(--ease),
+    filter var(--dur-1) var(--ease),
+    background-color var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+
+.prelaunch-cta:active {
+  transform: scale(0.985);
+}
+
+.prelaunch-cta-primary {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  box-shadow: 0 10px 28px -12px color-mix(in srgb, hsl(var(--secondary)) 70%, transparent);
+}
+
+.prelaunch-cta-primary:hover {
+  filter: brightness(1.04);
+}
+
+.prelaunch-cta-secondary {
+  background: transparent;
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--border));
+}
+
+.prelaunch-cta-secondary:hover {
+  border-color: color-mix(in srgb, hsl(var(--primary)) 28%, hsl(var(--border)));
+  background: color-mix(in srgb, hsl(var(--primary)) 4%, transparent);
+}
+
+.prelaunch-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 0.28em;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in srgb, hsl(var(--primary)) 35%, transparent);
+}
+
+.prelaunch-link:hover {
+  text-decoration-color: hsl(var(--primary));
+}
+
+.prelaunch-trust {
+  display: flex;
+  gap: 0.75rem 1.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-block: 1rem;
+  padding-inline: var(--prelaunch-gutter);
+}
+
+.prelaunch-trust::-webkit-scrollbar {
+  display: none;
+}
+
+.prelaunch-trust li {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Mobile-first landing rhythm — one clear composition, no CTA pile-up */
+@media (max-width: 767px) {
+  .prelaunch-root {
+    --prelaunch-gutter: 1rem;
+  }
+
+  .prelaunch-hero {
+    padding-top: 1.1rem !important;
+    padding-bottom: 1.25rem !important;
+    gap: 1.15rem !important;
+  }
+
+  .prelaunch-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .prelaunch-hero-brand {
+    margin-bottom: 0.65rem !important;
+    font-size: clamp(2.2rem, 11vw, 2.65rem) !important;
+  }
+
+  .prelaunch-hero-title {
+    font-size: clamp(1.65rem, 7.2vw, 2rem) !important;
+    line-height: 1.14 !important;
+    max-width: none !important;
+  }
+
+  .prelaunch-hero-sub {
+    margin-top: 0.7rem !important;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+  }
+
+  .prelaunch-hero-actions {
+    margin-top: 0.55rem !important;
+  }
+
+  .prelaunch-hero-actions .prelaunch-link {
+    align-self: flex-start;
+  }
+
+  .prelaunch-product {
+    border-radius: 1.05rem;
+    box-shadow:
+      0 1px 0 color-mix(in srgb, hsl(var(--foreground)) 3%, transparent),
+      0 18px 36px -24px color-mix(in srgb, hsl(var(--primary)) 32%, transparent);
+  }
+
+  .prelaunch-product-head {
+    padding: 0.95rem 1rem !important;
+  }
+
+  .prelaunch-product-body {
+    padding: 1rem !important;
+  }
+
+  .prelaunch-input {
+    min-height: 3.1rem;
+    font-size: 16px; /* avoid iOS zoom */
+  }
+
+  .prelaunch-sticky {
+    inset-inline: 0.75rem;
+    bottom: max(0.65rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .prelaunch-root.has-sticky-cta {
+    padding-bottom: calc(var(--prelaunch-sticky-h) + 0.5rem);
+  }
+}
+
+@keyframes prelaunch-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.prelaunch-rise {
+  animation: prelaunch-rise 0.7s var(--ease) both;
+}
+
+.prelaunch-rise-delay {
+  animation-delay: 90ms;
+}
+
+.prelaunch-rise-delay-2 {
+  animation-delay: 160ms;
+}
+
 @keyframes prelaunch-float {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-10px);
+    transform: translateY(-6px);
   }
 }
 
@@ -249,12 +504,12 @@ html.native-app [contenteditable='true'] {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(12px, -10px, 0) scale(1.03);
+    transform: translate3d(8px, -6px, 0) scale(1.02);
   }
 }
 
 .prelaunch-float {
-  animation: prelaunch-float 5.5s ease-in-out infinite;
+  animation: prelaunch-float 6s ease-in-out infinite;
 }
 
 .prelaunch-progress {
@@ -262,7 +517,7 @@ html.native-app [contenteditable='true'] {
 }
 
 .prelaunch-drift {
-  animation: prelaunch-drift 9s ease-in-out infinite;
+  animation: prelaunch-drift 12s ease-in-out infinite;
 }
 
 /* Bamakor / OpticalCenter AppSplashScreen — logo pop + sweeping progress line */
@@ -380,6 +635,7 @@ html[dir='rtl'] .fixly-splash-bar {
   .prelaunch-float,
   .prelaunch-progress,
   .prelaunch-drift,
+  .prelaunch-rise,
   .fixly-splash-bar,
   .fixly-splash-mark-pop,
   .animate-ios-fade,
@@ -421,11 +677,11 @@ html.fixly-tour-active .driver-overlay {
 
 .fixly-driver-popover .driver-popover-title {
   font-weight: 800;
-  color: #123563;
+  color: hsl(var(--primary));
 }
 
 .fixly-driver-popover .driver-popover-description {
   font-weight: 500;
-  color: #475569;
+  color: hsl(var(--muted-foreground));
   line-height: 1.5;
 }
