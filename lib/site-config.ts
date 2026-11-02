@@ -25,7 +25,7 @@ export const DEFAULT_TITLE_HE = 'Fixly — תיקונים ואנשי מקצוע 
 export const WAITLIST_DESCRIPTION_HE =
   'הצטרפו לרשימת ההשקה של Fixly לבעלי מקצוע בישראל. הרשמה ללא עלות לפי תחום ואזור, עם עדכון כשהשירות ייפתח באזור שלכם.'
 
-export const WAITLIST_TITLE_HE = 'Fixly Pro — הצטרפות בעלי מקצוע לרשימת ההשקה'
+export const WAITLIST_TITLE_HE = 'Fixly Pro — הרשמה לבעלי מקצוע לרשימת ההשקה'
 
 export const ABOUT_TITLE_HE = 'אודות Fixly — פלטפורמה לבעלי מקצוע ותיקונים בישראל'
 
