@@ -11,6 +11,11 @@ import {
   SEO_KEYWORDS_HE,
   SITE_URL,
 } from '@/lib/site-config'
+import {
+  buildOrganizationSchema,
+  buildWebSiteSchema,
+} from '@/lib/seo/schema'
+import JsonLd from '@/components/seo/JsonLd'
 import './globals.css'
 
 const heebo = Heebo({
@@ -56,11 +61,20 @@ export const metadata: Metadata = {
     siteName: 'Fixly',
     title: DEFAULT_TITLE_HE,
     description: DEFAULT_DESCRIPTION_HE,
+    images: [
+      {
+        url: '/brand/fixly-mark.png',
+        width: 512,
+        height: 512,
+        alt: 'Fixly',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: DEFAULT_TITLE_HE,
     description: DEFAULT_DESCRIPTION_HE,
+    images: ['/brand/fixly-mark.png'],
   },
   robots: {
     index: true,
@@ -97,23 +111,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    name: 'Fixly',
-    url: SITE_URL,
+  const organizationLd = {
+    ...buildOrganizationSchema(),
     description: DEFAULT_DESCRIPTION_HE,
-    logo: `${SITE_URL}/icons/icon-512.png`,
-    areaServed: {
-      '@type': 'Country',
-      name: 'Israel',
-    },
-    potentialAction: {
-      '@type': 'JoinAction',
-      target: `${SITE_URL}/waitlist`,
-      name: 'הרשמה ל-Fixly',
-    },
   }
+  const websiteLd = buildWebSiteSchema()
 
   return (
     <html
@@ -144,10 +146,8 @@ export default function RootLayout({
               'setTimeout(function(){try{document.documentElement.classList.remove("fixly-booting");var n=document.querySelectorAll(".fixly-app-splash");for(var i=0;i<n.length;i++)n[i].remove();}catch(e){}},3000);',
           }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <JsonLd data={organizationLd} />
+        <JsonLd data={websiteLd} />
         <AppProviders>
           <AppLayout>{children}</AppLayout>
         </AppProviders>
