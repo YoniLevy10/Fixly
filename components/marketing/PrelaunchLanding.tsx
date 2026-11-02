@@ -7,17 +7,11 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  Clock3,
-  Home,
   Lock,
-  Percent,
   Search,
   Share2,
-  ShieldCheck,
-  Sparkles,
-  Users,
+  Wrench,
   X,
-  Zap,
 } from 'lucide-react'
 import {
   getStoredAttribution,
@@ -52,7 +46,7 @@ const emptyForm: FormState = {
 }
 
 /** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
-const VARIANT = 'landing_v5'
+const VARIANT = 'landing_v8'
 
 function forceHebrewRtl() {
   document.documentElement.lang = 'he'
@@ -125,9 +119,11 @@ export default function PrelaunchLanding({
   useEffect(() => {
     const el = waitlistRef.current
     if (!el || typeof IntersectionObserver === 'undefined') return
+    // Hide sticky as soon as any part of the form panel approaches the viewport
+    // so it never covers inputs / submit on short phones.
     const observer = new IntersectionObserver(
       ([entry]) => setShowSticky(!(entry?.isIntersecting ?? false)),
-      { rootMargin: '-10% 0px -35% 0px', threshold: 0.05 },
+      { rootMargin: '0px 0px -18% 0px', threshold: [0, 0.05, 0.15] },
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -247,150 +243,243 @@ export default function PrelaunchLanding({
 
   return (
     <div
-      className="prelaunch-root min-h-screen overflow-x-hidden ios27-atmosphere pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] text-[#10233f] md:pb-0"
+      className={`prelaunch-root prelaunch-paper min-h-screen overflow-x-hidden text-foreground md:pb-0 ${
+        showSticky ? 'has-sticky-cta' : 'pb-6'
+      }`}
       dir="rtl"
       lang="he"
     >
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
-        <div className="prelaunch-drift absolute -right-28 -top-16 h-72 w-72 rounded-full bg-secondary/40 blur-3xl" />
-        <div className="prelaunch-drift absolute -left-36 top-[34rem] h-88 w-88 rounded-full bg-primary/20 blur-3xl [animation-delay:1.4s]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,53,99,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(18,53,99,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_bottom,black,transparent_55%)]" />
-      </div>
-
-      <header className="sticky top-0 z-40 apple-glass pt-[env(safe-area-inset-top,0px)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5 sm:px-8">
-          <a href="#top" className="flex items-center gap-2" aria-label="Fixly">
-            <span dir="ltr" className="text-2xl font-black tracking-tight text-primary">
-              {copy.brand}
-              <span className="text-secondary">.</span>
-            </span>
-            <span className="hidden apple-glass-pill rounded-full px-2.5 py-1 text-[11px] font-bold text-muted-foreground sm:inline-flex">
-              {copy.eyebrow}
-            </span>
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_srgb,hsl(var(--background))_92%,transparent)] backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
+        <div
+          className="mx-auto flex items-center justify-between py-3"
+          style={{ maxWidth: 'var(--prelaunch-max)', paddingInline: 'var(--prelaunch-gutter)' }}
+        >
+          <a href="#top" className="prelaunch-brand text-[1.25rem] font-extrabold text-primary sm:text-[1.35rem]" aria-label="Fixly" dir="ltr">
+            {copy.brand}
+            <span className="text-secondary">.</span>
           </a>
+          {/* Mobile: compact header CTA; desktop keeps full label */}
           <a
             href="#waitlist"
             onClick={() => track('waitlist_cta_click', { placement: 'header', variant: VARIANT })}
-            className="inline-flex min-h-10 items-center gap-2 rounded-2xl bg-primary px-4 text-sm font-black text-white shadow-md shadow-primary/25 transition hover:-translate-y-0.5 hover:bg-primary/90"
+            className="prelaunch-cta prelaunch-cta-primary inline-flex !min-h-10 px-3.5 text-sm sm:px-4"
           >
-            {copy.primaryCta}
-            <ArrowLeft className="h-4 w-4" aria-hidden />
+            <span className="sm:hidden">הצטרפות</span>
+            <span className="hidden sm:inline">{copy.primaryCta}</span>
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
           </a>
         </div>
       </header>
 
       <main id="top">
-        {/* Awareness + Action: copy + form above the fold */}
-        <section className="relative mx-auto grid max-w-6xl items-start gap-5 px-5 py-5 sm:gap-8 sm:px-8 sm:py-8 lg:grid-cols-[1fr_minmax(300px,400px)] lg:gap-10 lg:py-12">
-          <div className="transition-all duration-700 ease-out translate-y-0 opacity-100">
-            <div className="hidden justify-start lg:flex">
-              <p
-                dir="ltr"
-                className="mb-2 font-black tracking-tight text-[#123563] text-[clamp(2.4rem,7vw,4rem)] leading-none"
-              >
-                {copy.brand}
-                <span className="text-[#F59E0B]">.</span>
-              </p>
-            </div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs font-extrabold text-[#123563] sm:mb-3 sm:text-sm">
-              <Sparkles className="h-4 w-4 text-[#F59E0B]" aria-hidden />
-              {copy.badge}
+        {/* One composition: brand · headline · sub · CTA · product visual */}
+        <section
+          className="prelaunch-hero mx-auto grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(300px,26rem)] lg:gap-14"
+          style={{
+            maxWidth: 'var(--prelaunch-max)',
+            paddingInline: 'var(--prelaunch-gutter)',
+            paddingBlock: 'clamp(2rem, 6vw, 4.5rem) clamp(2.5rem, 5vw, 3.5rem)',
+          }}
+        >
+          <div className={`prelaunch-hero-copy ${mounted ? 'prelaunch-rise' : 'opacity-0'}`}>
+            <p
+              dir="ltr"
+              className="prelaunch-brand prelaunch-hero-brand mb-5 text-[clamp(2.75rem,9vw,4.5rem)] font-extrabold leading-none text-primary"
+            >
+              {copy.brand}
+              <span className="text-secondary">.</span>
             </p>
-            <h1 className="max-w-xl text-[clamp(1.45rem,4vw,2.35rem)] font-extrabold leading-snug text-[#1a2f4d]">
-              {copy.headline}
-              <span className="mt-1 hidden text-[#123563] sm:block">{copy.headlineLine2}</span>
-              <span className="mt-1 hidden text-[#F59E0B] sm:block">{copy.headlineAccent}</span>
+
+            <h1 className="prelaunch-hero-title max-w-[18ch] text-[clamp(1.85rem,6.2vw,3.15rem)] font-extrabold leading-[1.12] text-foreground">
+              <span className="block">{copy.headline}</span>
+              <span className="mt-1 block text-primary sm:mt-1.5">{copy.headlineLine2}</span>
             </h1>
-            <p className="mt-2 max-w-lg text-sm font-medium leading-6 text-slate-600 sm:mt-4 sm:text-lg sm:leading-8">
+
+            <p className="prelaunch-hero-sub mt-5 max-w-md text-[1.05rem] font-medium leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               {copy.subheadline}
             </p>
-            <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-bold text-slate-500 sm:mt-5">
-              {copy.trustItems.map((item, i) => {
-                const Icon = [ShieldCheck, Clock3, Percent, Users][i] ?? ShieldCheck
-                return (
-                  <li key={item} className="inline-flex items-center gap-1.5">
-                    <Icon className="h-4 w-4 text-[#123563]" aria-hidden />
-                    {item}
-                  </li>
-                )
-              })}
-            </ul>
-            <a
-              href="#how"
-              className="mt-6 hidden text-sm font-bold text-[#123563] underline-offset-4 hover:underline sm:inline-flex lg:mt-8"
-            >
-              {copy.secondaryCta}
-            </a>
+
+            {/* Mobile: text link only (header + form submit carry primary CTA). Desktop: both. */}
+            <div className="prelaunch-hero-actions mt-8">
+              <a href="#how" className="prelaunch-link sm:hidden">
+                {copy.secondaryCta}
+              </a>
+              <div className="hidden flex-wrap items-center gap-3 sm:flex">
+                <a
+                  href="#waitlist"
+                  onClick={() =>
+                    track('waitlist_cta_click', { placement: 'hero_primary', variant: VARIANT })
+                  }
+                  className="prelaunch-cta prelaunch-cta-primary inline-flex text-base"
+                >
+                  {copy.primaryCta}
+                  <ArrowLeft className="h-4 w-4" aria-hidden />
+                </a>
+                <a
+                  href="#how"
+                  className="prelaunch-cta prelaunch-cta-secondary inline-flex text-base"
+                >
+                  {copy.secondaryCta}
+                </a>
+              </div>
+            </div>
           </div>
 
           <div
             id="waitlist"
             ref={waitlistRef}
-            className={`scroll-mt-24 transition-all delay-100 duration-700 ease-out ${
-              mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            }`}
+            className={`scroll-mt-24 ${mounted ? 'prelaunch-rise prelaunch-rise-delay' : 'opacity-0'}`}
           >
-            <WaitlistFormCard {...formProps} compact />
+            <div className="prelaunch-product overflow-hidden">
+              <div className="prelaunch-product-head border-b border-border/80 bg-background/60 px-5 py-4 sm:px-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
+                      {copy.formEyebrow}
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold text-foreground">{copy.formLead}</p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                    {copy.proHint}
+                  </span>
+                </div>
+              </div>
+              <div className="prelaunch-product-body px-5 py-5 sm:px-6 sm:py-6">
+                <WaitlistFormCard {...formProps} />
+              </div>
+              <div className="hidden sm:block">
+                <DemoOpportunityCard />
+              </div>
+            </div>
+            {/* Demo below the form on phones so the form stays the hero visual */}
+            <div className="mt-3 sm:hidden">
+              <div className="prelaunch-product overflow-hidden">
+                <DemoOpportunityCard standalone />
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="how" className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
-          <h2 className="text-2xl font-black text-[#123563] sm:text-4xl">{copy.howTitle}</h2>
-          <p className="mt-3 max-w-2xl text-base font-medium text-slate-600 sm:text-lg">{copy.howLead}</p>
-          <ol className="mt-10 grid gap-8 sm:grid-cols-3">
-            {copy.howSteps.map((step, i) => {
-              const Icon = [Home, Search, Zap][i] ?? Home
-              return (
-                <li key={step.title}>
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#123563] text-white">
-                      <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-                    </div>
-                    <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-[#F59E0B]/15 px-2 text-sm font-black tabular-nums text-[#c2410c]">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <h3 className="mt-1 text-lg font-black text-[#123563]">{step.title}</h3>
-                  <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{step.text}</p>
-                </li>
-              )
-            })}
+        <div className="border-y border-border/80">
+          <ul
+            className="prelaunch-trust mx-auto justify-start text-sm font-semibold text-muted-foreground sm:flex-wrap sm:justify-center sm:overflow-visible sm:whitespace-normal"
+            style={{ maxWidth: 'var(--prelaunch-max)' }}
+          >
+            {copy.trustItems.map((item) => (
+              <li key={item} className="inline-flex items-center gap-2">
+                <span className="h-1 w-1 rounded-full bg-secondary" aria-hidden />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <section
+          id="how"
+          className="mx-auto"
+          style={{
+            maxWidth: 'var(--prelaunch-max)',
+            paddingInline: 'var(--prelaunch-gutter)',
+            paddingBlock: 'clamp(3.5rem, 8vw, 6rem)',
+          }}
+        >
+          <h2 className="text-[clamp(1.65rem,3.5vw,2.25rem)] font-extrabold text-foreground">
+            {copy.howTitle}
+          </h2>
+          <p className="mt-3 max-w-xl text-base font-medium text-muted-foreground sm:text-lg">
+            {copy.howLead}
+          </p>
+          <ol className="mt-12 grid gap-10 sm:grid-cols-3 sm:gap-8">
+            {copy.howSteps.map((step, i) => (
+              <li key={step.title} className="relative">
+                <p className="text-[0.7rem] font-extrabold tabular-nums tracking-[0.18em] text-secondary">
+                  {String(i + 1).padStart(2, '0')}
+                </p>
+                <h3 className="mt-3 text-lg font-extrabold leading-snug text-foreground">
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">
+                  {step.text}
+                </p>
+              </li>
+            ))}
           </ol>
         </section>
 
-        {/* Desire: professionals */}
-        <section className="mx-auto max-w-6xl px-5 py-12 sm:px-8 sm:py-16">
-          <div className="overflow-hidden rounded-[1.75rem] bg-[#10233f] p-7 text-white sm:p-10">
-            <p className="text-xs font-black text-[#ffd07a]">לבעלי מקצוע</p>
-            <h2 className="mt-3 max-w-2xl text-2xl font-black tracking-tight text-white sm:text-3xl">
+        <section
+          className="mx-auto"
+          style={{
+            maxWidth: 'var(--prelaunch-max)',
+            paddingInline: 'var(--prelaunch-gutter)',
+            paddingBottom: 'clamp(3.5rem, 8vw, 5.5rem)',
+          }}
+        >
+          <div className="overflow-hidden rounded-[1.25rem] border border-border bg-primary px-7 py-9 text-primary-foreground sm:px-10 sm:py-12">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-secondary">
               {copy.proTitle}
-            </h2>
-            <p className="mt-3 max-w-2xl text-base font-medium leading-7 text-white/90">
+            </p>
+            <p className="mt-3 max-w-xl text-base font-medium text-primary-foreground/80">
               {copy.proLead}
             </p>
+            <ul className="mt-10 grid gap-8 sm:grid-cols-3">
+              {copy.differentiators.map((item) => (
+                <li key={item.num}>
+                  <p className="text-[0.7rem] font-extrabold tabular-nums tracking-[0.16em] text-secondary/90">
+                    {item.num}
+                  </p>
+                  <h3 className="mt-2 text-base font-extrabold text-primary-foreground">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm font-medium leading-6 text-primary-foreground/70">
+                    {item.text}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <a
+              href="#waitlist"
+              onClick={() =>
+                track('waitlist_cta_click', { placement: 'value_band', variant: VARIANT })
+              }
+              className="prelaunch-cta prelaunch-cta-primary inline-flex mt-10 text-sm"
+            >
+              {copy.proCta}
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+            </a>
           </div>
         </section>
 
-        {/* Trust / objections */}
-        <section className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-16">
-          <h2 className="text-center text-2xl font-black text-[#123563] sm:text-3xl">{copy.faqTitle}</h2>
-          <div className="mt-8 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <section
+          className="mx-auto"
+          style={{
+            maxWidth: '40rem',
+            paddingInline: 'var(--prelaunch-gutter)',
+            paddingBottom: 'clamp(3.5rem, 8vw, 5.5rem)',
+          }}
+        >
+          <h2 className="text-center text-[clamp(1.65rem,3.5vw,2.1rem)] font-extrabold text-foreground">
+            {copy.faqTitle}
+          </h2>
+          <div className="mt-8 divide-y divide-border overflow-hidden rounded-[1.15rem] border border-border bg-card">
             {copy.faq.map((item) => (
-              <details key={item.q} className="group p-5 sm:px-6">
-                <summary className="cursor-pointer list-none text-base font-black text-[#10233f] marker:content-none">
+              <details key={item.q} className="group px-5 py-4 sm:px-6">
+                <summary className="cursor-pointer list-none text-[0.98rem] font-extrabold text-foreground marker:content-none">
                   <span className="flex items-center justify-between gap-4">
                     {item.q}
-                    <span className="text-xl font-black text-[#F59E0B] transition group-open:rotate-45">
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border text-base font-extrabold text-secondary transition group-open:rotate-45"
+                      aria-hidden
+                    >
                       +
                     </span>
                   </span>
                 </summary>
-                <p className="mt-3 text-sm font-medium leading-7 text-slate-600">
+                <p className="mt-3 pe-10 text-sm font-medium leading-7 text-muted-foreground">
                   {item.a}
                   {item.q.includes('בטוחים') ? (
                     <>
                       {' '}
-                      <Link href="/privacy" className="font-bold text-[#123563] underline">
+                      <Link href="/privacy" className="font-bold text-primary underline underline-offset-2">
                         מדיניות הפרטיות
                       </Link>
                       .
@@ -401,28 +490,27 @@ export default function PrelaunchLanding({
             ))}
           </div>
         </section>
-
       </main>
 
-      <footer className="border-t border-[#123563]/10 bg-white/80 px-5 py-8 text-center text-sm font-medium text-slate-500">
-        <p className="font-black text-[#123563]" dir="ltr">
-          Fixly<span className="text-[#F59E0B]">.</span>
+      <footer className="border-t border-border bg-card/60 px-5 py-10 text-center text-sm font-medium text-muted-foreground">
+        <p className="prelaunch-brand text-lg font-extrabold text-primary" dir="ltr">
+          Fixly<span className="text-secondary">.</span>
         </p>
-        <p className="mt-2">
+        <p className="mt-3">
           © {new Date().getFullYear()} Fixly ·{' '}
-          <Link href="/privacy" className="underline underline-offset-2">
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
             פרטיות
           </Link>
           {' · '}
-          <Link href="/terms" className="underline underline-offset-2">
+          <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
             תנאים
           </Link>
           {' · '}
-          <Link href="/about" className="underline underline-offset-2">
+          <Link href="/about" className="underline underline-offset-2 hover:text-foreground">
             אודות
           </Link>
           {' · '}
-          <Link href="/waitlist" className="underline underline-offset-2">
+          <Link href="/waitlist" className="underline underline-offset-2 hover:text-foreground">
             הרשמה
           </Link>
           {PRODUCT_URL ? (
@@ -430,7 +518,7 @@ export default function PrelaunchLanding({
               {' · '}
               <a
                 href={PRODUCT_URL}
-                className="underline underline-offset-2"
+                className="underline underline-offset-2 hover:text-foreground"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -442,13 +530,13 @@ export default function PrelaunchLanding({
       </footer>
 
       {showSticky ? (
-        <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] z-50 md:hidden">
+        <div className="prelaunch-sticky fixed z-50 md:hidden">
           <a
             href="#waitlist"
             onClick={() =>
               track('waitlist_cta_click', { placement: 'mobile_sticky', variant: VARIANT })
             }
-            className="flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-lg)] bg-primary px-5 text-base font-black text-white shadow-[0_16px_40px_rgba(18,53,99,0.32)]"
+            className="prelaunch-cta prelaunch-cta-primary inline-flex w-full min-h-14 text-base shadow-[0_16px_40px_-8px_rgba(245,158,11,0.55)]"
           >
             {copy.stickyCta}
             <ArrowLeft className="h-5 w-5" aria-hidden />
@@ -459,13 +547,44 @@ export default function PrelaunchLanding({
   )
 }
 
+function DemoOpportunityCard({ standalone = false }: { standalone?: boolean }) {
+  return (
+    <aside
+      className={`${standalone ? 'bg-card' : 'border-t border-border/80 bg-background/50'} px-4 py-3.5 sm:px-6 sm:py-4`}
+      aria-label={copy.previewTitle}
+    >
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+          {copy.previewTitle}
+        </p>
+        <span className="rounded-md bg-primary px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-primary-foreground">
+          {copy.previewBadge}
+        </span>
+      </div>
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary ring-1 ring-primary/10">
+          <Wrench className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-extrabold text-foreground">{copy.previewJobTitle}</p>
+          <p className="mt-0.5 text-xs font-medium text-muted-foreground">{copy.previewJobMeta}</p>
+          <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-secondary" aria-hidden />
+            {copy.previewJobStatus}
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-[11px] font-medium text-muted-foreground">{copy.previewLead}</p>
+    </aside>
+  )
+}
+
 type WaitlistFormProps = {
   form: FormState
   loading: boolean
   error: string | null
   done: boolean
   shareCopied: boolean
-  compact?: boolean
   onFormChange: (updater: FormState | ((f: FormState) => FormState)) => void
   onSubmit: (e: FormEvent) => void
   onSignupStarted: () => void
@@ -507,117 +626,110 @@ function WaitlistFormCard({
     })
   }
 
-  return (
-    <div
-      id="waitlist-panel"
-      className="apple-glass-strong rounded-[var(--radius-xl)] p-5 sm:p-6"
-    >
-      <h2 className="mb-1 text-center text-sm font-black tracking-wide text-[#123563]">
-        {copy.formEyebrow}
-      </h2>
-      <p className="mb-4 text-center text-xs font-semibold text-slate-500">
-        {copy.proHint}
-      </p>
-
-      {done ? (
-        <div className="flex flex-col items-center gap-3 py-8 text-center sm:py-10">
-          <CheckCircle2 className="h-12 w-12 text-emerald-600" aria-hidden />
-          <p className="text-xl font-black text-[#123563]">{copy.successTitle}</p>
-          <p className="max-w-sm text-sm font-medium text-slate-600">
-            {copy.successPro}
+  if (done) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center sm:py-8">
+        <CheckCircle2 className="h-11 w-11 text-success" aria-hidden />
+        <p className="text-xl font-extrabold text-primary">{copy.successTitle}</p>
+        <p className="max-w-sm text-sm font-medium text-muted-foreground">{copy.successPro}</p>
+        <div className="mt-3 w-full rounded-xl border border-border bg-background p-4 text-start">
+          <p className="text-sm font-extrabold text-primary">{copy.successShareTitle}</p>
+          <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
+            {copy.successShareLead}
           </p>
-          <div className="mt-4 w-full max-w-sm rounded-2xl bg-[#f3f6fa] p-4 text-start">
-            <p className="text-sm font-black text-[#123563]">{copy.successShareTitle}</p>
-            <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{copy.successShareLead}</p>
-            <div className="mt-3 flex flex-col gap-2">
-              <a
-                href={buildWaitlistWhatsAppShareUrl('professional')}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() =>
-                  track('waitlist_share_click', {
-                    audience: 'professional',
-                    channel: 'whatsapp',
-                    variant: VARIANT,
-                  })
-                }
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-black text-white transition hover:brightness-105"
-              >
-                {copy.successShareWhatsApp}
-              </a>
-              <button
-                type="button"
-                onClick={() => onShare('native')}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#123563]/15 bg-white px-4 text-sm font-black text-[#123563] transition hover:bg-white/80"
-              >
-                <Share2 className="h-4 w-4" aria-hidden />
-                {shareCopied ? copy.successShareCopied : copy.successShareNative}
-              </button>
-            </div>
+          <div className="mt-3 flex flex-col gap-2">
+            <a
+              href={buildWaitlistWhatsAppShareUrl('professional')}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                track('waitlist_share_click', {
+                  audience: 'professional',
+                  channel: 'whatsapp',
+                  variant: VARIANT,
+                })
+              }
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-extrabold text-white transition hover:brightness-105"
+            >
+              {copy.successShareWhatsApp}
+            </a>
+            <button
+              type="button"
+              onClick={() => onShare('native')}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-extrabold text-primary transition hover:bg-primary/5"
+            >
+              <Share2 className="h-4 w-4" aria-hidden />
+              {shareCopied ? copy.successShareCopied : copy.successShareNative}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onResetDone}
-            className="mt-2 text-sm font-bold text-[#123563] underline"
-          >
-            לרשום עוד מישהו
-          </button>
         </div>
-      ) : (
-        <form className="mt-1 space-y-3.5" onSubmit={onSubmit} onFocus={onSignupStarted}>
-          <Field
-            label="שם מלא"
-            name="fullName"
-            autoComplete="name"
-            required
-            placeholder="איך קוראים לך?"
-            value={form.fullName}
-            onChange={(v) => setField('fullName', v)}
-          />
-          <Field
-            label="טלפון"
-            name="phone"
-            autoComplete="tel"
-            required
-            dir="ltr"
-            inputMode="tel"
-            placeholder="050-0000000"
-            value={form.phone}
-            onChange={(v) => setField('phone', v)}
-          />
-          <ProfessionMultiSelect
-            selected={form.categories}
-            onToggle={toggleCategory}
-            onRemove={toggleCategory}
-          />
-          <Field
-            label="עיר (אופציונלי)"
-            name="city"
-            autoComplete="address-level2"
-            placeholder="למשל ירושלים"
-            value={form.city}
-            onChange={(v) => setField('city', v)}
-          />
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">
-              {error}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex w-full min-h-12 items-center justify-center gap-2 rounded-xl bg-[#F59E0B] px-6 text-base font-black text-[#123563] transition hover:brightness-105 disabled:opacity-60"
-          >
-            {loading ? 'שולחים…' : copy.submitPro}
-            {!loading ? <ArrowLeft className="h-4 w-4" aria-hidden /> : null}
-          </button>
-          <p className="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-slate-500">
-            <Lock className="h-3.5 w-3.5" aria-hidden />
-            בלי כרטיס אשראי · אפשר להסיר בכל עת
-          </p>
-        </form>
-      )}
-    </div>
+        <button
+          type="button"
+          onClick={onResetDone}
+          className="mt-1 text-sm font-bold text-primary underline underline-offset-2"
+        >
+          לרשום עוד מישהו
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form className="space-y-3.5 sm:space-y-4" onSubmit={onSubmit} onFocus={onSignupStarted} id="waitlist-panel">
+      <Field
+        label="שם מלא"
+        name="fullName"
+        autoComplete="name"
+        required
+        placeholder="איך קוראים לך?"
+        value={form.fullName}
+        onChange={(v) => setField('fullName', v)}
+      />
+      <Field
+        label="טלפון"
+        name="phone"
+        autoComplete="tel"
+        required
+        dir="ltr"
+        inputMode="tel"
+        placeholder="050-0000000"
+        value={form.phone}
+        onChange={(v) => setField('phone', v)}
+      />
+      <ProfessionMultiSelect
+        selected={form.categories}
+        onToggle={toggleCategory}
+        onRemove={toggleCategory}
+      />
+      <Field
+        label="עיר (אופציונלי)"
+        name="city"
+        autoComplete="address-level2"
+        placeholder="למשל ירושלים"
+        value={form.city}
+        onChange={(v) => setField('city', v)}
+      />
+      {error ? (
+        <p
+          className="rounded-xl bg-destructive/10 px-3 py-2.5 text-sm font-semibold text-destructive"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
+      <button
+        type="submit"
+        disabled={loading}
+        className="prelaunch-cta prelaunch-cta-primary inline-flex w-full text-base disabled:opacity-60"
+      >
+        {loading ? 'שולחים…' : copy.submitPro}
+        {!loading ? <ArrowLeft className="h-4 w-4" aria-hidden /> : null}
+      </button>
+      <p className="flex items-center justify-center gap-1.5 text-center text-xs font-medium text-muted-foreground">
+        <Lock className="h-3.5 w-3.5" aria-hidden />
+        בלי כרטיס אשראי · אפשר להסיר בכל עת
+      </p>
+    </form>
   )
 }
 
@@ -652,18 +764,18 @@ function ProfessionMultiSelect({
   }, [open])
 
   const filtered = query.trim()
-    ? WAITLIST_PROFESSION_OPTIONS.filter((name) =>
-        name.includes(query.trim()),
-      )
+    ? WAITLIST_PROFESSION_OPTIONS.filter((name) => name.includes(query.trim()))
     : WAITLIST_PROFESSION_OPTIONS
 
   const atLimit = selected.length >= WAITLIST_MAX_PROFESSIONS
 
   return (
     <div ref={rootRef} className="block">
-      <span className="mb-1.5 block text-sm font-bold text-[#123563]">
+      <span className="mb-1.5 block text-[0.8rem] font-bold text-foreground">
         תחומי מקצוע
-        <span className="mr-1 font-semibold text-slate-400">(חובה · עד {WAITLIST_MAX_PROFESSIONS})</span>
+        <span className="mr-1 font-medium text-muted-foreground">
+          (חובה · עד {WAITLIST_MAX_PROFESSIONS})
+        </span>
       </span>
 
       {selected.length > 0 ? (
@@ -673,7 +785,7 @@ function ProfessionMultiSelect({
               key={name}
               type="button"
               onClick={() => onRemove(name)}
-              className="inline-flex max-w-full items-center gap-1 rounded-lg bg-[#123563]/10 px-2.5 py-1 text-xs font-bold text-[#123563]"
+              className="inline-flex max-w-full items-center gap-1 rounded-lg bg-primary/8 px-2.5 py-1.5 text-xs font-bold text-primary ring-1 ring-primary/10"
             >
               <span className="truncate">{name}</span>
               <X className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -688,25 +800,25 @@ function ProfessionMultiSelect({
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full min-h-[46px] items-center justify-between gap-2 rounded-xl border border-[#123563]/15 bg-white px-3 py-2.5 text-start text-base font-medium text-[#0f2342] outline-none transition focus:border-[#123563] focus:ring-4 focus:ring-[#123563]/15"
+        className="prelaunch-input flex items-center justify-between gap-2 text-start"
       >
-        <span className={selected.length ? 'text-[#123563]' : 'text-slate-400'}>
+        <span className={selected.length ? 'text-foreground' : 'text-muted-foreground'}>
           {selected.length
             ? `${selected.length} תחומים נבחרו`
             : 'בחרו תחומים — למשל מזגנים, חשמל…'}
         </span>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition ${open ? 'rotate-180' : ''}`}
           aria-hidden
         />
       </button>
 
       {open ? (
-        <div className="mt-2 overflow-hidden rounded-xl border border-[#123563]/12 bg-white shadow-[0_12px_32px_rgba(18,53,99,0.12)]">
-          <div className="border-b border-slate-100 p-2">
+        <div className="mt-2 overflow-hidden rounded-xl border border-border bg-card shadow-[0_16px_40px_-20px_rgba(18,53,99,0.35)]">
+          <div className="border-b border-border p-2">
             <label className="relative block">
               <Search
-                className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden
               />
               <input
@@ -714,7 +826,7 @@ function ProfessionMultiSelect({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="חיפוש תחום…"
-                className="w-full rounded-lg border border-slate-200 bg-[#f8fafc] py-2 pe-3 ps-9 text-sm font-medium outline-none focus:border-[#123563]"
+                className="w-full rounded-lg border border-border bg-background py-2.5 pe-3 ps-9 text-sm font-medium outline-none focus:border-primary"
               />
             </label>
           </div>
@@ -724,7 +836,7 @@ function ProfessionMultiSelect({
             className="max-h-56 overflow-y-auto overscroll-contain p-1.5"
           >
             {filtered.length === 0 ? (
-              <li className="px-3 py-4 text-center text-sm font-medium text-slate-500">
+              <li className="px-3 py-4 text-center text-sm font-medium text-muted-foreground">
                 לא נמצא תחום מתאים
               </li>
             ) : (
@@ -737,19 +849,19 @@ function ProfessionMultiSelect({
                       type="button"
                       disabled={disabled}
                       onClick={() => onToggle(name)}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-start text-sm font-bold transition ${
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-start text-sm font-bold transition ${
                         isOn
-                          ? 'bg-[#123563]/10 text-[#123563]'
+                          ? 'bg-primary/8 text-primary'
                           : disabled
-                            ? 'cursor-not-allowed text-slate-300'
-                            : 'text-[#40546e] hover:bg-[#f3f6fa]'
+                            ? 'cursor-not-allowed text-muted-foreground/40'
+                            : 'text-foreground/80 hover:bg-background'
                       }`}
                     >
                       <span
                         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                           isOn
-                            ? 'border-[#123563] bg-[#123563] text-white'
-                            : 'border-slate-300 bg-white'
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-border bg-card'
                         }`}
                         aria-hidden
                       >
@@ -763,15 +875,15 @@ function ProfessionMultiSelect({
             )}
           </ul>
           {atLimit ? (
-            <p className="border-t border-slate-100 px-3 py-2 text-xs font-semibold text-amber-700">
+            <p className="border-t border-border px-3 py-2 text-xs font-semibold text-muted-foreground">
               הגעתם למקסימום {WAITLIST_MAX_PROFESSIONS} תחומים
             </p>
           ) : null}
         </div>
       ) : null}
 
-      <p className="mt-1.5 text-xs font-medium text-slate-500">
-        אפשר לבחור כמה תחומים — למשל מזגנים וגם חשמל.
+      <p className="mt-1.5 text-xs font-medium text-muted-foreground">
+        אפשר לבחור כמה תחומים.
       </p>
     </div>
   )
@@ -802,7 +914,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-bold text-[#123563]">{label}</span>
+      <span className="mb-1.5 block text-[0.8rem] font-bold text-foreground">{label}</span>
       <input
         name={name}
         autoComplete={autoComplete}
@@ -813,7 +925,7 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-[#123563]/15 bg-white px-3 py-2.5 text-base font-medium text-[#0f2342] outline-none transition placeholder:text-slate-400 focus:border-[#123563] focus:ring-4 focus:ring-[#123563]/15"
+        className="prelaunch-input"
       />
     </label>
   )

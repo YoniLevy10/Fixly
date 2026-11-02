@@ -51,9 +51,7 @@ export default function EntryNotice() {
       // Ignore storage failures; the dialog still closes.
     }
     setOpen(false)
-    if (pathname === '/waitlist' || pathname === '/') {
-      document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
+    // Stay on the hero composition — do not auto-scroll past the brand.
   }
 
   if (!open || typeof document === 'undefined') return null
@@ -62,7 +60,7 @@ export default function EntryNotice() {
     <div className="fixed inset-0 z-[200] flex items-end justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))] sm:items-center sm:pb-4">
       <button
         type="button"
-        className="absolute inset-0 bg-[#10233f]/55"
+        className="absolute inset-0 bg-[color-mix(in_srgb,hsl(var(--primary))_55%,black)]/70 backdrop-blur-[2px]"
         aria-label="סגירה"
         onClick={closeNotice}
       />
@@ -70,28 +68,28 @@ export default function EntryNotice() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="entry-notice-title"
-        className="relative w-full max-w-sm rounded-[1.5rem] bg-white p-6 text-center shadow-[0_24px_60px_rgba(16,35,63,0.28)]"
+        className="prelaunch-product relative w-full max-w-sm p-7 text-center"
       >
         <button
           type="button"
           onClick={closeNotice}
-          className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-[#123563]/70 hover:bg-[#123563]/5"
+          className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground"
           aria-label="סגירה"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
-        <p dir="ltr" className="text-lg font-black text-[#123563]">
-          Fixly<span className="text-[#F59E0B]">.</span>
+        <p dir="ltr" className="prelaunch-brand text-xl font-extrabold text-primary">
+          Fixly<span className="text-secondary">.</span>
         </p>
-        <h2 id="entry-notice-title" className="mt-3 text-xl font-black !text-[#10233f]">
+        <h2 id="entry-notice-title" className="mt-4 text-xl font-extrabold tracking-tight text-foreground">
           {copy.noticeTitle}
         </h2>
-        <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{copy.noticeBody}</p>
+        <p className="mt-2 text-sm font-medium leading-6 text-muted-foreground">{copy.noticeBody}</p>
         <button
           ref={actionRef}
           type="button"
           onClick={closeNotice}
-          className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#F59E0B] px-5 text-base font-black text-[#10233f]"
+          className="prelaunch-cta prelaunch-cta-primary inline-flex mt-6 w-full text-base"
         >
           {copy.noticeCta}
         </button>
