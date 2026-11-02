@@ -1,13 +1,23 @@
 type JsonLdProps = {
-  data: Record<string, unknown> | Record<string, unknown>[]
+  data: unknown | unknown[]
 }
 
-/** Server-safe JSON-LD script tag. */
-export default function JsonLd({ data }: JsonLdProps) {
+/** Server-safe JSON-LD script tag(s). */
+function JsonLd({ data }: JsonLdProps) {
+  const nodes = Array.isArray(data) ? data : [data]
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
+    <>
+      {nodes.map((node, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(node) }}
+        />
+      ))}
+    </>
   )
 }
+
+export default JsonLd
+/** Named export for SEO landing modules that import `{ JsonLd }`. */
+export { JsonLd }

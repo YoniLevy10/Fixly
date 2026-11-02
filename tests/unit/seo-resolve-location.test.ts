@@ -53,6 +53,7 @@ describe('resolveSeoCategorySlug', () => {
   })
 
   it('returns null outside the SEO set', () => {
-    assert.equal(resolveSeoCategorySlug('הובלות'), null)
+    assert.equal(resolveSeoCategorySlug('קוסמטיקה'), null)
+    assert.equal(resolveSeoCategorySlug('עורך דין'), null)
   })
 })

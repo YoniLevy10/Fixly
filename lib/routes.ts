@@ -19,5 +19,11 @@ export const routes = {
   proJoin: '/pro/join',
   waitlist: '/waitlist',
   proPricing: '/pro/pricing',
-  services: (city: string, category: string) => `/services/${city}/${category}`,
+  forProfessionals: '/for-professionals',
+  locations: '/locations',
+  location: (city: string) => `/locations/${city}`,
+  professionalsCategory: (category: string) => `/professionals/${category}`,
+  /** Canonical programmatic SEO: /professionals/[category]/[city] */
+  services: (city: string, category: string) => `/professionals/${category}/${city}`,
+  legacyServices: (city: string, category: string) => `/services/${city}/${category}`,
 }

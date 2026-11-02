@@ -1,45 +1,33 @@
+import { cn } from '@/lib/utils/cn'
+import type { ReactNode } from 'react'
+
 type SectionHeaderProps = {
   title: string
-  action?: string
+  action?: ReactNode
+  className?: string
 }
 
 export default function SectionHeader({
   title,
   action,
+  className,
 }: SectionHeaderProps) {
   return (
     <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '18px',
-      }}
-    >
-      <h2
-        style={{
-          margin: 0,
-          fontSize: '24px',
-          fontWeight: 800,
-          letterSpacing: '-0.03em',
-        }}
-      >
-        {title}
-      </h2>
-
-      {action && (
-        <button
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: '#005BFF',
-            fontWeight: 700,
-            fontSize: '15px',
-          }}
-        >
-          {action}
-        </button>
+      className={cn(
+        'mb-4 flex items-center justify-between gap-3',
+        className
       )}
+    >
+      <h2 className="fixly-section-title m-0">{title}</h2>
+
+      {action != null ? (
+        typeof action === 'string' ? (
+          <span className="text-sm font-bold text-primary">{action}</span>
+        ) : (
+          action
+        )
+      ) : null}
     </div>
   )
 }
