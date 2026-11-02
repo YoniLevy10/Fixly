@@ -133,6 +133,7 @@ export default function PrelaunchLanding({
     if (startedRef.current) return
     startedRef.current = true
     track('waitlist_signup_started', { audience, variant: VARIANT })
+    track('signup_start', { audience, source: 'waitlist', medium: 'organic' })
   }
 
   const shareWaitlist = async (channel: 'whatsapp' | 'native' | 'copy') => {
@@ -209,6 +210,18 @@ export default function PrelaunchLanding({
           ? { utm_campaign: attribution.utm_campaign }
           : {}),
       })
+      track('signup_complete', {
+        audience,
+        source: attribution.utm_source || 'fixly',
+        medium: attribution.utm_medium || 'organic',
+        landing_page: typeof window !== 'undefined' ? window.location.pathname : '/waitlist',
+      })
+      if (audience === 'professional') {
+        track('professional_signup', {
+          source: attribution.utm_source || 'fixly',
+          medium: attribution.utm_medium || 'organic',
+        })
+      }
       setDone(true)
       setForm(emptyForm)
       startedRef.current = false

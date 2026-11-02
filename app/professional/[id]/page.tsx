@@ -4,6 +4,7 @@ import Link from 'next/link'
 import ProfessionalProfileView from '@/components/professionals/ProfessionalProfileView'
 import JsonLd from '@/components/seo/JsonLd'
 import SeoBreadcrumbs from '@/components/seo/SeoBreadcrumbs'
+import SeoLandingTracker from '@/components/seo/SeoLandingTracker'
 import ProListCard from '@/components/professionals/ProListCard'
 import {
   getProfessional,
@@ -50,9 +51,10 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical },
-    robots: isDemo
-      ? { index: false, follow: true }
-      : { index: true, follow: true },
+    robots:
+      isDemo || !pro.isApproved
+        ? { index: false, follow: true }
+        : { index: true, follow: true },
     openGraph: {
       title,
       description,
@@ -84,6 +86,7 @@ export default async function ProfessionalPage({ params }: ProfessionalPageProps
   const category = resolved.category
   const servicesHref =
     categorySlug && citySlug ? routes.services(citySlug, categorySlug) : null
+  const isDemo = isSeedDemoProfessionalId(pro.id)
 
   let related = categorySlug
     ? (
@@ -95,8 +98,9 @@ export default async function ProfessionalPage({ params }: ProfessionalPageProps
     : []
 
   if (related.length < 3 && categorySlug) {
-    const fallback = (await listProfessionals({ categorySlug }))
-      .filter((p) => p.id !== pro.id && !related.some((r) => r.id === p.id))
+    const fallback = (await listProfessionals({ categorySlug })).filter(
+      (p) => p.id !== pro.id && !related.some((r) => r.id === p.id),
+    )
     related = [...related, ...fallback]
   }
   related = related.slice(0, 6)
@@ -105,7 +109,10 @@ export default async function ProfessionalPage({ params }: ProfessionalPageProps
     { name: 'Fixly', href: routes.home },
     ...(servicesHref && city && category
       ? [
-          { name: 'קטגוריות', href: '/categories' },
+          {
+            name: category.nameHe,
+            href: routes.professionalsCategory(categorySlug!),
+          },
           {
             name: `${category.nameHe} ב${city.nameHe}`,
             href: servicesHref,
@@ -135,6 +142,12 @@ export default async function ProfessionalPage({ params }: ProfessionalPageProps
 
   return (
     <>
+      <SeoLandingTracker
+        pageType="pro_profile"
+        category={categorySlug ?? undefined}
+        city={citySlug}
+        indexable={!isDemo && pro.isApproved}
+      />
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={profileLd} />
       <div className="max-w-5xl mx-auto px-4 pt-4 lg:px-8">

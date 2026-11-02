@@ -67,7 +67,7 @@ export function jerusalemPriorityLinks() {
     const cat = SEO_CATEGORIES.find((c) => c.slug === slug)!
     return {
       categorySlug: slug,
-      path: `/services/jerusalem/${slug}`,
+      path: `/professionals/${slug}/jerusalem`,
       label: `${cat.nameHe} בירושלים`,
     }
   })

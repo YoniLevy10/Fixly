@@ -279,6 +279,33 @@ export default function HomeScreen() {
           </button>
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-2 text-xs">
+          <Link
+            href="/locations"
+            className="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+          >
+            לפי עיר
+          </Link>
+          <Link
+            href="/for-professionals"
+            className="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+          >
+            עבודות לבעלי מקצוע
+          </Link>
+          <Link
+            href="/professionals/plumbing"
+            className="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+          >
+            אינסטלטור
+          </Link>
+          <Link
+            href="/professionals/electricity"
+            className="rounded-full border border-border bg-white px-3 py-1.5 font-medium"
+          >
+            חשמלאי
+          </Link>
+        </div>
+
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <Link

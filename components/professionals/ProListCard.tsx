@@ -18,11 +18,21 @@ type ProListCardProps = {
   /** Defaults to Hebrew — SEO landing pages are he-IL. */
   labels?: ProListCardLabels
   locale?: Locale
+  /**
+   * Absolute product host origin (e.g. PRODUCT_URL) so marketing-host SEO
+   * pages can deep-link into the app without hitting the waitlist redirect.
+   */
+  productBaseUrl?: string
 }
 
 const DEFAULT_LABELS: ProListCardLabels = {
   profile: 'פרופיל',
   chat: 'שיחה',
+}
+
+function withProductBase(base: string | undefined, path: string): string {
+  if (!base) return path
+  return `${base.replace(/\/$/, '')}${path}`
 }
 
 /**
@@ -33,9 +43,11 @@ export default function ProListCard({
   professional: pro,
   labels = DEFAULT_LABELS,
   locale = 'he',
+  productBaseUrl,
 }: ProListCardProps) {
   const rating = Math.min(5, Math.max(0, Number(pro.rating) || 0))
-  const profileHref = routes.professional(pro.id)
+  const profileHref = withProductBase(productBaseUrl, routes.professional(pro.id))
+  const chatHref = withProductBase(productBaseUrl, routes.chat(pro.id))
 
   return (
     <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4 hover:border-primary/35 transition-colors duration-[var(--dur-1)]">
@@ -115,7 +127,7 @@ export default function ProListCard({
           {labels.profile}
         </Link>
         <Link
-          href={routes.chat(pro.id)}
+          href={chatHref}
           className="flex-1 bg-primary text-primary-foreground text-xs min-h-10 rounded-xl font-extrabold inline-flex items-center justify-center hover:bg-primary/90 transition-colors"
         >
           {labels.chat}

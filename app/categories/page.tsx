@@ -31,7 +31,7 @@ export default function CategoriesPage() {
   const links = SEO_CITIES.flatMap((city) =>
     SEO_CATEGORIES.map((cat) => ({
       name: `${cat.nameHe} ב${city.nameHe}`,
-      path: seoPagePath(city.slug, cat.slug),
+      path: seoPagePath(cat.slug, city.slug),
       citySlug: city.slug,
       cityName: city.nameHe,
       categoryName: cat.nameHe,
@@ -81,7 +81,7 @@ export default function CategoriesPage() {
             </div>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {SEO_CATEGORIES.map((cat) => {
-                const path = seoPagePath(city.slug, cat.slug)
+                const path = seoPagePath(cat.slug, city.slug)
                 const isPriorityIntent =
                   isPrimary &&
                   (cat.slug === 'plumbing' ||

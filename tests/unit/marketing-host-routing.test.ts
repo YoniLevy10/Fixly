@@ -21,15 +21,24 @@ describe('marketing host routing policy', () => {
     assert.equal(shouldShowPrelaunchLanding('fixly.vercel.app'), false)
   })
 
-  it('redirects product paths off marketing hosts (allowlist miss)', () => {
+  it('redirects true app paths off marketing hosts (allowlist miss)', () => {
     assert.equal(isMarketingHost('fixly.tech'), true)
-    assert.equal(isMarketingPublicPath('/professionals'), false)
+    assert.equal(isMarketingPublicPath('/dashboard'), false)
+    assert.equal(isMarketingPublicPath('/request/new'), false)
+    assert.equal(isMarketingPublicPath('/pro/dashboard'), false)
+    assert.equal(isMarketingPublicPath('/chat/abc'), false)
+    assert.equal(isMarketingPublicPath('/login'), false)
     // Middleware maps this miss → 308 Location: /waitlist on same host
   })
 
-  it('keeps landing paths on marketing hosts', () => {
+  it('keeps landing + SEO paths on marketing hosts', () => {
     assert.equal(isMarketingPublicPath('/'), true)
     assert.equal(isMarketingPublicPath('/waitlist'), true)
+    assert.equal(isMarketingPublicPath('/professionals'), true)
+    assert.equal(isMarketingPublicPath('/professionals/plumbing/tel-aviv'), true)
+    assert.equal(isMarketingPublicPath('/locations/haifa'), true)
+    assert.equal(isMarketingPublicPath('/for-professionals'), true)
+    assert.equal(isMarketingPublicPath('/services/tel-aviv/plumbing'), true)
     assert.equal(shouldShowPrelaunchLanding('fixly.tech'), true)
   })
 
