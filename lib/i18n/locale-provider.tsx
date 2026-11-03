@@ -31,10 +31,11 @@ const LOCALE_SUGGESTED_KEY = 'fixly-locale-suggested'
 
 function isMarketingPath(pathname: string): boolean {
   if (typeof window === 'undefined') {
-    return pathname === '/waitlist' || pathname.startsWith('/go/')
+    return pathname === '/waitlist' || pathname === '/for-professionals' || pathname.startsWith('/go/')
   }
   return (
     pathname === '/waitlist' ||
+    pathname === '/for-professionals' ||
     pathname.startsWith('/go/') ||
     (shouldShowPrelaunchLanding(window.location.host) && pathname === '/')
   )

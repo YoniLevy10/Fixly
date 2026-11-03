@@ -9,12 +9,12 @@ import { SITE_URL } from '@/lib/site-config'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL
 
-  const marketingPaths = ['', '/waitlist', '/about', '/privacy', '/terms'] as const
+  const marketingPaths = ['', '/waitlist', '/for-professionals', '/about', '/privacy', '/terms'] as const
 
   return marketingPaths.map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
-    priority: path === '' || path === '/waitlist' ? 1 : 0.7,
+    priority: path === '' || path === '/waitlist' ? 1 : path === '/for-professionals' ? 0.9 : 0.7,
   }))
 }

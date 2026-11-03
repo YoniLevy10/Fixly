@@ -41,6 +41,49 @@ export function storeUtm(params: UtmParams) {
   }
 }
 
+const SEARCH_ENGINES: ReadonlyArray<{ needle: string; source: string }> = [
+  { needle: 'google.', source: 'google' },
+  { needle: 'bing.com', source: 'bing' },
+  { needle: 'yahoo.', source: 'yahoo' },
+  { needle: 'duckduckgo.com', source: 'duckduckgo' },
+]
+
+/**
+ * First-touch source when the URL has no UTM.
+ * Search referrers become organic. A same-site referrer is ignored so an
+ * existing first touch is not replaced. Direct visits are recorded once.
+ */
+export function inferVisitAttribution(input: {
+  referrer: string
+  pathname: string
+  existing: UtmParams
+}): UtmParams | null {
+  if (hasUtm(input.existing)) return null
+  const campaign = (input.pathname || '/').split('?')[0]?.slice(0, 200) || '/'
+  const referrer = input.referrer.trim()
+  if (!referrer) {
+    return { utm_source: 'direct', utm_medium: 'none', utm_campaign: campaign }
+  }
+  let host = ''
+  try {
+    host = new URL(referrer).hostname.toLowerCase()
+  } catch {
+    return { utm_source: 'direct', utm_medium: 'none', utm_campaign: campaign }
+  }
+  if (host === 'fixly.tech' || host === 'www.fixly.tech' || host === 'localhost' || host === '127.0.0.1') {
+    return null
+  }
+  const engine = SEARCH_ENGINES.find((item) => host.includes(item.needle))
+  if (engine) {
+    return { utm_source: engine.source, utm_medium: 'organic', utm_campaign: campaign }
+  }
+  return {
+    utm_source: 'referral',
+    utm_medium: host.slice(0, 80),
+    utm_campaign: campaign,
+  }
+}
+
 export function getStoredUtm(): UtmParams {
   if (typeof window === 'undefined') return {}
   try {

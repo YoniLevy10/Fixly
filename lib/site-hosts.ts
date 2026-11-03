@@ -29,6 +29,7 @@ const MARKETING_PUBLIC_EXACT_PATHS = new Set([
   '/privacy',
   '/terms',
   '/about',
+  '/for-professionals',
   '/robots.txt',
   '/sitemap.xml',
   '/manifest.webmanifest',

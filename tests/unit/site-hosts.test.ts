@@ -64,6 +64,7 @@ describe('site-hosts', () => {
       '/privacy',
       '/terms',
       '/about',
+      '/for-professionals',
       '/il-only',
       '/api/waitlist',
       '/api/pro/waitlist',

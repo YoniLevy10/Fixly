@@ -26,6 +26,7 @@ import {
 import { track } from '@/lib/analytics/track'
 import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 import { prelaunchCopy as copy } from '@/lib/marketing/prelaunch-copy'
+import { acceptedWaitlistSave } from '@/lib/marketing/signup-result'
 import {
   buildWaitlistShareMessage,
   buildWaitlistShareUrl,
@@ -52,7 +53,7 @@ const emptyForm: FormState = {
 }
 
 /** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
-const VARIANT = 'landing_v6'
+const VARIANT = 'landing_v7'
 
 function forceHebrewRtl() {
   document.documentElement.lang = 'he'
@@ -60,12 +61,6 @@ function forceHebrewRtl() {
   document.documentElement.classList.add('locale-rtl')
   document.documentElement.classList.remove('locale-ltr')
   document.body.dir = 'rtl'
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  )
 }
 
 export default function PrelaunchLanding({
@@ -153,6 +148,21 @@ export default function PrelaunchLanding({
     track('waitlist_signup_started', { audience, variant: VARIANT })
   }
 
+  const selectProfession = (name: string) => {
+    markSignupStarted()
+    setForm((current) => {
+      if (current.categories.includes(name) || current.categories.length >= WAITLIST_MAX_PROFESSIONS) {
+        return current
+      }
+      return {
+        ...current,
+        categories: [...current.categories, name].sort((a, b) => a.localeCompare(b, 'he')),
+      }
+    })
+    track('waitlist_cta_click', { placement: 'profession_chip', variant: VARIANT })
+    document.getElementById('waitlist-panel')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
   const shareWaitlist = async (channel: 'whatsapp' | 'native' | 'copy') => {
     track('waitlist_share_click', { audience, channel, variant: VARIANT })
     const message = buildWaitlistShareMessage(audience)
@@ -202,7 +212,7 @@ export default function PrelaunchLanding({
           city: form.city || undefined,
           categories: form.categories,
           audience: 'professional',
-          source: 'waitlist_landing_v6_professional',
+          source: 'waitlist_landing_v7_professional',
           ...(referralCode ? { referralCode } : {}),
           ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         }),
@@ -210,11 +220,8 @@ export default function PrelaunchLanding({
       const data = (await res.json().catch(() => null)) as
         | { error?: string; id?: string; ok?: boolean }
         | null
-      if (!res.ok) {
-        throw new Error(data?.error || 'לא הצלחנו לשמור את הפרטים')
-      }
-      if (!data?.id || !isUuid(data.id)) {
-        throw new Error('השמירה לא אושרה — נסו שוב')
+      if (!acceptedWaitlistSave(res.ok, data)) {
+        throw new Error(data?.error || 'השמירה לא אושרה — נסו שוב')
       }
       track('waitlist_submitted', { audience, variant: VARIANT, id: data.id })
       track('waitlist_signup_completed', {
@@ -303,19 +310,22 @@ export default function PrelaunchLanding({
             <div className="absolute -left-28 -top-32 h-80 w-80 rounded-full bg-[#efc56f]/20 blur-3xl" />
             <div className="absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-[#16354f]/[0.06] blur-3xl" />
           </div>
-          <div className="relative mx-auto grid max-w-7xl items-center gap-5 px-5 pb-7 pt-7 sm:gap-8 sm:px-8 sm:pb-14 sm:pt-12 lg:min-h-[640px] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-14 lg:py-16">
-            <div className="relative z-10">
+          <div className="relative mx-auto grid max-w-7xl items-start gap-5 px-5 pb-7 pt-7 sm:gap-8 sm:px-8 sm:pb-14 sm:pt-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)] lg:gap-14 lg:py-16">
+            <div className="relative z-10 order-2 lg:order-1">
               <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-[#d7c8a8] bg-[#efe7d6] px-3.5 py-1.5 text-xs font-extrabold text-[#704b17] sm:text-sm">
                 <span className="h-2 w-2 rounded-full bg-[#3e8b70] shadow-[0_0_0_4px_rgba(62,139,112,0.12)]" aria-hidden="true" />
                 {copy.badge}
               </p>
-              <h1 className="mt-4 max-w-2xl text-[clamp(2.65rem,10vw,5.25rem)] font-black leading-[1.02] tracking-[-0.055em] text-[#10233f] sm:mt-6">
+              <h1 className="mt-4 max-w-2xl text-[clamp(2.05rem,8vw,4.6rem)] font-black leading-[1.02] tracking-[-0.055em] text-[#10233f] sm:mt-6">
                 {copy.headline}
                 <br />
                 <span className="text-[#bd741e]">{copy.headlineLine2}</span>
               </h1>
               <p className="mt-4 max-w-xl text-base font-medium leading-7 text-[#526376] sm:mt-6 sm:text-lg sm:leading-8">
                 {copy.subheadline}
+              </p>
+              <p className="mt-3 max-w-xl text-sm font-bold leading-6 text-[#10233f] sm:text-base">
+                {copy.expectation}
               </p>
               <div className="mt-5 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:items-center sm:gap-3">
                 <a
@@ -346,7 +356,11 @@ export default function PrelaunchLanding({
               </ul>
             </div>
 
-            <div className="relative min-w-0">
+            <div id="waitlist-panel" ref={waitlistRef} className="order-1 scroll-mt-20 lg:sticky lg:top-24 lg:order-2">
+              <WaitlistFormCard {...formProps} />
+            </div>
+
+            <div className="relative order-3 min-w-0 lg:col-span-2">
               <div className="relative aspect-[1.45] overflow-hidden rounded-[1.75rem] bg-[#dfd2bf] shadow-[0_28px_65px_rgba(16,35,63,0.16)] sm:aspect-[1.55] lg:aspect-[0.93] lg:rounded-[2rem]">
                 <Image
                   src="/brand/professional-hero.png"
@@ -403,8 +417,8 @@ export default function PrelaunchLanding({
           className="scroll-mt-16 relative overflow-hidden bg-[#102b43] px-5 py-12 text-white sm:px-8 sm:py-16 lg:py-20"
         >
           <div className="pointer-events-none absolute -left-32 -top-28 h-80 w-80 rounded-full bg-[#e9a638]/10 blur-3xl" aria-hidden="true" />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-9 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.8fr)] lg:gap-16">
-            <div className="max-w-xl">
+          <div className="relative mx-auto max-w-3xl">
+            <div>
               <p className="inline-flex items-center gap-2 text-xs font-black tracking-[0.14em] text-[#f1c46b]">
                 <span className="h-px w-6 bg-[#f1c46b]" aria-hidden="true" />
                 הצטרפות לרשימת ההשקה
@@ -429,9 +443,6 @@ export default function PrelaunchLanding({
                   הפרטים משמשים לניהול ההרשמה ולעדכונים
                 </li>
               </ul>
-            </div>
-            <div id="waitlist-panel" ref={waitlistRef} className="scroll-mt-20">
-              <WaitlistFormCard {...formProps} />
             </div>
           </div>
         </section>
@@ -487,12 +498,26 @@ export default function PrelaunchLanding({
               </a>
             </div>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-              {copy.categories.map((category) => (
-                <li key={category.label} className="flex min-h-[88px] flex-col justify-center rounded-2xl border border-[#e7e4dd] bg-[#faf9f5] px-4 py-4 transition hover:border-[#d9bc7a] hover:bg-[#fffdf7]">
-                  <span className="text-sm font-black text-[#10233f] sm:text-base">{category.label}</span>
-                  <span className="mt-1 text-xs font-semibold text-[#718092]">{category.profession}</span>
-                </li>
-              ))}
+              {copy.categories.map((category) => {
+                const selected = form.categories.includes(category.profession)
+                return (
+                  <li key={category.label}>
+                    <button
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => selectProfession(category.profession)}
+                      className={`flex min-h-[88px] w-full flex-col justify-center rounded-2xl border px-4 py-4 text-start transition ${
+                        selected
+                          ? 'border-[#d9bc7a] bg-[#fff6e4]'
+                          : 'border-[#e7e4dd] bg-[#faf9f5] hover:border-[#d9bc7a] hover:bg-[#fffdf7]'
+                      }`}
+                    >
+                      <span className="text-sm font-black text-[#10233f] sm:text-base">{category.label}</span>
+                      <span className="mt-1 text-xs font-semibold text-[#718092]">{category.profession}</span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         </section>
@@ -566,6 +591,10 @@ export default function PrelaunchLanding({
           {' · '}
           <Link href="/about" className="underline underline-offset-2">
             אודות
+          </Link>
+          {' · '}
+          <Link href="/for-professionals" className="underline underline-offset-2">
+            לבעלי מקצוע
           </Link>
           {' · '}
           <Link href="/waitlist" className="underline underline-offset-2">
@@ -822,6 +851,27 @@ function ProfessionMultiSelect({
         תחומי מקצוע
         <span className="mr-1 font-semibold text-[#718092]">(חובה · עד {WAITLIST_MAX_PROFESSIONS})</span>
       </span>
+
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {copy.categories.map((category) => {
+          const selectedChip = selected.includes(category.profession)
+          return (
+            <button
+              key={category.profession}
+              type="button"
+              aria-pressed={selectedChip}
+              onClick={() => onToggle(category.profession)}
+              className={`inline-flex min-h-11 items-center rounded-xl border px-3 text-xs font-extrabold transition ${
+                selectedChip
+                  ? 'border-[#d9bc7a] bg-[#e9a638]/25 text-[#10233f]'
+                  : 'border-[#e7e4dd] bg-white text-[#40546a] hover:border-[#d9bc7a]'
+              }`}
+            >
+              {category.label}
+            </button>
+          )
+        })}
+      </div>
 
       {selected.length > 0 ? (
         <div className="mb-2 flex flex-wrap gap-1.5">

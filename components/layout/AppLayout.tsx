@@ -55,6 +55,7 @@ export default function AppLayout({ children, hideNav = false }: AppLayoutProps)
     pathname === '/waitlist' ||
     pathname === '/pro/join' ||
     pathname === '/about' ||
+    pathname === '/for-professionals' ||
     pathname === '/privacy' ||
     pathname === '/terms' ||
     isMarketingHome

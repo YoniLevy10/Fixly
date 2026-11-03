@@ -30,6 +30,7 @@ describe('marketing host routing policy', () => {
   it('keeps landing paths on marketing hosts', () => {
     assert.equal(isMarketingPublicPath('/'), true)
     assert.equal(isMarketingPublicPath('/waitlist'), true)
+    assert.equal(isMarketingPublicPath('/for-professionals'), true)
     assert.equal(shouldShowPrelaunchLanding('fixly.tech'), true)
   })
 
