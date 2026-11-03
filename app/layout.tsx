@@ -20,8 +20,8 @@ import './globals.css'
 
 const heebo = Heebo({
   subsets: ['hebrew', 'latin'],
-  // Fewer weights = less render-blocking font CSS on mobile PageSpeed.
-  weight: ['400', '600', '700'],
+  // 800 covers font-extrabold; avoid font-black (900) without a loaded face.
+  weight: ['400', '600', '700', '800'],
   display: 'swap',
   variable: '--font-heebo',
   preload: true,

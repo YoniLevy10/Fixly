@@ -30,9 +30,9 @@ describe('jerusalem SEO cluster', () => {
     assert.deepEqual(
       links.map((l) => l.path),
       [
-        '/services/jerusalem/plumbing',
-        '/services/jerusalem/electricity',
-        '/services/jerusalem/ac',
+        '/professionals/plumbing/jerusalem',
+        '/professionals/electricity/jerusalem',
+        '/professionals/ac/jerusalem',
       ],
     )
     assert.match(links[0].label, /אינסטלטור בירושלים/)

@@ -1,7 +1,8 @@
 /**
  * Host routing for Fixly.
  *
- * - Marketing hosts (`fixly.tech` / `www`): registration / waitlist landing ONLY.
+ * - Marketing hosts (`fixly.tech` / `www`): registration / waitlist + SEO/recruitment
+ *   landings only — not the full marketplace app.
  * - Product hosts (Vercel production aliases, preview `*.vercel.app`, localhost):
  *   full marketplace / app UI.
  *
@@ -21,7 +22,7 @@ export const LEGACY_VERCEL_PRODUCTION_HOSTS = [
   'www.fixly.vercel.app',
 ] as const
 
-/** Paths allowed on marketing hosts (everything else → /waitlist). */
+/** Exact paths allowed on marketing hosts (everything else → /waitlist). */
 const MARKETING_PUBLIC_EXACT_PATHS = new Set([
   '/',
   '/waitlist',
@@ -30,6 +31,8 @@ const MARKETING_PUBLIC_EXACT_PATHS = new Set([
   '/terms',
   '/about',
   '/for-professionals',
+  '/professionals',
+  '/locations',
   '/robots.txt',
   '/sitemap.xml',
   '/manifest.webmanifest',
@@ -95,6 +98,9 @@ export function shouldShowPrelaunchLanding(host: string | null | undefined): boo
 /**
  * Allowlist for marketing hosts. Static assets / `_next` are excluded by the
  * middleware matcher; everything else on fixly.tech must match this list.
+ *
+ * Includes national SEO / recruitment surfaces so organic + GSC can land on
+ * fixly.tech without opening the full marketplace app.
  */
 export function isMarketingPublicPath(pathname: string | null | undefined): boolean {
   const p = normalizePathname(pathname)
@@ -102,6 +108,12 @@ export function isMarketingPublicPath(pathname: string | null | undefined): bool
   if (p === '/il-only' || p.startsWith('/il-only/')) return true
   if (p === '/api/waitlist' || p.startsWith('/api/waitlist/')) return true
   if (p === '/api/pro/waitlist' || p.startsWith('/api/pro/waitlist/')) return true
+  // National SEO hubs + city×trade landings
+  if (p === '/professionals' || p.startsWith('/professionals/')) return true
+  if (p === '/locations' || p.startsWith('/locations/')) return true
+  if (p === '/for-professionals' || p.startsWith('/for-professionals/')) return true
+  // Legacy /services/* so 308 redirects to canonical SEO URLs can run
+  if (p === '/services' || p.startsWith('/services/')) return true
   return false
 }
 

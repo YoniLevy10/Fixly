@@ -55,7 +55,7 @@ describe('site-hosts', () => {
     assert.equal(isLegacyVercelProductionHost('fixly-git-main.vercel.app'), false)
   })
 
-  it('allowlists only marketing/landing paths on the purchased domain', () => {
+  it('allowlists marketing, SEO, and recruitment paths on the purchased domain', () => {
     for (const path of [
       '/',
       '/waitlist',
@@ -71,17 +71,25 @@ describe('site-hosts', () => {
       '/robots.txt',
       '/sitemap.xml',
       '/manifest.webmanifest',
+      '/for-professionals',
+      '/professionals',
+      '/professionals/plumbing',
+      '/professionals/plumbing/jerusalem',
+      '/locations',
+      '/locations/tel-aviv',
+      '/services/jerusalem/plumbing',
     ]) {
       assert.equal(isMarketingPublicPath(path), true, path)
     }
     for (const path of [
-      '/professionals',
       '/professional/abc',
-      '/services/jerusalem/plumber',
       '/login',
       '/my-requests',
       '/pro/dashboard',
+      '/dashboard',
       '/request/new',
+      '/request/quick',
+      '/chat/abc',
       '/categories',
       '/api/health',
       '/go',

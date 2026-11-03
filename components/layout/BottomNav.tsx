@@ -65,7 +65,7 @@ export default function BottomNav() {
 
   return (
     <nav className="native-bottom-nav lg:hidden fixed bottom-3 inset-x-3 z-50 mx-auto max-w-lg">
-      <div className="apple-glass rounded-[var(--radius-xl)] safe-area-pb">
+      <div className="apple-glass rounded-[var(--radius-lg)] border border-border/60 safe-area-pb">
         <div className="flex items-center h-16 px-2 relative">
           <div className="flex items-center justify-around flex-1">
             {mobileNav.slice(0, 2).map(renderItem)}
@@ -75,10 +75,10 @@ export default function BottomNav() {
             <button
               type="button"
               onClick={() => router.push(routes.quickRequest)}
-              className="w-14 h-14 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-lg shadow-secondary/35 border-[3px] border-white/80 active:scale-95 transition-transform duration-[var(--dur-1)]"
+              className="w-14 h-14 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center shadow-lg shadow-secondary/30 border-[3px] border-card active:scale-95 transition-transform duration-[var(--dur-1)]"
               aria-label={t('common.publishIssue')}
             >
-              <span className="text-2xl font-bold leading-none">+</span>
+              <span className="text-2xl font-extrabold leading-none">+</span>
             </button>
           </div>
 

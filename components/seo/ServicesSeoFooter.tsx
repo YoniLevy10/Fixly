@@ -21,7 +21,7 @@ export default function ServicesSeoFooter({ currentPath }: ServicesSeoFooterProp
     const city = SEO_CITIES.find((c) => c.slug === item.city)
     const cat = SEO_CATEGORIES.find((c) => c.slug === item.category)
     if (!city || !cat) return null
-    const path = seoPagePath(city.slug, cat.slug)
+    const path = seoPagePath(cat.slug, city.slug)
     if (currentPath && path === currentPath) return null
     return {
       path,

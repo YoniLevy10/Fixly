@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
       { source: '/dashboard', destination: '/my-requests', permanent: false },
       { source: '/pro-dashboard', destination: '/pro/dashboard', permanent: false },
       { source: '/tracking', destination: '/my-requests', permanent: false },
+      // Legacy GSC / backlinks → canonical profession×city SEO URLs
+      {
+        source: '/services/:city/:category',
+        destination: '/professionals/:category/:city',
+        permanent: true,
+      },
       // Dead marketing stubs → waitlist (kept for old campaign URLs)
       { source: '/go', destination: '/waitlist', permanent: true },
       { source: '/go/:path*', destination: '/waitlist', permanent: true },

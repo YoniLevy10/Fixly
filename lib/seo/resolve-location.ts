@@ -77,11 +77,17 @@ const CATEGORY_NEEDLES: { slug: (typeof SEO_CATEGORIES)[number]['slug']; needles
   { slug: 'plumbing', needles: ['אינסטל', 'שרברב', 'plumb'] },
   { slug: 'electricity', needles: ['חשמל', 'electric'] },
   { slug: 'ac', needles: ['מיזוג', 'מזגן', 'air conditioning', ' a/c', 'ac '] },
+  { slug: 'handyman', needles: ['הנדימן', 'שיפוצניק קטן', 'handyman'] },
   { slug: 'cleaning', needles: ['ניקיון', 'מנקה', 'clean'] },
   { slug: 'painting', needles: ['צבע', 'צביע', 'paint'] },
   { slug: 'carpentry', needles: ['נגר', 'carpentry', 'carpenter'] },
   { slug: 'locksmith', needles: ['מנעול', 'locksmith'] },
   { slug: 'gardening', needles: ['גינון', 'גנן', 'garden'] },
+  { slug: 'renovations', needles: ['שיפוץ', 'שיפוצ', 'renovat'] },
+  { slug: 'moving', needles: ['הובל', 'מוביל', 'moving'] },
+  { slug: 'pest_control', needles: ['הדבר', 'מדביר', 'pest'] },
+  { slug: 'waterproofing', needles: ['איטום', 'waterproof'] },
+  { slug: 'appliance_repair', needles: ['מכשיר', 'appliance'] },
 ]
 
 /**

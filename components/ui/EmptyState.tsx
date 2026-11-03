@@ -1,53 +1,43 @@
+import { cn } from '@/lib/utils/cn'
+import type { ReactNode } from 'react'
+
 type EmptyStateProps = {
   title: string
   description: string
-  icon?: string
+  /** Prefer a lucide icon or custom node; string emoji still accepted */
+  icon?: ReactNode
+  className?: string
+  action?: ReactNode
 }
 
 export default function EmptyState({
   title,
   description,
-  icon = '📭',
+  icon,
+  className,
+  action,
 }: EmptyStateProps) {
   return (
     <div
-      style={{
-        background: 'white',
-        borderRadius: '32px',
-        padding: '42px 28px',
-        textAlign: 'center',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-      }}
+      className={cn(
+        'ios27-surface px-6 py-10 sm:px-8 sm:py-12 text-center',
+        className
+      )}
+      role="status"
     >
-      <div
-        style={{
-          fontSize: '52px',
-          marginBottom: '18px',
-        }}
-      >
-        {icon}
-      </div>
+      {icon != null ? (
+        <div className="mb-4 flex justify-center text-4xl text-muted-foreground" aria-hidden>
+          {icon}
+        </div>
+      ) : null}
 
-      <h3
-        style={{
-          margin: 0,
-          fontSize: '24px',
-          marginBottom: '10px',
-        }}
-      >
-        {title}
-      </h3>
+      <h3 className="m-0 text-xl font-extrabold text-foreground sm:text-2xl">{title}</h3>
 
-      <p
-        style={{
-          color: '#6B7280',
-          margin: 0,
-          lineHeight: 1.7,
-          fontSize: '16px',
-        }}
-      >
+      <p className="mx-auto mt-2 mb-0 max-w-sm text-sm font-medium leading-relaxed text-muted-foreground sm:text-base">
         {description}
       </p>
+
+      {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   )
 }
