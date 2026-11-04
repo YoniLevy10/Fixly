@@ -53,12 +53,17 @@ async function handleWaitlist(request: Request, route: string) {
     )
 
     if (!saved.ok) {
-      return NextResponse.json({ error: saved.error }, { status: 503 })
+      return NextResponse.json({ error: saved.error }, { status: saved.status })
     }
 
     return NextResponse.json(
-      { ok: true, audience: body.audience, id: saved.id },
-      { status: 201 }
+      {
+        ok: true,
+        audience: body.audience,
+        id: saved.id,
+        alreadyRegistered: saved.alreadyRegistered,
+      },
+      { status: saved.alreadyRegistered ? 200 : 201 }
     )
   } catch (error) {
     trackError(error, { route })

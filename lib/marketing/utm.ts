@@ -84,6 +84,15 @@ export function inferVisitAttribution(input: {
   }
 }
 
+/** Fields safe to send to analytics. Campaign labels only — never a query or contact. */
+export function publicAttribution(params: UtmParams): UtmParams {
+  const next: UtmParams = {}
+  if (params.utm_source) next.utm_source = params.utm_source
+  if (params.utm_medium) next.utm_medium = params.utm_medium
+  if (params.utm_campaign) next.utm_campaign = params.utm_campaign
+  return next
+}
+
 export function getStoredUtm(): UtmParams {
   if (typeof window === 'undefined') return {}
   try {

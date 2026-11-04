@@ -33,6 +33,7 @@ type AdminPayload = {
     pendingRequests: number
     completedRequests: number
     waitlist: number
+    waitlistToday?: number
     waitlistCustomers?: number
     waitlistProfessionals?: number
     reviews: number
@@ -328,7 +329,7 @@ export default function AdminPage() {
     {
       label: 'רשימת המתנה',
       value: stats.waitlist,
-      hint: `${stats.waitlistCustomers ?? 0} לקוחות · ${stats.waitlistProfessionals ?? 0} מקצוענים`,
+      hint: `${stats.waitlistCustomers ?? 0} לקוחות · ${stats.waitlistProfessionals ?? 0} מקצוענים · היום ${stats.waitlistToday ?? 0}`,
     },
     { label: 'בקשות ממתינות', value: stats.pendingRequests },
     { label: 'בקשות שהושלמו', value: stats.completedRequests },
@@ -441,7 +442,8 @@ export default function AdminPage() {
           <div>
             <h2 className="font-bold text-lg">רשימת המתנה אחרונה</h2>
             <p className="text-xs text-muted-foreground">
-              עד 50 רשומות — שם, טלפון, אימייל, מקור וזמן הרשמה
+              עד 50 רשומות אחרונות, החדשות למעלה. היום בישראל:{' '}
+              {stats.waitlistToday ?? 0}
             </p>
           </div>
           <button

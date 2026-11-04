@@ -18,6 +18,7 @@ import {
   getStoredReferral,
 } from '@/components/shared/ReferralCapture'
 import { track } from '@/lib/analytics/track'
+import { publicAttribution } from '@/lib/marketing/utm'
 import type { WaitlistAudience } from '@/lib/data/pro-waitlist-store'
 import { prelaunchCopy as copy } from '@/lib/marketing/prelaunch-copy'
 import {
@@ -73,6 +74,7 @@ export default function PrelaunchLanding({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [showSticky, setShowSticky] = useState(true)
   const [shareCopied, setShareCopied] = useState(false)
@@ -132,8 +134,11 @@ export default function PrelaunchLanding({
   const markSignupStarted = () => {
     if (startedRef.current) return
     startedRef.current = true
-    track('waitlist_signup_started', { audience, variant: VARIANT })
-    track('signup_start', { audience, source: 'waitlist', medium: 'organic' })
+    track('waitlist_signup_started', {
+      audience,
+      variant: VARIANT,
+      ...publicAttribution(getStoredAttribution()),
+    })
   }
 
   const shareWaitlist = async (channel: 'whatsapp' | 'native' | 'copy') => {
@@ -191,7 +196,7 @@ export default function PrelaunchLanding({
         }),
       })
       const data = (await res.json().catch(() => null)) as
-        | { error?: string; id?: string; ok?: boolean }
+        | { error?: string; id?: string; ok?: boolean; alreadyRegistered?: boolean }
         | null
       if (!res.ok) {
         throw new Error(data?.error || 'לא הצלחנו לשמור את הפרטים')
@@ -199,29 +204,15 @@ export default function PrelaunchLanding({
       if (!data?.id || !isUuid(data.id)) {
         throw new Error('השמירה לא אושרה — נסו שוב')
       }
-      track('waitlist_submitted', { audience, variant: VARIANT, id: data.id })
-      track('waitlist_signup_completed', {
-        audience,
-        variant: VARIANT,
-        id: data.id,
-        ...(attribution.utm_source ? { utm_source: attribution.utm_source } : {}),
-        ...(attribution.utm_medium ? { utm_medium: attribution.utm_medium } : {}),
-        ...(attribution.utm_campaign
-          ? { utm_campaign: attribution.utm_campaign }
-          : {}),
-      })
-      track('signup_complete', {
-        audience,
-        source: attribution.utm_source || 'fixly',
-        medium: attribution.utm_medium || 'organic',
-        landing_page: typeof window !== 'undefined' ? window.location.pathname : '/waitlist',
-      })
-      if (audience === 'professional') {
-        track('professional_signup', {
-          source: attribution.utm_source || 'fixly',
-          medium: attribution.utm_medium || 'organic',
+      const source = publicAttribution(attribution)
+      if (!data.alreadyRegistered) {
+        track('waitlist_signup_completed', {
+          audience,
+          variant: VARIANT,
+          ...source,
         })
       }
+      setAlreadyRegistered(Boolean(data.alreadyRegistered))
       setDone(true)
       setForm(emptyForm)
       startedRef.current = false
@@ -243,6 +234,7 @@ export default function PrelaunchLanding({
     loading,
     error,
     done,
+    alreadyRegistered,
     shareCopied,
     onFormChange: setForm,
     onSubmit: submit,
@@ -250,6 +242,7 @@ export default function PrelaunchLanding({
     onShare: shareWaitlist,
     onResetDone: () => {
       setDone(false)
+      setAlreadyRegistered(false)
       setShareCopied(false)
     },
   }
@@ -600,6 +593,7 @@ type WaitlistFormProps = {
   loading: boolean
   error: string | null
   done: boolean
+  alreadyRegistered: boolean
   shareCopied: boolean
   onFormChange: (updater: FormState | ((f: FormState) => FormState)) => void
   onSubmit: (e: FormEvent) => void
@@ -613,6 +607,7 @@ function WaitlistFormCard({
   loading,
   error,
   done,
+  alreadyRegistered,
   shareCopied,
   onFormChange,
   onSubmit,
@@ -647,7 +642,9 @@ function WaitlistFormCard({
       <div className="flex flex-col items-center gap-3 py-6 text-center sm:py-8">
         <CheckCircle2 className="h-11 w-11 text-success" aria-hidden />
         <p className="text-xl font-extrabold text-primary">{copy.successTitle}</p>
-        <p className="max-w-sm text-sm font-medium text-muted-foreground">{copy.successPro}</p>
+        <p className="max-w-sm text-sm font-medium text-muted-foreground">
+          {alreadyRegistered ? copy.successAlready : copy.successPro}
+        </p>
         <div className="mt-3 w-full rounded-xl border border-border bg-background p-4 text-start">
           <p className="text-sm font-extrabold text-primary">{copy.successShareTitle}</p>
           <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">

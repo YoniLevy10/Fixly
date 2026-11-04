@@ -83,6 +83,7 @@ export const prelaunchCopy = {
   successTitle: 'נרשמתם',
   successCustomer: 'נעדכן אתכם כשניפתח באזור שלכם.',
   successPro: 'שמרנו לכם מקום. נעדכן כשנפתח.',
+  successAlready: 'הפרטים האלה כבר שמורים. אין צורך להירשם שוב.',
   successShareTitle: 'מכירים עוד בעל מקצוע?',
   successShareLead: 'שיתוף קצר בוואטסאפ עוזר לפתוח את העיר מהר יותר.',
   successShareWhatsApp: 'שתפו בוואטסאפ',

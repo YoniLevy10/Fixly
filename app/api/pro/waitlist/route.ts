@@ -44,12 +44,17 @@ export async function POST(request: Request) {
     )
 
     if (!saved.ok) {
-      return NextResponse.json({ error: saved.error }, { status: 503 })
+      return NextResponse.json({ error: saved.error }, { status: saved.status })
     }
 
     return NextResponse.json(
-      { ok: true, audience: 'professional', id: saved.id },
-      { status: 201 },
+      {
+        ok: true,
+        audience: 'professional',
+        id: saved.id,
+        alreadyRegistered: saved.alreadyRegistered,
+      },
+      { status: saved.alreadyRegistered ? 200 : 201 },
     )
   } catch (error) {
     trackError(error, { route: 'POST /api/pro/waitlist' })

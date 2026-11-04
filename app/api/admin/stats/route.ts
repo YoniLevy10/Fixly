@@ -9,6 +9,7 @@ import {
   isCountableGoalSignup,
   summarizeGoalProgress,
 } from '@/lib/growth/monthly-signup-goal'
+import { jerusalemDayStart } from '@/lib/time/jerusalem-day'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +39,7 @@ export async function GET() {
 
     const { admin } = access
     const { start, end } = getMonthlyGoalWindow()
+    const dayStart = jerusalemDayStart()
 
     const [
       professionals,
@@ -56,6 +58,7 @@ export async function GET() {
       customerWaitlist,
       professionalWaitlist,
       goalWindowRows,
+      todayWaitlist,
     ] = await Promise.all([
       admin.from('professionals').select('*', { count: 'exact', head: true }),
       admin.from('requests').select('*', { count: 'exact', head: true }),
@@ -113,16 +116,28 @@ export async function GET() {
         .select('id, full_name, phone, audience, source, created_at')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString()),
+      admin
+        .from('pro_waitlist')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', dayStart.toISOString()),
     ])
+
+    const waitlistReadError = recentWaitlist.error ?? waitlist.error ?? todayWaitlist.error
+    if (waitlistReadError) {
+      trackError(waitlistReadError, { route: 'GET /api/admin/stats' })
+      return NextResponse.json({ error: 'טעינת רשימת ההמתנה נכשלה' }, { status: 500 })
+    }
 
     let waitlistRows = recentWaitlist.data ?? []
     let waitlistCount = waitlist.count ?? 0
+    let waitlistToday = todayWaitlist.count ?? 0
     let storage: 'supabase' | 'memory' | 'mixed' = 'supabase'
 
     const memory = mapMemoryWaitlist()
     if (!isSupabaseEnabled() && memory.length > 0) {
       waitlistRows = memory
       waitlistCount = memory.length
+      waitlistToday = memory.filter((row) => row.created_at >= dayStart.toISOString()).length
       storage = 'memory'
     }
 
@@ -140,6 +155,7 @@ export async function GET() {
         pendingRequests: pendingRequests.count ?? 0,
         completedRequests: completedRequests.count ?? 0,
         waitlist: waitlistCount,
+        waitlistToday,
         waitlistCustomers: customerWaitlist.count ?? 0,
         waitlistProfessionals: professionalWaitlist.count ?? 0,
         reviews: reviews.count ?? 0,
