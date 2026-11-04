@@ -1,0 +1,14 @@
+{
+  "title": "Fixly",
+  "description": "Execution network for tradespeople in Israel. Real demand is matched by trade, area, availability, and track record, then followed through to completion.",
+  "status": "Pilot",
+  "visibility": true,
+  "featured": false,
+  "category": "Marketplace",
+  "website": "https://fixly.tech",
+  "logo": "",
+  "cover": "",
+  "video": "",
+  "technologies": ["Next.js", "TypeScript", "Supabase", "Stripe"],
+  "tags": ["marketplace", "field-service"]
+}
