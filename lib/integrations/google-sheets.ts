@@ -8,6 +8,11 @@ import {
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
+const SHEETS_FETCH_TIMEOUT_MS = 8_000
+
+function sheetSignal(): AbortSignal {
+  return AbortSignal.timeout(SHEETS_FETCH_TIMEOUT_MS)
+}
 
 type TokenCache = { token: string; exp: number }
 let tokenCache: TokenCache | null = null
@@ -62,6 +67,7 @@ async function accessToken(): Promise<string> {
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion,
     }),
+    signal: sheetSignal(),
   })
   const body = (await response.json().catch(() => ({}))) as { access_token?: string }
   if (!response.ok || !body.access_token) {
@@ -78,7 +84,7 @@ function quoteTitle(title: string): string {
 async function sheetTitle(token: string, spreadsheetId: string): Promise<string> {
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`,
-    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
+    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: sheetSignal() },
   )
   if (!response.ok) throw new Error('לא ניתן לקרוא את מבנה הגיליון')
   const body = (await response.json()) as {
@@ -98,7 +104,7 @@ async function readViaApi(spreadsheetId: string): Promise<string[][]> {
   const range = encodeURIComponent(`${quoteTitle(title)}!A:H`)
   const response = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
-    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
+    { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: sheetSignal() },
   )
   if (!response.ok) throw new Error('קריאת הגיליון נכשלה')
   const body = (await response.json()) as { values?: string[][] }
@@ -116,6 +122,7 @@ async function readViaCsv(spreadsheetId: string): Promise<string[][]> {
       },
       cache: 'no-store',
       redirect: 'follow',
+      signal: sheetSignal(),
     },
   )
   const text = await response.text()
@@ -168,6 +175,7 @@ export async function writeOutreachCells(writes: SheetCellWrite[]): Promise<bool
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ valueInputOption: 'RAW', data }),
+      signal: sheetSignal(),
     },
   )
   if (!response.ok) throw new Error('כתיבה לגיליון נכשלה')

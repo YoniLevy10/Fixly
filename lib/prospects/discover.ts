@@ -96,6 +96,10 @@ type DiscoveryCursor = {
   phase: 'places' | 'osm' | 'gov' | 'done'
   placesJobOffset: number
   placesJobsTotal: number
+  /** Next OSM category index (categories that have Overpass filters). */
+  osmCategoryOffset: number
+  /** Next data.gov.il datastore offset for the pest-license registry. */
+  govPageOffset: number
   sourcesWanted: DiscoveryAutoSource[]
   cumulative: {
     found: number
@@ -172,7 +176,15 @@ export function sanitizeDiscoveryCursor(cursor: DiscoveryCursor): DiscoveryCurso
   if (phase === 'places' && !isGooglePlacesEnabled()) {
     phase = phaseForSources(sourcesWanted)
   }
-  return { ...cursor, sourcesWanted, phase }
+  return {
+    ...cursor,
+    sourcesWanted,
+    phase,
+    osmCategoryOffset: Number.isFinite(cursor.osmCategoryOffset)
+      ? cursor.osmCategoryOffset
+      : 0,
+    govPageOffset: Number.isFinite(cursor.govPageOffset) ? cursor.govPageOffset : 0,
+  }
 }
 
 function initialCursor(sources: DiscoveryAutoSource[]): DiscoveryCursor {
@@ -181,6 +193,8 @@ function initialCursor(sources: DiscoveryAutoSource[]): DiscoveryCursor {
     phase: phaseForSources(wanted),
     placesJobOffset: 0,
     placesJobsTotal: 0,
+    osmCategoryOffset: 0,
+    govPageOffset: 0,
     sourcesWanted: wanted,
     cumulative: emptyCumulative(),
   }
@@ -603,22 +617,35 @@ export async function runProspectDiscovery(
         city,
         totalBudget: budget,
         perCategoryLimit: getDiscoveryPerCategoryCap(),
+        categoryOffset: cursor.osmCategoryOffset,
+        maxCategories: 1,
+        deadlineAt: placesDeadlineAt,
       })
       await writeRunProgress(admin, runId, {
-        percent: 78,
+        percent: Math.min(90, 60 + cursor.osmCategoryOffset),
         phase: 'osm',
-        labelHe: 'סורק OpenStreetMap…',
+        labelHe: `סורק OpenStreetMap… קטגוריה ${cursor.osmCategoryOffset + 1}`,
         apiCalls: cursor.cumulative.apiCalls,
         apiCallBudget,
       })
       const records = await adapter.fetchRecords()
+      const slice = adapter.lastSlice
+      const prevOsm = bySource.osm
       chunkFound = records.length
       bySource.osm = {
-        found: records.length,
-        created: 0,
-        updated: 0,
-        skipped: 0,
-        errors: adapter.lastCategoryErrors.slice(0, 5),
+        found: (prevOsm?.found ?? 0) + records.length,
+        created: prevOsm?.created ?? 0,
+        updated: prevOsm?.updated ?? 0,
+        skipped: prevOsm?.skipped ?? 0,
+        errors: [
+          ...(prevOsm?.errors ?? []),
+          ...adapter.lastCategoryErrors,
+        ].slice(0, 8),
+        stats: {
+          categoryOffset: slice.nextCategoryOffset,
+          categoriesTotal: slice.categoriesTotal,
+          stoppedForDeadline: slice.stoppedForDeadline ? 1 : 0,
+        },
       }
       if (adapter.lastCategoryErrors.length) {
         chunkErrors += adapter.lastCategoryErrors.length
@@ -626,6 +653,7 @@ export async function runProspectDiscovery(
           ...adapter.lastCategoryErrors.slice(0, 3).map((e) => `osm: ${e}`),
         )
       }
+      let osmSaved = true
       if (records.length > 0) {
         try {
           const result = await ingestFromAdapter(
@@ -638,45 +666,73 @@ export async function runProspectDiscovery(
           chunkUpdated = result.updated.length
           chunkSkipped = result.skipped.length
           chunkErrors += result.errors.length
-          bySource.osm.created = result.created.length
-          bySource.osm.updated = result.updated.length
-          bySource.osm.skipped = result.skipped.length
-          bySource.osm.uniqueToSource = result.created.length
-          bySource.osm.mergedIntoExisting = result.updated.length
+          bySource.osm.created = (prevOsm?.created ?? 0) + result.created.length
+          bySource.osm.updated = (prevOsm?.updated ?? 0) + result.updated.length
+          bySource.osm.skipped = (prevOsm?.skipped ?? 0) + result.skipped.length
+          bySource.osm.uniqueToSource = bySource.osm.created
+          bySource.osm.mergedIntoExisting = bySource.osm.updated
           if (result.errors.length) {
             topErrors.push(
               ...result.errors.slice(0, 3).map((e) => `osm: ${e.error}`),
             )
           }
         } catch (e) {
+          osmSaved = false
           chunkErrors += 1
           topErrors.push(`osm: ${unknownErrorMessage(e)}`)
         }
       }
-      cursor.phase = nextPhaseAfter(cursor)
+      if (osmSaved && !slice.stoppedForDeadline) {
+        cursor.osmCategoryOffset = slice.nextCategoryOffset
+        if (slice.done) {
+          cursor.phase = nextPhaseAfter(cursor)
+          cursor.osmCategoryOffset = 0
+        }
+      }
     } else if (
       cursor.phase === 'gov' &&
       cursor.sourcesWanted.includes('gov_pest_control')
     ) {
-      const adapter = new GovPestControlProspectAdapter({ city })
+      const adapter = new GovPestControlProspectAdapter({
+        city,
+        pageSize: 200,
+      })
       await writeRunProgress(admin, runId, {
         percent: 90,
         phase: 'gov',
-        labelHe: 'טוען מאגר מדבירים…',
+        labelHe: `טוען מאגר מדבירים… היסט ${cursor.govPageOffset}`,
         apiCalls: cursor.cumulative.apiCalls,
         apiCallBudget,
       })
-      const records = await adapter.fetchRecords()
+      let slice: Awaited<ReturnType<GovPestControlProspectAdapter['fetchSlice']>> | null =
+        null
+      try {
+        slice = await adapter.fetchSlice({
+          offset: cursor.govPageOffset,
+          maxPages: 1,
+          deadlineAt: placesDeadlineAt,
+        })
+      } catch (e) {
+        chunkErrors += 1
+        topErrors.push(`gov_pest_control: ${unknownErrorMessage(e)}`)
+      }
+      const records = slice?.records ?? []
+      const prevGov = bySource.gov_pest_control
       chunkFound = records.length
       bySource.gov_pest_control = {
-        found: records.length,
-        created: 0,
-        updated: 0,
-        skipped: 0,
-        errors: adapter.lastErrors.slice(0, 5),
-        stats: { fetched: adapter.lastFetched, kept: adapter.lastKept },
+        found: (prevGov?.found ?? 0) + records.length,
+        created: prevGov?.created ?? 0,
+        updated: prevGov?.updated ?? 0,
+        skipped: prevGov?.skipped ?? 0,
+        errors: [...(prevGov?.errors ?? []), ...adapter.lastErrors].slice(0, 8),
+        stats: {
+          fetched: (Number(prevGov?.stats?.fetched) || 0) + (slice?.fetched ?? 0),
+          kept: (Number(prevGov?.stats?.kept) || 0) + adapter.lastKept,
+          pageOffset: slice?.nextOffset ?? cursor.govPageOffset,
+        },
       }
-      if (records.length > 0) {
+      let govSaved = slice != null
+      if (slice && records.length > 0 && !slice.stoppedForDeadline) {
         try {
           const result = await ingestFromAdapter(
             admin,
@@ -688,9 +744,12 @@ export async function runProspectDiscovery(
           chunkUpdated = result.updated.length
           chunkSkipped = result.skipped.length
           chunkErrors += result.errors.length
-          bySource.gov_pest_control.created = result.created.length
-          bySource.gov_pest_control.updated = result.updated.length
-          bySource.gov_pest_control.skipped = result.skipped.length
+          bySource.gov_pest_control.created =
+            (prevGov?.created ?? 0) + result.created.length
+          bySource.gov_pest_control.updated =
+            (prevGov?.updated ?? 0) + result.updated.length
+          bySource.gov_pest_control.skipped =
+            (prevGov?.skipped ?? 0) + result.skipped.length
           if (result.errors.length) {
             topErrors.push(
               ...result.errors
@@ -699,11 +758,18 @@ export async function runProspectDiscovery(
             )
           }
         } catch (e) {
+          govSaved = false
           chunkErrors += 1
           topErrors.push(`gov_pest_control: ${unknownErrorMessage(e)}`)
         }
       }
-      cursor.phase = 'done'
+      if (slice && govSaved && !slice.stoppedForDeadline) {
+        cursor.govPageOffset = slice.nextOffset
+        if (slice.done) {
+          cursor.phase = 'done'
+          cursor.govPageOffset = 0
+        }
+      }
     } else {
       cursor.phase = 'done'
     }

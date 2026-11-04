@@ -32,6 +32,25 @@ export type OsmAdapterOptions = {
   totalBudget?: number
   endpoint?: string
   fetchImpl?: typeof fetch
+  /** Resume index among categories that have Overpass filters. */
+  categoryOffset?: number
+  /** Hard cap on categories queried in this call. Omit to scan all. */
+  maxCategories?: number
+  /**
+   * Stop before starting another Overpass call once this epoch ms is near.
+   * A category that was not started is left for the next invocation.
+   */
+  deadlineAt?: number
+}
+
+export type OsmFetchSlice = {
+  categoryOffset: number
+  nextCategoryOffset: number
+  categoriesTotal: number
+  done: boolean
+  /** True when the next category was not started because the deadline was close. */
+  stoppedForDeadline: boolean
+  attempted: number
 }
 
 const DEFAULT_OVERPASS = 'https://overpass-api.de/api/interpreter'
@@ -55,7 +74,18 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
   private readonly perCategoryLimit: number
   private readonly endpoints: string[]
   private readonly fetchImpl: typeof fetch
+  private readonly categoryOffset: number
+  private readonly maxCategories: number | null
+  private readonly deadlineAt: number | null
   lastCategoryErrors: string[] = []
+  lastSlice: OsmFetchSlice = {
+    categoryOffset: 0,
+    nextCategoryOffset: 0,
+    categoriesTotal: 0,
+    done: true,
+    stoppedForDeadline: false,
+    attempted: 0,
+  }
 
   constructor(options: OsmAdapterOptions = {}) {
     this.city = options.city ?? getDiscoveryCity()
@@ -64,6 +94,12 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
       ? [options.endpoint, ...OVERPASS_ENDPOINTS.filter((e) => e !== options.endpoint)]
       : [...OVERPASS_ENDPOINTS]
     this.fetchImpl = options.fetchImpl ?? fetch
+    this.categoryOffset = Math.max(0, options.categoryOffset ?? 0)
+    this.maxCategories =
+      options.maxCategories != null && options.maxCategories > 0
+        ? Math.floor(options.maxCategories)
+        : null
+    this.deadlineAt = options.deadlineAt ?? null
     this.mappings = getDiscoveryMappingsForSlugs(
       options.categorySlugs ?? getRecruitCategorySlugs(),
     )
@@ -73,17 +109,32 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
     const out: ProspectSourceRecord[] = []
     const seen = new Set<string>()
     const categoryErrors: string[] = []
+    const indexed = this.mappings.filter((mapping) => mapping.osmFilters.length > 0)
+    const start = Math.min(this.categoryOffset, indexed.length)
+    const limit = this.maxCategories ?? indexed.length
+    let next = start
+    let attempted = 0
+    let stoppedForDeadline = false
 
-    for (const mapping of this.mappings) {
-      if (mapping.osmFilters.length === 0) continue
+    for (let i = start; i < indexed.length && attempted < limit; i++) {
+      const mapping = indexed[i]
+      if (this.deadlineAt != null && this.deadlineAt - Date.now() < 6_000) {
+        stoppedForDeadline = true
+        next = i
+        break
+      }
       let elements: OsmElement[] = []
       try {
         elements = await this.queryCategory(mapping)
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Overpass failed'
         categoryErrors.push(`${mapping.slug}: ${message}`)
+        attempted += 1
+        next = i + 1
         continue
       }
+      attempted += 1
+      next = i + 1
       for (const el of elements.slice(0, this.perCategoryLimit)) {
         const externalId = `${el.type}/${el.id}`
         if (seen.has(externalId)) continue
@@ -162,8 +213,23 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
       }
     }
 
+    const done = !stoppedForDeadline && next >= indexed.length
+    this.lastSlice = {
+      categoryOffset: start,
+      nextCategoryOffset: next,
+      categoriesTotal: indexed.length,
+      done,
+      stoppedForDeadline,
+      attempted,
+    }
     this.lastCategoryErrors = categoryErrors
-    if (categoryErrors.length > 0 && out.length === 0) {
+    const fullScan = this.categoryOffset === 0 && this.maxCategories == null
+    if (
+      fullScan &&
+      categoryErrors.length > 0 &&
+      out.length === 0 &&
+      !stoppedForDeadline
+    ) {
       throw new Error(
         `Overpass query failed for all categories: ${categoryErrors[0]}`,
       )
@@ -186,7 +252,7 @@ export class OsmOverpassProspectAdapter implements ProspectSourceAdapter {
     })
 
     return `
-[out:json][timeout:25];
+[out:json][timeout:12];
 (
   ${parts.join('\n  ')}
 );
@@ -202,12 +268,15 @@ out center tags;
     const errors: string[] = []
 
     for (const endpoint of this.endpoints) {
+      const remaining = this.deadlineAt != null ? this.deadlineAt - Date.now() : 15_000
+      if (remaining < 4_000) break
+      const timeoutMs = Math.min(15_000, remaining - 500)
       try {
         const res = await this.fetchImpl(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body,
-          signal: AbortSignal.timeout(35_000),
+          signal: AbortSignal.timeout(timeoutMs),
         })
 
         if (!res.ok) {

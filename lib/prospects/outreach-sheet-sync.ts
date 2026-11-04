@@ -8,13 +8,17 @@ import {
 } from '@/lib/integrations/google-sheets'
 import { normalizePhone } from '@/lib/prospects/phone'
 import {
+  OUTREACH_LOCK_LEASE_MS,
   OUTREACH_SOURCE,
+  OUTREACH_SYNC_MAX_MUTATIONS,
   contentHash,
+  isOutreachLockActive,
   leadContentHash,
   parseOutreachGrid,
   planOutreachSync,
   prospectStatusToSheet,
   readOutreachLink,
+  sliceOutreachPlan,
   type ExistingOutreachProspect,
   type OutreachUpdate,
   type SheetLead,
@@ -47,6 +51,101 @@ export type OutreachSyncResult = {
   configured: boolean
   message: string
   errors: string[]
+  /** Another invocation still holds the lease. */
+  busy?: boolean
+  /** More creates/updates remain for a later invocation. */
+  partial?: boolean
+  processed?: number
+  remaining?: number
+  /** Id-only sheet pushes skipped because Google write credentials are absent. */
+  deferred?: number
+}
+
+const LOCK_QUERY = 'outreach_sync_lock'
+const LOCK_CITY = '__cron__'
+const LOCK_SOURCE = 'outreach_sheet'
+const SYNC_BUDGET_MS = 40_000
+
+function emptySyncResult(
+  message: string,
+  extra: Partial<OutreachSyncResult> = {},
+): OutreachSyncResult {
+  return {
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    duplicates: 0,
+    registered: 0,
+    uncertain: 0,
+    wroteSheet: false,
+    configured: sheetsWriteConfigured(),
+    message,
+    errors: [],
+    ...extra,
+  }
+}
+
+async function acquireOutreachLock(
+  admin: SupabaseClient,
+): Promise<'acquired' | 'busy'> {
+  const nowIso = new Date().toISOString()
+  const { data: row, error } = await admin
+    .from('prospect_query_stats')
+    .select('last_run_at')
+    .eq('query_key', LOCK_QUERY)
+    .eq('city', LOCK_CITY)
+    .eq('source_name', LOCK_SOURCE)
+    .maybeSingle()
+  if (error) {
+    console.warn('[outreach-sync] lock read failed')
+    return 'busy'
+  }
+  if (row && isOutreachLockActive(row.last_run_at, Date.now(), OUTREACH_LOCK_LEASE_MS)) {
+    return 'busy'
+  }
+  if (!row) {
+    const inserted = await admin
+      .from('prospect_query_stats')
+      .insert({
+        query_key: LOCK_QUERY,
+        city: LOCK_CITY,
+        source_name: LOCK_SOURCE,
+        last_run_at: nowIso,
+        updated_at: nowIso,
+      })
+      .select('query_key')
+    if (!inserted.error) return 'acquired'
+    if (inserted.error.code === '23505') return 'busy'
+    console.warn('[outreach-sync] lock insert failed')
+    return 'busy'
+  }
+  const stamp = row.last_run_at as string | null
+  let update = admin
+    .from('prospect_query_stats')
+    .update({ last_run_at: nowIso, updated_at: nowIso })
+    .eq('query_key', LOCK_QUERY)
+    .eq('city', LOCK_CITY)
+    .eq('source_name', LOCK_SOURCE)
+  update = stamp ? update.eq('last_run_at', stamp) : update.is('last_run_at', null)
+  const won = await update.select('query_key')
+  if (won.error || !won.data?.length) return 'busy'
+  return 'acquired'
+}
+
+async function releaseOutreachLock(admin: SupabaseClient) {
+  await admin
+    .from('prospect_query_stats')
+    .update({
+      last_run_at: new Date(0).toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('query_key', LOCK_QUERY)
+    .eq('city', LOCK_CITY)
+    .eq('source_name', LOCK_SOURCE)
+}
+
+function isPushOnly(change: OutreachUpdate): boolean {
+  return change.pushId && !change.pushFields && !change.pushStatus
 }
 
 async function loadAll<T>(
@@ -104,97 +203,143 @@ function actorId(actorUserId?: string | null): string | null {
 }
 
 export async function syncOutreachSheet(admin: SupabaseClient, actorUserId?: string | null): Promise<OutreachSyncResult> {
-  const grid = await readOutreachGrid()
-  const leads = parseOutreachGrid(grid)
-  const [prospects, waitlist] = await Promise.all([
-    loadAll<ProspectRow>(
-      admin,
-      'professional_prospects',
-      'id, name, phone, phone_normalized, city, status, notes, services, waitlist_id, enrichment',
-    ),
-    loadAll<{ phone: string | null }>(admin, 'pro_waitlist', 'id, phone'),
-  ])
-  const existing: ExistingOutreachProspect[] = prospects.map((row) => ({
-    id: row.id,
-    name: row.name,
-    phone: row.phone,
-    phoneNormalized: row.phone_normalized,
-    city: row.city,
-    status: row.status,
-    notes: row.notes,
-    services: row.services ?? [],
-    waitlistId: row.waitlist_id,
-    link: readOutreachLink(row.enrichment),
-  }))
-  const plan = planOutreachSync(
-    leads,
-    existing,
-    waitlist.map((row) => row.phone ?? ''),
-  )
-  const errors: string[] = []
-  const writes: SheetCellWrite[] = []
-  let created = 0
-  let updated = 0
-  const categories = await loadCategories(admin)
-  const actor = actorId(actorUserId)
+  const lock = await acquireOutreachLock(admin)
+  if (lock === 'busy') {
+    return emptySyncResult('סנכרון כבר רץ — הדילוג מונע ריצה כפולה', {
+      busy: true,
+      partial: true,
+    })
+  }
 
-  for (const lead of plan.creates) {
-    try {
-      const id = await insertLead(admin, lead, categories, actor)
-      created++
-      writes.push({ row: lead.row, column: 'H', value: id })
-    } catch (error) {
-      errors.push(`${lead.name}: ${error instanceof Error ? error.message : 'יצירה נכשלה'}`)
+  const started = Date.now()
+  const deadline = started + SYNC_BUDGET_MS
+  try {
+    const grid = await readOutreachGrid()
+    const leads = parseOutreachGrid(grid)
+    const [prospects, waitlist] = await Promise.all([
+      loadAll<ProspectRow>(
+        admin,
+        'professional_prospects',
+        'id, name, phone, phone_normalized, city, status, notes, services, waitlist_id, enrichment',
+      ),
+      loadAll<{ phone: string | null }>(admin, 'pro_waitlist', 'id, phone'),
+    ])
+    const existing: ExistingOutreachProspect[] = prospects.map((row) => ({
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      phoneNormalized: row.phone_normalized,
+      city: row.city,
+      status: row.status,
+      notes: row.notes,
+      services: row.services ?? [],
+      waitlistId: row.waitlist_id,
+      link: readOutreachLink(row.enrichment),
+    }))
+    const plan = planOutreachSync(
+      leads,
+      existing,
+      waitlist.map((row) => row.phone ?? ''),
+    )
+    const configured = sheetsWriteConfigured()
+    const actionableUpdates = configured
+      ? plan.updates
+      : plan.updates.filter((change) => !isPushOnly(change))
+    const deferred = configured ? 0 : plan.updates.length - actionableUpdates.length
+    const batch = sliceOutreachPlan(
+      plan.creates,
+      actionableUpdates,
+      OUTREACH_SYNC_MAX_MUTATIONS,
+    )
+    const errors: string[] = []
+    const writes: SheetCellWrite[] = []
+    const touchedIds: string[] = []
+    let created = 0
+    let updated = 0
+    let processed = 0
+    const categories = await loadCategories(admin)
+    const actor = actorId(actorUserId)
+
+    for (const lead of batch.creates) {
+      if (Date.now() > deadline) break
+      try {
+        const id = await insertLead(admin, lead, categories, actor)
+        created++
+        processed++
+        touchedIds.push(id)
+        writes.push({ row: lead.row, column: 'H', value: id })
+      } catch (error) {
+        processed++
+        errors.push(`שורה ${lead.row}: ${error instanceof Error ? error.message : 'יצירה נכשלה'}`)
+      }
     }
-  }
 
-  for (const change of plan.updates) {
-    try {
-      const changed = await applyUpdate(admin, change, actor)
-      if (changed) updated++
-      writes.push(...cellsFor(change))
-    } catch (error) {
-      errors.push(`${change.name}: ${error instanceof Error ? error.message : 'עדכון נכשל'}`)
+    for (const change of batch.updates) {
+      if (Date.now() > deadline) break
+      try {
+        const changed = await applyUpdate(admin, change, actor)
+        if (changed) updated++
+        processed++
+        touchedIds.push(change.id)
+        writes.push(...cellsFor(change))
+      } catch (error) {
+        processed++
+        errors.push(`שורה ${change.lead.row}: ${error instanceof Error ? error.message : 'עדכון נכשל'}`)
+      }
     }
-  }
 
-  let wroteSheet = false
-  if (writes.length && sheetsWriteConfigured()) {
-    wroteSheet = await writeOutreachCells(writes)
-    if (wroteSheet) await clearPendingPush(admin, writes.map((write) => write.row))
-  }
+    const unfinishedInBatch =
+      processed < batch.creates.length + batch.updates.length
+    const remaining = batch.remaining + deferred + (unfinishedInBatch
+      ? batch.creates.length + batch.updates.length - processed
+      : 0)
+    let wroteSheet = false
+    if (writes.length && configured && Date.now() < deadline + 8_000) {
+      wroteSheet = await writeOutreachCells(writes)
+      if (wroteSheet) await clearPendingPush(admin, touchedIds)
+    }
 
-  const duplicates = plan.skips.filter((skip) => skip.reason === 'כפילות בגיליון').length
-  const registered = plan.skips.filter((skip) => skip.reason === 'כבר נרשם').length
-  const uncertain = plan.skips.filter((skip) => skip.reason.includes('לא ודאי')).length
-  const pending = writes.length > 0 && !wroteSheet
-  const message = [
-    `נוספו ${created}`,
-    `עודכנו ${updated}`,
-    `דולגו ${plan.skips.length}`,
-    duplicates ? `כפילויות בגיליון ${duplicates}` : '',
-    registered ? `כבר נרשמו ${registered}` : '',
-    uncertain ? `מספר לא ודאי שכבר קיים ${uncertain}` : '',
-    pending
-      ? 'הכתיבה חזרה לגיליון ממתינה לשיתוף הגיליון עם חשבון Google'
-      : wroteSheet
-        ? 'הגיליון עודכן'
-        : '',
-  ]
-    .filter(Boolean)
-    .join(' · ')
+    const duplicates = plan.skips.filter((skip) => skip.reason === 'כפילות בגיליון').length
+    const registered = plan.skips.filter((skip) => skip.reason === 'כבר נרשם').length
+    const uncertain = plan.skips.filter((skip) => skip.reason.includes('לא ודאי')).length
+    const pending = writes.length > 0 && !wroteSheet
+    const partial = remaining > 0
+    const message = [
+      `נוספו ${created}`,
+      `עודכנו ${updated}`,
+      `דולגו ${plan.skips.length}`,
+      duplicates ? `כפילויות בגיליון ${duplicates}` : '',
+      registered ? `כבר נרשמו ${registered}` : '',
+      uncertain ? `מספר לא ודאי שכבר קיים ${uncertain}` : '',
+      partial ? `נשארו ${remaining} להמשך` : '',
+      deferred ? `דחיית כתיבת מזהה ${deferred}` : '',
+      pending
+        ? 'הכתיבה חזרה לגיליון ממתינה לשיתוף הגיליון עם חשבון Google'
+        : wroteSheet
+          ? 'הגיליון עודכן'
+          : '',
+    ]
+      .filter(Boolean)
+      .join(' · ')
 
-  return {
-    created,
-    updated,
-    skipped: plan.skips.length,
-    duplicates,
-    registered,
-    uncertain,
-    wroteSheet,
-    configured: sheetsWriteConfigured(),
-    message,
-    errors,
+    return {
+      created,
+      updated,
+      skipped: plan.skips.length,
+      duplicates,
+      registered,
+      uncertain,
+      wroteSheet,
+      configured,
+      message,
+      errors,
+      partial,
+      processed,
+      remaining,
+      deferred,
+    }
+  } finally {
+    await releaseOutreachLock(admin).catch(() => undefined)
   }
 }
 
@@ -373,16 +518,17 @@ async function applyUpdate(
   return !same
 }
 
-async function clearPendingPush(admin: SupabaseClient, rows: number[]) {
-  const unique = [...new Set(rows)]
-  const prospects = await loadAll<ProspectRow>(
-    admin,
-    'professional_prospects',
-    'id, enrichment',
-  )
-  for (const prospect of prospects) {
+async function clearPendingPush(admin: SupabaseClient, ids: string[]) {
+  const unique = [...new Set(ids)]
+  if (!unique.length) return
+  const { data, error } = await admin
+    .from('professional_prospects')
+    .select('id, enrichment')
+    .in('id', unique)
+  if (error || !data) return
+  for (const prospect of data) {
     const link = readOutreachLink(prospect.enrichment)
-    if (!link || !unique.includes(link.row) || !link.pendingPush) continue
+    if (!link?.pendingPush) continue
     const enrichment = enrichmentWithLink(prospect.enrichment, { ...link, pendingPush: false })
     await admin.from('professional_prospects').update({ enrichment }).eq('id', prospect.id)
   }

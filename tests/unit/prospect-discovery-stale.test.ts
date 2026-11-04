@@ -125,8 +125,8 @@ describe('discovery stale lock helpers', () => {
                       id: 'dead',
                       started_at: new Date(now - 60_000).toISOString(),
                       details: {
-                        // Older than DISCOVERY_HEARTBEAT_STALE_MS (20 min)
-                        heartbeatAt: new Date(now - 1_300_000).toISOString(),
+                        // Older than DISCOVERY_HEARTBEAT_STALE_MS (90 min)
+                        heartbeatAt: new Date(now - 100 * 60 * 1000).toISOString(),
                       },
                     },
                   ],

@@ -2,8 +2,17 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { mapProfessionalRow } from '@/lib/data/supabase-mappers'
 import type { Professional } from '@/types/professional'
 
-/** Columns present on all Fixly DBs (pre-Midrag). */
-const PRO_SELECT_CORE = `
+/**
+ * Columns that exist on production `professionals` (Supabase ref
+ * lfzxvmievofvdhxrwggo). Do not add `midrag_*` here: those columns are not
+ * in production, and selecting them raises Postgres 42703 on every read.
+ * The fallback used to retry without them, but the first query still logged
+ * the error. Re-add the columns only after applying
+ * supabase/migrations/20260812000000_midrag_integration.sql
+ * (also repeated in 20260904120000_fix_professionals_catalog.sql).
+ * `updated_at` is likewise absent; do not select or write it.
+ */
+export const PROFESSIONALS_PUBLIC_SELECT = `
   id,
   title,
   description,
@@ -27,48 +36,14 @@ const PRO_SELECT_CORE = `
   service_categories ( name, name_he, slug )
 `
 
-/** Midrag columns — missing until 20260812000000_midrag_integration is applied. */
-const PRO_SELECT_WITH_MIDRAG = `
-  ${PRO_SELECT_CORE.trim()},
-  midrag_profile_url,
-  midrag_rating,
-  midrag_reviews_count,
-  midrag_verified,
-  midrag_last_synced_at
-`
-
-function isMissingColumnError(message: string | undefined): boolean {
-  if (!message) return false
-  return (
-    (/midrag_|jobs_completed|performance_score|accept_rate/i.test(message) &&
-      /does not exist|schema cache/i.test(message)) ||
-    false
-  )
-}
-
 async function selectProfessionals(
   supabase: NonNullable<Awaited<ReturnType<typeof createServerSupabaseClient>>>,
   id?: string
 ) {
-  const base = supabase.from('professionals').select(PRO_SELECT_WITH_MIDRAG)
-  const withMidrag = id
+  const base = supabase.from('professionals').select(PROFESSIONALS_PUBLIC_SELECT)
+  return id
     ? await base.eq('id', id).maybeSingle()
     : await base.order('performance_score', { ascending: false, nullsFirst: false })
-
-  if (!withMidrag.error) return withMidrag
-
-  if (!isMissingColumnError(withMidrag.error.message)) {
-    return withMidrag
-  }
-
-  // Production may lag behind Midrag migration — retry without those columns.
-  console.warn(
-    '[supabase] professionals Midrag columns missing; falling back to core select'
-  )
-  const core = supabase.from('professionals').select(PRO_SELECT_CORE)
-  return id
-    ? await core.eq('id', id).maybeSingle()
-    : await core.order('rating', { ascending: false })
 }
 
 export async function supabaseListProfessionals(): Promise<Professional[] | null> {

@@ -315,6 +315,40 @@ function cityFromSheet(sheetRegion: string, current: string): string {
   return region
 }
 
+/** Lease for the outreach cron lock. Longer than one bounded invocation, shorter than the 30 min schedule. */
+export const OUTREACH_LOCK_LEASE_MS = 90_000
+
+/** Mutations (creates + field updates) applied in one invocation. */
+export const OUTREACH_SYNC_MAX_MUTATIONS = 20
+
+export function isOutreachLockActive(
+  lastRunAt: string | null | undefined,
+  nowMs: number,
+  leaseMs = OUTREACH_LOCK_LEASE_MS,
+): boolean {
+  if (!lastRunAt) return false
+  const at = Date.parse(lastRunAt)
+  if (!Number.isFinite(at)) return false
+  const age = nowMs - at
+  return age >= 0 && age < leaseMs
+}
+
+export function sliceOutreachPlan<T, U>(
+  creates: readonly T[],
+  updates: readonly U[],
+  max: number,
+): { creates: T[]; updates: U[]; remaining: number } {
+  const cap = Math.max(0, Math.floor(max))
+  const nextCreates = creates.slice(0, cap)
+  const room = cap - nextCreates.length
+  const nextUpdates = updates.slice(0, Math.max(0, room))
+  return {
+    creates: nextCreates,
+    updates: nextUpdates,
+    remaining: creates.length + updates.length - nextCreates.length - nextUpdates.length,
+  }
+}
+
 export function planOutreachSync(
   leads: SheetLead[],
   existing: ExistingOutreachProspect[],

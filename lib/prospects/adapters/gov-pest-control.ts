@@ -53,6 +53,14 @@ export type GovPestAdapterOptions = {
   pageSize?: number
 }
 
+export type GovFetchSlice = {
+  nextOffset: number
+  done: boolean
+  /** Page was not requested because the deadline was already too close. */
+  stoppedForDeadline: boolean
+  fetched: number
+}
+
 export function settlementMatchesCity(
   settlement: string | null | undefined,
   city: string,
@@ -172,19 +180,94 @@ export class GovPestControlProspectAdapter implements ProspectSourceAdapter {
   lastFetched = 0
   lastKept = 0
   lastErrors: string[] = []
+  lastSlice: GovFetchSlice = {
+    nextOffset: 0,
+    done: true,
+    stoppedForDeadline: false,
+    fetched: 0,
+  }
 
   constructor(options: GovPestAdapterOptions = {}) {
     this.city = options.city ?? getDiscoveryCity()
     this.resourceId = options.resourceId ?? GOV_PEST_RESOURCE_ID
     this.rows = options.rows
     this.fetchImpl = options.fetchImpl ?? fetch
-    this.pageSize = Math.min(options.pageSize ?? 500, 1000)
+    this.pageSize = Math.min(options.pageSize ?? 200, 1000)
   }
 
   async fetchRecords(): Promise<ProspectSourceRecord[]> {
+    const slice = await this.fetchSlice({ offset: 0, maxPages: 25 })
+    return slice.records
+  }
+
+  /**
+   * One or more CKAN pages. Cron passes maxPages: 1 and a deadline so a
+   * national download cannot consume the whole function.
+   */
+  async fetchSlice(options: {
+    offset?: number
+    maxPages?: number
+    deadlineAt?: number
+  } = {}): Promise<GovFetchSlice & { records: ProspectSourceRecord[] }> {
     this.lastErrors = []
-    const rows = this.rows ?? (await this.fetchAllRows())
+    const start = Math.max(0, options.offset ?? 0)
+    const maxPages = Math.max(1, options.maxPages ?? 1)
+    if (this.rows) {
+      const records = this.recordsFromRows(this.rows)
+      const slice: GovFetchSlice = {
+        nextOffset: this.rows.length,
+        done: true,
+        stoppedForDeadline: false,
+        fetched: this.rows.length,
+      }
+      this.lastSlice = slice
+      this.lastFetched = this.rows.length
+      return { ...slice, records }
+    }
+
+    const rows: GovPestRow[] = []
+    let offset = start
+    let done = false
+    let stoppedForDeadline = false
+    let pages = 0
+    const hardCap = 5000
+
+    while (pages < maxPages && offset < hardCap) {
+      if (options.deadlineAt != null && options.deadlineAt - Date.now() < 6_000) {
+        stoppedForDeadline = true
+        break
+      }
+      const remaining =
+        options.deadlineAt != null ? options.deadlineAt - Date.now() : 20_000
+      const timeoutMs = Math.min(12_000, Math.max(4_000, remaining - 500))
+      const page = await this.fetchPage(offset, timeoutMs)
+      pages += 1
+      rows.push(...page.records)
+      offset += page.records.length
+      if (page.records.length < this.pageSize) {
+        done = true
+        break
+      }
+      if (page.total != null && offset >= page.total) {
+        done = true
+        break
+      }
+    }
+
+    if (!done && !stoppedForDeadline && offset >= hardCap) done = true
+    const records = this.recordsFromRows(rows)
+    const slice: GovFetchSlice = {
+      nextOffset: offset,
+      done,
+      stoppedForDeadline,
+      fetched: rows.length,
+    }
+    this.lastSlice = slice
     this.lastFetched = rows.length
+    return { ...slice, records }
+  }
+
+  private recordsFromRows(rows: GovPestRow[]): ProspectSourceRecord[] {
     const out: ProspectSourceRecord[] = []
     const seen = new Set<string>()
 
@@ -206,39 +289,34 @@ export class GovPestControlProspectAdapter implements ProspectSourceAdapter {
     return out
   }
 
-  private async fetchAllRows(): Promise<GovPestRow[]> {
-    const all: GovPestRow[] = []
-    let offset = 0
-    // Soft cap — full national set is ~2k; we filter locally to city
-    const hardCap = 5000
-    while (all.length < hardCap) {
-      const url = new URL(DATASTORE_URL)
-      url.searchParams.set('resource_id', this.resourceId)
-      url.searchParams.set('limit', String(this.pageSize))
-      url.searchParams.set('offset', String(offset))
+  private async fetchPage(
+    offset: number,
+    timeoutMs: number,
+  ): Promise<{ records: GovPestRow[]; total: number | null }> {
+    const url = new URL(DATASTORE_URL)
+    url.searchParams.set('resource_id', this.resourceId)
+    url.searchParams.set('limit', String(this.pageSize))
+    url.searchParams.set('offset', String(offset))
 
-      const res = await this.fetchImpl(url.toString(), {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(45_000),
-      })
-      if (!res.ok) {
-        const body = await res.text().catch(() => '')
-        throw new Error(`data.gov.il ${res.status}: ${body.slice(0, 200)}`)
-      }
-      const json = (await res.json()) as {
-        success?: boolean
-        result?: { records?: GovPestRow[]; total?: number }
-      }
-      if (!json.success) {
-        throw new Error('data.gov.il datastore_search failed')
-      }
-      const batch = json.result?.records ?? []
-      all.push(...batch)
-      if (batch.length < this.pageSize) break
-      offset += batch.length
-      if (json.result?.total != null && offset >= json.result.total) break
+    const res = await this.fetchImpl(url.toString(), {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(timeoutMs),
+    })
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      throw new Error(`data.gov.il ${res.status}: ${body.slice(0, 200)}`)
     }
-    return all
+    const json = (await res.json()) as {
+      success?: boolean
+      result?: { records?: GovPestRow[]; total?: number }
+    }
+    if (!json.success) {
+      throw new Error('data.gov.il datastore_search failed')
+    }
+    return {
+      records: json.result?.records ?? [],
+      total: json.result?.total ?? null,
+    }
   }
 }

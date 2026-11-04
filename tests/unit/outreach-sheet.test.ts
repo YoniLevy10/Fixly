@@ -2,9 +2,11 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   contentHash,
+  isOutreachLockActive,
   parseCsv,
   parseOutreachGrid,
   planOutreachSync,
+  sliceOutreachPlan,
   type ExistingOutreachProspect,
   type SheetLead,
 } from '../../lib/prospects/outreach-sheet'
@@ -124,5 +126,25 @@ describe('outreach sheet sync', () => {
     const pushed = planOutreachSync([lead], [edited], []).updates[0]
     assert.equal(pushed?.pushFields, true)
     assert.equal(pushed?.status, 'interested')
+  })
+})
+
+describe('outreach sync bounds', () => {
+  it('keeps a fresh lock and releases an expired one', () => {
+    const now = Date.now()
+    assert.equal(isOutreachLockActive(new Date(now - 10_000).toISOString(), now), true)
+    assert.equal(isOutreachLockActive(new Date(now - 120_000).toISOString(), now), false)
+    assert.equal(isOutreachLockActive(null, now), false)
+  })
+
+  it('slices creates ahead of updates and reports the remainder', () => {
+    const sliced = sliceOutreachPlan([1, 2, 3], ['a', 'b'], 2)
+    assert.deepEqual(sliced.creates, [1, 2])
+    assert.deepEqual(sliced.updates, [])
+    assert.equal(sliced.remaining, 3)
+    const rest = sliceOutreachPlan([1], ['a', 'b', 'c'], 3)
+    assert.deepEqual(rest.creates, [1])
+    assert.deepEqual(rest.updates, ['a', 'b'])
+    assert.equal(rest.remaining, 1)
   })
 })

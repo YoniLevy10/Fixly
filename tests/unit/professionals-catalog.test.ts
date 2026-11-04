@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { withCuratedProfessionals } from '../../lib/data/professionals-service'
+import { PROFESSIONALS_PUBLIC_SELECT } from '../../lib/data/supabase-professionals'
 import type { Professional } from '../../types/professional'
 
 const sampleDbPro: Professional = {
@@ -28,5 +29,23 @@ describe('withCuratedProfessionals', () => {
     assert.equal(merged.length, 1)
     assert.equal(merged[0]?.id, sampleDbPro.id)
     assert.equal(merged, input)
+  })
+})
+
+describe('PROFESSIONALS_PUBLIC_SELECT', () => {
+  it('does not request columns missing from production professionals', () => {
+    const sql = PROFESSIONALS_PUBLIC_SELECT
+    for (const missing of [
+      'midrag_profile_url',
+      'midrag_rating',
+      'midrag_reviews_count',
+      'midrag_verified',
+      'midrag_last_synced_at',
+      'updated_at',
+    ]) {
+      assert.equal(sql.includes(missing), false, missing)
+    }
+    assert.match(sql, /\bperformance_score\b/)
+    assert.match(sql, /service_categories/)
   })
 })

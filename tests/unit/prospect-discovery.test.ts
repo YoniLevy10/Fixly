@@ -11,6 +11,7 @@ import {
   JERUSALEM_SEARCH_AREAS,
 } from '@/lib/prospects/discovery-mapping'
 import { OsmOverpassProspectAdapter } from '@/lib/prospects/adapters/osm-overpass'
+import { GovPestControlProspectAdapter } from '@/lib/prospects/adapters/gov-pest-control'
 import { GooglePlacesProspectAdapter } from '@/lib/prospects/adapters/google-places'
 import {
   humanizeDiscoveryError,
@@ -257,6 +258,137 @@ describe('OsmOverpassProspectAdapter', () => {
     assert.ok(records.length >= 1)
     assert.ok(hits.length >= 2)
   })
+
+  it('queries one category per chunk and resumes from the offset', async () => {
+    let calls = 0
+    const adapter = new OsmOverpassProspectAdapter({
+      categorySlugs: ['plumbing', 'electricity'],
+      categoryOffset: 0,
+      maxCategories: 1,
+      fetchImpl: async () => {
+        calls += 1
+        return new Response(
+          JSON.stringify({
+            elements: [
+              {
+                type: 'node',
+                id: 4,
+                tags: {
+                  name: 'יוסי כהן אינסטלטור',
+                  phone: '0501234567',
+                  craft: 'plumber',
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        )
+      },
+    })
+    const first = await adapter.fetchRecords()
+    assert.ok(first.length >= 1)
+    assert.equal(calls, 1)
+    assert.equal(adapter.lastSlice.attempted, 1)
+    assert.equal(adapter.lastSlice.nextCategoryOffset, 1)
+    assert.equal(adapter.lastSlice.done, false)
+
+    const next = new OsmOverpassProspectAdapter({
+      categorySlugs: ['plumbing', 'electricity'],
+      categoryOffset: adapter.lastSlice.nextCategoryOffset,
+      maxCategories: 1,
+      fetchImpl: async () => {
+        calls += 1
+        return new Response(
+          JSON.stringify({
+            elements: [
+              {
+                type: 'node',
+                id: 5,
+                tags: {
+                  name: 'אבי חשמלאי',
+                  phone: '0509998877',
+                  craft: 'electrician',
+                },
+              },
+            ],
+          }),
+          { status: 200 },
+        )
+      },
+    })
+    await next.fetchRecords()
+    assert.equal(next.lastSlice.done, true)
+    assert.equal(next.lastSlice.categoryOffset, 1)
+  })
+
+  it('does not start an Overpass call when the deadline has passed', async () => {
+    let calls = 0
+    const adapter = new OsmOverpassProspectAdapter({
+      categorySlugs: ['plumbing', 'electricity'],
+      maxCategories: 2,
+      deadlineAt: Date.now() - 1_000,
+      fetchImpl: async () => {
+        calls += 1
+        return new Response(JSON.stringify({ elements: [] }), { status: 200 })
+      },
+    })
+    const records = await adapter.fetchRecords()
+    assert.equal(records.length, 0)
+    assert.equal(calls, 0)
+    assert.equal(adapter.lastSlice.stoppedForDeadline, true)
+    assert.equal(adapter.lastSlice.nextCategoryOffset, 0)
+    assert.equal(adapter.lastSlice.done, false)
+  })
+})
+
+describe('GovPestControlProspectAdapter slices', () => {
+  it('fetches a single page and resumes from the saved offset', async () => {
+    const pages: number[] = []
+    const adapter = new GovPestControlProspectAdapter({
+      city: 'ירושלים',
+      pageSize: 1,
+      fetchImpl: async (url) => {
+        const offset = Number(new URL(String(url)).searchParams.get('offset'))
+        pages.push(offset)
+        const row =
+          offset === 0
+            ? {
+                _id: 1,
+                FirstName: 'דנה',
+                LastName: 'כהן',
+                settlement: 'ירושלים',
+                Telephone: '0501234567',
+                Status: 'בתוקף',
+                LicenseNumber: '11',
+              }
+            : {
+                _id: 2,
+                FirstName: 'עמית',
+                LastName: 'לוי',
+                settlement: 'תל אביב',
+                Telephone: '0507654321',
+                Status: 'בתוקף',
+                LicenseNumber: '22',
+              }
+        return new Response(
+          JSON.stringify({
+            success: true,
+            result: { records: [row], total: 2 },
+          }),
+          { status: 200 },
+        )
+      },
+    })
+    const first = await adapter.fetchSlice({ offset: 0, maxPages: 1 })
+    assert.equal(pages.length, 1)
+    assert.equal(first.done, false)
+    assert.equal(first.nextOffset, 1)
+    assert.equal(first.records.length, 1)
+    const second = await adapter.fetchSlice({ offset: first.nextOffset, maxPages: 1 })
+    assert.deepEqual(pages, [0, 1])
+    assert.equal(second.records.length, 0)
+    assert.equal(second.done, true)
+  })
 })
 
 describe('prospect category embed', () => {
@@ -306,6 +438,8 @@ describe('free-only discovery defaults', () => {
         phase: 'places',
         placesJobOffset: 40,
         placesJobsTotal: 800,
+        osmCategoryOffset: 2,
+        govPageOffset: 200,
         sourcesWanted: ['google_places', 'osm', 'gov_pest_control'],
         cumulative: {
           found: 0,
@@ -317,6 +451,8 @@ describe('free-only discovery defaults', () => {
         },
       })
       assert.equal(sanitized.phase, 'osm')
+      assert.equal(sanitized.osmCategoryOffset, 2)
+      assert.equal(sanitized.govPageOffset, 200)
       assert.deepEqual(sanitized.sourcesWanted, ['osm', 'gov_pest_control'])
     } finally {
       if (prevEnabled === undefined) delete process.env.FIXLY_GOOGLE_PLACES_ENABLED

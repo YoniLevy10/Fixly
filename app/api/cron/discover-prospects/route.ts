@@ -7,7 +7,12 @@ import {
 import { trackError } from '@/lib/monitoring/track-error'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 120
+/**
+ * Ceiling above the soft session (70s, one category or one registry page).
+ * This Pro Fluid project allows up to 800s; 180s only covers a slow ingest
+ * so the cursor can commit. The platform default without this export is 300s.
+ */
+export const maxDuration = 180
 
 /**
  * Frequent legal discovery resume — continues any incomplete `running`
@@ -28,15 +33,26 @@ export async function GET(request: Request) {
 
   try {
     const continueRunId = await findRunningDiscoveryRunId(admin)
-    // Keep cron sessions short so Vercel does not 504 at maxDuration (120s).
+    // One bounded chunk so the invocation returns inside maxDuration.
     // Incomplete runs stay `running` and resume on the next cron tick.
     const result = await runProspectDiscoveryChunks(admin, {
       trigger: 'cron',
       // Free-only: never start Google Places from cron (even if API key exists).
       sources: continueRunId ? undefined : ['osm', 'gov_pest_control'],
       continueRunId,
+      // One OSM category or one gov page. The cursor stays `running` for the next tick.
       maxSessionMs: 70_000,
-      maxChunks: 2,
+      maxChunks: 1,
+    })
+    console.info('[cron discover-prospects]', {
+      status: result.status,
+      runId: result.runId,
+      chunks: result.chunks,
+      phase: result.chunk?.phase ?? null,
+      found: result.found,
+      created: result.created,
+      skipped: result.skipped,
+      errors: result.errors,
     })
     return NextResponse.json(result, {
       status:

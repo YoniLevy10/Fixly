@@ -58,8 +58,8 @@ export const DISCOVERY_CHUNK_MAX_JOBS = 20
 
 /**
  * Soft wall-clock for one discovery chunk (ms).
- * Must stay well under Vercel `maxDuration` (120s) so a session can
- * run several chunks before the function times out.
+ * Must stay well under the discover cron `maxDuration` (180s) so the
+ * chunk can ingest and commit its cursor before the platform kills it.
  */
 export const DISCOVERY_WALL_CLOCK_MS = 45_000
 
@@ -74,8 +74,11 @@ export const DISCOVERY_STALE_LOCK_MS = 7_200_000
  * If progress heartbeat is older than this, treat the run as dead.
  * Kept long enough that leaving the Superadmin screen (client stop)
  * does not fail the run — cron / next POST resumes the same cursor.
+ * Must also exceed the discover cron gap (20 min). A checkpointed
+ * `running` row is resumed on the next tick; failing it at 20 min
+ * dropped the cursor and started a duplicate full scan.
  */
-export const DISCOVERY_HEARTBEAT_STALE_MS = 1_200_000
+export const DISCOVERY_HEARTBEAT_STALE_MS = 90 * 60 * 1000
 
 /**
  * Soft budget for one HTTP invocation that loops several chunks.
@@ -167,7 +170,7 @@ export function getDiscoveryStaleLockMs(): number {
 
 export function getDiscoveryHeartbeatStaleMs(): number {
   const n = Number(process.env.FIXLY_DISCOVERY_HEARTBEAT_STALE_MS)
-  if (Number.isFinite(n) && n >= 20_000) return Math.min(Math.floor(n), 3_600_000)
+  if (Number.isFinite(n) && n >= 20_000) return Math.min(Math.floor(n), 3 * 60 * 60 * 1000)
   return DISCOVERY_HEARTBEAT_STALE_MS
 }
 

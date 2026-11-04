@@ -123,6 +123,7 @@ export async function refreshProfessionalPerformance(
     jobsCompleted,
   })
 
+  // `updated_at` is not on production professionals (42703). Omit it so the score write succeeds.
   await supabase
     .from('professionals')
     .update({
@@ -136,7 +137,6 @@ export async function refreshProfessionalPerformance(
       reopen_rate: reopenRate,
       close_quality_score: closeQualityScore,
       performance_score: score,
-      updated_at: new Date().toISOString(),
     })
     .eq('id', professionalId)
 
