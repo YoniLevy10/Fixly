@@ -30,7 +30,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category: slug } = await params
   const category = getCategoryBySlug(slug)
-  if (!category) return { title: 'Fixly' }
+  if (!category) notFound()
   const path = categoryHubPath(category.slug)
   const title = `${category.nameHe} בישראל`
   const description = `מצא ${category.nameHe} בערים ברחבי ישראל דרך Fixly. בקשה אחת, התאמה לפי אזור, ומעקב עד סיום.`

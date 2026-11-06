@@ -30,7 +30,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category: categorySlug, city: citySlug } = await params
   const { category, city } = resolveCategoryCity(categorySlug, citySlug)
-  if (!category || !city) return { title: 'Fixly' }
+  if (!category || !city) notFound()
 
   const seo = await resolveSeoIndexValue({
     cityQuery: city.query,

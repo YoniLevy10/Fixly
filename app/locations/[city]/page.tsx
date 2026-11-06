@@ -30,7 +30,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { city: slug } = await params
   const city = getCityBySlug(slug)
-  if (!city) return { title: 'Fixly' }
+  if (!city) notFound()
   const path = locationHubPath(city.slug)
   const title = `בעלי מקצוע ב${city.nameHe}`
   const description = `בעלי מקצוע ב${city.nameHe} לפי תחום — אינסטלטור, חשמלאי, הנדימן ועוד. Fixly מציגה רק בעלי מקצוע אמיתיים.`

@@ -103,6 +103,13 @@ function applyListOptions(
   })
 }
 
+export function filterSeoProfessionals(
+  catalog: Professional[],
+  options?: { query?: string; categorySlug?: string },
+): Professional[] {
+  return applyListOptions(catalog, options)
+}
+
 export async function listProfessionals(options?: {
   query?: string
   categorySlug?: string
