@@ -23,7 +23,11 @@ const nextConfig: NextConfig = {
       { source: '/dashboard', destination: '/my-requests', permanent: false },
       { source: '/pro-dashboard', destination: '/pro/dashboard', permanent: false },
       { source: '/tracking', destination: '/my-requests', permanent: false },
-      // Legacy GSC / backlinks → canonical profession×city SEO URLs
+      // Legacy directory listed every city×trade pair, including empty ones.
+      { source: '/categories', destination: '/professionals', permanent: true },
+      // Legacy GSC / backlinks → canonical profession×city SEO URLs.
+      // Unknown slugs (for example plumbers) still 404 on the destination;
+      // the content slug for plumbers is plumbing.
       {
         source: '/services/:city/:category',
         destination: '/professionals/:category/:city',

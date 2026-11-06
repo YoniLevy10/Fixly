@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     locale: 'he_IL',
     type: 'website',
   },
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: true },
 }
 
 export default function CategoriesPage() {

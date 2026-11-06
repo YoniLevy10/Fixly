@@ -13,7 +13,7 @@ import {
   getCategoryBySlug,
   seoPagePath,
 } from '@/lib/seo/marketplace-pages'
-import { resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
+import { categoryHasIndexablePair, resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
 import { routes } from '@/lib/routes'
 import { SITE_URL } from '@/lib/site-config'
 
@@ -33,11 +33,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!category) return { title: 'Fixly' }
   const path = categoryHubPath(category.slug)
   const title = `${category.nameHe} בישראל`
-  const description = `מצא ${category.nameHe} בערים ברחבי ישראל דרך Fixly. בקשה אחת, התאמה לפי אזור, ומעקב עד סיום. ${category.jobsHe} — הצטרפות חינם לבעלי מקצוע.`
+  const description = `מצא ${category.nameHe} בערים ברחבי ישראל דרך Fixly. בקשה אחת, התאמה לפי אזור, ומעקב עד סיום.`
+  const indexable = await categoryHasIndexablePair(category.slug)
   return {
     title,
     description,
     alternates: { canonical: `${SITE_URL}${path}` },
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
     openGraph: {
       title: `${title} | Fixly`,
       description,
@@ -124,13 +126,11 @@ export default async function ProfessionalsCategoryHubPage({ params }: PageProps
         </p>
         <ul className="flex flex-wrap gap-2">
           {pending.map(({ city }) => (
-            <li key={city.slug}>
-              <Link
-                href={seoPagePath(category.slug, city.slug)}
-                className="inline-flex rounded-full border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground"
-              >
-                {city.nameHe}
-              </Link>
+            <li
+              key={city.slug}
+              className="inline-flex rounded-full border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground"
+            >
+              {city.nameHe}
             </li>
           ))}
         </ul>

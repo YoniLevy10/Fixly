@@ -111,7 +111,7 @@ test.describe('public pages', () => {
     const sitemap = await request.get(`${BASE}/sitemap.xml`)
     expect(sitemap.status()).toBe(200)
     const xml = await sitemap.text()
-    expect(xml).toContain('waitlist')
+    expect(xml).toContain('for-professionals')
   })
 
   test('professionals directory loads', async ({ page }) => {

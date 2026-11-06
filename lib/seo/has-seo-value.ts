@@ -1,6 +1,8 @@
+import { cache } from 'react'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { isSupabaseEnabled } from '@/lib/data/config'
 import { listRealProfessionalsForSeo } from '@/lib/data/professionals-service'
+import { SEO_CATEGORIES, SEO_CITIES } from '@/lib/seo/marketplace-pages'
 
 /** Min verified customer waitlist rows for a city before indexing without supply. */
 export const SEO_WAITLIST_DEMAND_THRESHOLD = 3
@@ -19,13 +21,11 @@ export type SeoValueResult = {
  * - ≥1 real (non-demo) professional in city+category, or
  * - ≥3 customer waitlist signups for that city (verified demand).
  */
-export async function resolveSeoIndexValue(options: {
-  cityQuery: string
-  categorySlug: string
-}): Promise<SeoValueResult> {
+const resolveSeoIndexValueCached = cache(
+  async (cityQuery: string, categorySlug: string): Promise<SeoValueResult> => {
   const realPros = await listRealProfessionalsForSeo({
-    categorySlug: options.categorySlug,
-    query: options.cityQuery,
+    categorySlug,
+    query: cityQuery,
   })
   if (realPros.length > 0) {
     return {
@@ -36,7 +36,7 @@ export async function resolveSeoIndexValue(options: {
     }
   }
 
-  const demand = await countCustomerWaitlistForCity(options.cityQuery)
+  const demand = await countCustomerWaitlistForCity(cityQuery)
   if (demand >= SEO_WAITLIST_DEMAND_THRESHOLD) {
     return {
       hasValue: true,
@@ -52,9 +52,38 @@ export async function resolveSeoIndexValue(options: {
     realProCount: 0,
     waitlistDemandCount: demand,
   }
+})
+
+export function resolveSeoIndexValue(options: {
+  cityQuery: string
+  categorySlug: string
+}): Promise<SeoValueResult> {
+  return resolveSeoIndexValueCached(options.cityQuery, options.categorySlug)
 }
 
-async function countCustomerWaitlistForCity(cityQuery: string): Promise<number> {
+export async function categoryHasIndexablePair(categorySlug: string): Promise<boolean> {
+  for (const city of SEO_CITIES) {
+    const seo = await resolveSeoIndexValue({
+      cityQuery: city.query,
+      categorySlug,
+    })
+    if (seo.hasValue) return true
+  }
+  return false
+}
+
+export async function cityHasIndexablePair(cityQuery: string): Promise<boolean> {
+  for (const category of SEO_CATEGORIES) {
+    const seo = await resolveSeoIndexValue({
+      cityQuery,
+      categorySlug: category.slug,
+    })
+    if (seo.hasValue) return true
+  }
+  return false
+}
+
+const countCustomerWaitlistForCity = cache(async (cityQuery: string): Promise<number> => {
   const needle = cityQuery.trim()
   if (!needle || !isSupabaseEnabled()) return 0
 
@@ -71,4 +100,4 @@ async function countCustomerWaitlistForCity(cityQuery: string): Promise<number> 
 
   if (error) return 0
   return count ?? 0
-}
+})

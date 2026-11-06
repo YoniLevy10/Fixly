@@ -47,6 +47,8 @@ describe('national SEO inventory', () => {
   it('resolves known city and category slugs', () => {
     assert.equal(getCityBySlug('rishon-lezion')?.nameHe, 'ראשון לציון')
     assert.equal(getCategoryBySlug('missing'), undefined)
+    assert.equal(getCategoryBySlug('plumbers'), undefined)
+    assert.equal(getCategoryBySlug('plumbing')?.slug, 'plumbing')
   })
 })
 

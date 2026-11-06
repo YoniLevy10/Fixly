@@ -78,6 +78,8 @@ describe('site-hosts', () => {
       '/locations',
       '/locations/tel-aviv',
       '/services/jerusalem/plumbing',
+      '/sw.js',
+      '/categories',
     ]) {
       assert.equal(isMarketingPublicPath(path), true, path)
     }
@@ -90,8 +92,11 @@ describe('site-hosts', () => {
       '/request/new',
       '/request/quick',
       '/chat/abc',
-      '/categories',
       '/api/health',
+      '/api/professionals',
+      '/api/admin',
+      '/admin',
+      '/superadmin',
       '/go',
     ]) {
       assert.equal(isMarketingPublicPath(path), false, path)

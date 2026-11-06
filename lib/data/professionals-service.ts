@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import {
   filterProfessionals,
   getApprovedProfessionals,
@@ -132,13 +133,17 @@ export async function listProfessionals(options?: {
  * Organic / SEO pages only — real Supabase professionals, excluding seed demos
  * and never merging the mock catalog. Empty means the page should noindex.
  */
+const loadRealProfessionalsForSeo = cache(async (): Promise<Professional[]> => {
+  if (resolveDataBackend() !== 'supabase') return []
+  const fromDb = (await supabaseListProfessionals()) ?? []
+  return fromDb.filter((p) => !isSeedDemoProfessionalId(p.id))
+})
+
 export async function listRealProfessionalsForSeo(options?: {
   query?: string
   categorySlug?: string
 }): Promise<Professional[]> {
-  if (resolveDataBackend() !== 'supabase') return []
-  const fromDb = (await supabaseListProfessionals()) ?? []
-  const real = fromDb.filter((p) => !isSeedDemoProfessionalId(p.id))
+  const real = await loadRealProfessionalsForSeo()
   return applyListOptions(real, options)
 }
 

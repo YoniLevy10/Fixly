@@ -14,8 +14,6 @@ import {
   serviceJsonLd,
 } from '@/lib/seo/json-ld'
 import {
-  SEO_CATEGORIES,
-  SEO_CITIES,
   categoryHubPath,
   getCategoryBySlug,
   getCityBySlug,
@@ -39,6 +37,8 @@ type Props = {
 
 export default function CategoryCityLanding({ city, category, seo, pros }: Props) {
   const path = seoPagePath(category.slug, city.slug)
+  const proSignupHref = `${routes.forProfessionals}?utm_source=fixly&utm_medium=organic&utm_campaign=seo_pro_${category.slug}_${city.slug}`
+  const requestHref = `${PRODUCT_URL}${routes.newRequest}?category=${category.slug}&city=${city.slug}`
   const crumbs = [
     { name: 'Fixly', path: '/' },
     { name: 'בעלי מקצוע', path: routes.professionals },
@@ -46,8 +46,6 @@ export default function CategoryCityLanding({ city, category, seo, pros }: Props
     { name: city.nameHe, path },
   ]
   const faqs = categoryCityFaqs(category, city, pros.length)
-  const relatedCities = SEO_CITIES.filter((c) => c.slug !== city.slug).slice(0, 8)
-  const relatedCats = SEO_CATEGORIES.filter((c) => c.slug !== category.slug).slice(0, 8)
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-8 pb-28 space-y-8">
@@ -81,8 +79,8 @@ export default function CategoryCityLanding({ city, category, seo, pros }: Props
           {pros.length > 0
             ? `${pros.length} אנשי מקצוע רלוונטיים באזור • בקשה חינם • מעקב עד סיום העבודה`
             : seo.reason === 'waitlist_demand'
-              ? `יש ביקוש מאומת ב${city.nameHe}. נפתח ללקוחות כשיש אספקה אמיתית — בינתיים אפשר להירשם.`
-              : `Fixly בונה מאגר ארצי. עמוד זה ל-${category.nameHe} ב${city.nameHe} ייפתח לאינדוקס כשיהיו בעלי מקצוע או ביקוש מאומת.`}
+              ? `יש ביקוש מאומת ב${city.nameHe}, אבל אין עדיין ${category.nameHe} מאומת. הזמנת עבודה תיפתח כשיהיה בעל מקצוע.`
+              : `אין עדיין ${category.nameHe} מאומת ב${city.nameHe}. הדף ייפתח לאינדוקס כשיהיה בעל מקצוע או ביקוש מאומת.`}
         </p>
       </header>
 
@@ -101,37 +99,33 @@ export default function CategoryCityLanding({ city, category, seo, pros }: Props
               />
             ))}
           </div>
-          <Link
-            href={`${routes.waitlist}?audience=customer&utm_source=fixly&utm_medium=organic&utm_campaign=seo_${category.slug}_${city.slug}`}
-            data-seo-cta="find_pro"
+          <a
+            href={requestHref}
+            data-seo-cta="request_pro"
             className="block text-center bg-primary text-white py-3.5 rounded-xl font-bold active:scale-[0.99]"
           >
-            הירשמו — מצאו {category.nameHe} ב{city.nameHe}
-          </Link>
+            בקשו {category.nameHe} ב{city.nameHe}
+          </a>
+          <p className="text-sm text-muted-foreground text-center">
+            {category.nameHe} שמחפש עבודות?{' '}
+            <Link href={proSignupHref} data-seo-cta="waitlist_pro" className="font-bold text-primary underline">
+              הצטרפות נפרדת, בחינם ובלי עמלה
+            </Link>
+          </p>
         </section>
       ) : (
         <section className="rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-4">
           <p className="text-muted-foreground leading-relaxed">
-            עדיין אין בעלי מקצוע אמיתיים מאומתים ב{city.nameHe} לתחום {category.nameHe}.
-            אנחנו לא מציגים פרופילי דמו בדפי חיפוש.
+            אין עדיין {category.nameHe} מאומת ב{city.nameHe}, ולכן אי אפשר להזמין מכאן עבודה.
+            הדף לא מציג פרופילים לדוגמה.
           </p>
           <Link
-            href={`${routes.waitlist}?audience=customer&utm_source=fixly&utm_medium=organic&utm_campaign=seo_${category.slug}_${city.slug}`}
-            data-seo-cta="waitlist_customer"
+            href={proSignupHref}
+            data-seo-cta="waitlist_pro"
             className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-bold text-white"
           >
-            הירשמו לעדכון באזור
+            אני {category.nameHe} — הצטרפות בחינם
           </Link>
-          <p className="text-sm text-muted-foreground">
-            {category.nameHe}?{' '}
-            <Link
-              href={`${routes.waitlist}?audience=professional&utm_source=fixly&utm_medium=organic&utm_campaign=seo_pro_${category.slug}_${city.slug}`}
-              data-seo-cta="waitlist_pro"
-              className="font-bold text-primary underline"
-            >
-              הצטרפו בחינם — ללא מנוי וללא עמלה
-            </Link>
-          </p>
         </section>
       )}
 
@@ -160,50 +154,15 @@ export default function CategoryCityLanding({ city, category, seo, pros }: Props
         </dl>
       </section>
 
-      <section className="space-y-3" aria-labelledby="related-cities">
-        <h2 id="related-cities" className="text-lg font-bold">
+      <p className="text-sm text-muted-foreground">
+        <Link href={categoryHubPath(category.slug)} className="underline font-medium">
           {category.nameHe} בערים נוספות
-        </h2>
-        <ul className="flex flex-wrap gap-2">
-          {relatedCities.map((c) => (
-            <li key={c.slug}>
-              <Link
-                href={seoPagePath(category.slug, c.slug)}
-                className="inline-flex rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium hover:border-primary/40"
-              >
-                {category.nameHe} ב{c.nameHe}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-muted-foreground">
-          <Link href={categoryHubPath(category.slug)} className="underline font-medium">
-            כל הערים ל{category.nameHe}
-          </Link>
-          {' · '}
-          <Link href={locationHubPath(city.slug)} className="underline font-medium">
-            כל המקצועות ב{city.nameHe}
-          </Link>
-        </p>
-      </section>
-
-      <section className="space-y-3" aria-labelledby="related-cats">
-        <h2 id="related-cats" className="text-lg font-bold">
+        </Link>
+        {' · '}
+        <Link href={locationHubPath(city.slug)} className="underline font-medium">
           מקצועות נוספים ב{city.nameHe}
-        </h2>
-        <ul className="flex flex-wrap gap-2">
-          {relatedCats.map((c) => (
-            <li key={c.slug}>
-              <Link
-                href={seoPagePath(c.slug, city.slug)}
-                className="inline-flex rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium hover:border-primary/40"
-              >
-                {c.nameHe}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+        </Link>
+      </p>
     </main>
   )
 }

@@ -13,6 +13,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react'
+import EntryNotice from '@/components/marketing/EntryNotice'
 import {
   getStoredAttribution,
   getStoredReferral,
@@ -174,6 +175,11 @@ export default function PrelaunchLanding({
     setError(null)
     if (form.categories.length === 0) {
       setError('בחרו לפחות תחום מקצוע אחד')
+      track('waitlist_form_error', {
+        audience,
+        variant: VARIANT,
+        reason: 'missing_profession',
+      })
       return
     }
     setLoading(true)
@@ -222,7 +228,7 @@ export default function PrelaunchLanding({
       track('waitlist_form_error', {
         audience,
         variant: VARIANT,
-        message: message.slice(0, 80),
+        reason: 'submit_failed',
       })
     } finally {
       setLoading(false)
@@ -255,6 +261,7 @@ export default function PrelaunchLanding({
       dir="rtl"
       lang="he"
     >
+      <EntryNotice />
       <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_srgb,hsl(var(--background))_92%,transparent)] backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
         <div
           className="mx-auto flex items-center justify-between py-3"
@@ -306,6 +313,12 @@ export default function PrelaunchLanding({
             </p>
             <p className="mt-3 max-w-md text-sm font-bold leading-6 text-foreground">
               {copy.expectation}
+            </p>
+            <p className="mt-2 max-w-md text-sm font-medium leading-6 text-muted-foreground">
+              מחפשים בעל מקצוע?{' '}
+              <Link href="/professionals" className="font-bold text-primary underline underline-offset-2">
+                בחרו מקצוע ועיר
+              </Link>
             </p>
 
             {/* Mobile: text link only (header + form submit carry primary CTA). Desktop: both. */}
@@ -521,6 +534,14 @@ export default function PrelaunchLanding({
           {' · '}
           <Link href="/waitlist" className="underline underline-offset-2 hover:text-foreground">
             הרשמה
+          </Link>
+          {' · '}
+          <Link href="/for-professionals" className="underline underline-offset-2 hover:text-foreground">
+            לבעלי מקצוע
+          </Link>
+          {' · '}
+          <Link href="/professionals" className="underline underline-offset-2 hover:text-foreground">
+            חיפוש בעל מקצוע
           </Link>
           {PRODUCT_URL ? (
             <>

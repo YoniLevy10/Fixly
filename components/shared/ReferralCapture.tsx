@@ -17,20 +17,24 @@ export default function ReferralCapture() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    const ref = searchParams.get('ref')
-    if (ref) localStorage.setItem(REF_KEY, ref)
+    try {
+      const ref = searchParams.get('ref')
+      if (ref) localStorage.setItem(REF_KEY, ref)
 
-    const utm = readUtmFromSearchParams(searchParams)
-    if (hasUtm(utm)) {
-      storeUtm(utm)
-      return
+      const utm = readUtmFromSearchParams(searchParams)
+      if (hasUtm(utm)) {
+        storeUtm(utm)
+        return
+      }
+      const inferred = inferVisitAttribution({
+        referrer: document.referrer,
+        pathname: window.location.pathname,
+        existing: getStoredUtm(),
+      })
+      if (inferred) storeUtm(inferred)
+    } catch {
+      // Private mode and blocked storage must not stop the page.
     }
-    const inferred = inferVisitAttribution({
-      referrer: document.referrer,
-      pathname: window.location.pathname,
-      existing: getStoredUtm(),
-    })
-    if (inferred) storeUtm(inferred)
   }, [searchParams])
 
   return null
@@ -38,7 +42,11 @@ export default function ReferralCapture() {
 
 export function getStoredReferral(): string | null {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem(REF_KEY)
+  try {
+    return localStorage.getItem(REF_KEY)
+  } catch {
+    return null
+  }
 }
 
 export function getStoredAttribution(): UtmParams {

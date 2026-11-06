@@ -37,6 +37,9 @@ const MARKETING_PUBLIC_EXACT_PATHS = new Set([
   '/sitemap.xml',
   '/manifest.webmanifest',
   '/manifest',
+  '/sw.js',
+  // Redirects to the professionals directory; not a content page of its own.
+  '/categories',
 ])
 
 export function normalizeHost(host: string | null | undefined): string {
