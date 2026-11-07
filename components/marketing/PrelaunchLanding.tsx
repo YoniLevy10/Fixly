@@ -295,7 +295,6 @@ export default function PrelaunchLanding({
       dir="rtl"
       lang="he"
     >
-      <EntryNotice />
       <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_srgb,hsl(var(--background))_92%,transparent)] backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
         <div
           className="mx-auto flex items-center justify-between py-3"
@@ -386,6 +385,7 @@ export default function PrelaunchLanding({
             ref={waitlistRef}
             className={`order-1 scroll-mt-24 lg:order-2 ${mounted ? 'prelaunch-rise prelaunch-rise-delay' : 'opacity-0'}`}
           >
+            <EntryNotice />
             <div className="prelaunch-product overflow-hidden">
               <div className="prelaunch-product-head border-b border-border/80 bg-background/60 px-5 py-4 sm:px-6">
                 <div className="flex items-center justify-between gap-3">
