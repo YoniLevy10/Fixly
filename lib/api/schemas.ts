@@ -78,6 +78,8 @@ export const proWaitlistFieldsSchema = z.object({
   category: z.string().trim().max(500).optional(),
   /** Preferred: multi-select Midrag-style professions (joined server-side). */
   categories: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
+  /** Free-text profession when categories includes `אחר`. */
+  otherProfession: z.string().trim().min(2).max(80).optional(),
   city: z.string().trim().max(100).optional(),
   referralCode: z.string().trim().max(50).nullish(),
   /** Required — never silently default to professional (mislabels customers). */
@@ -89,8 +91,21 @@ export const proWaitlistFieldsSchema = z.object({
 export const proWaitlistSchema = proWaitlistFieldsSchema.superRefine((data, ctx) => {
   if (data.audience !== 'professional') return
   const hasJoined = Boolean(data.category?.trim())
-  const hasMulti = Boolean(data.categories?.length)
-  if (!hasJoined && !hasMulti) {
+  const cats = data.categories ?? []
+  const hasOther = cats.some((c) => c.trim() === 'אחר')
+  const knownSelected = cats.some((c) => c.trim() && c.trim() !== 'אחר')
+  const custom = data.otherProfession?.trim() ?? ''
+
+  if (hasOther && custom.length < 2) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'נא לפרט את המקצוע',
+      path: ['otherProfession'],
+    })
+    return
+  }
+
+  if (!hasJoined && !knownSelected && !(hasOther && custom.length >= 2)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'בחרו לפחות תחום מקצוע אחד',

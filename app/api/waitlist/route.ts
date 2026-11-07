@@ -40,7 +40,7 @@ async function handleWaitlist(request: Request, route: string) {
     }
     const attribution = compactAttribution(body.attribution)
     const category =
-      joinWaitlistProfessions(body.categories) ??
+      joinWaitlistProfessions(body.categories, body.otherProfession) ??
       body.category?.trim() ??
       undefined
 
