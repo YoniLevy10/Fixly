@@ -40,6 +40,7 @@ export async function GET() {
     const { admin } = access
     const { start, end } = getMonthlyGoalWindow()
     const dayStart = jerusalemDayStart()
+    const last7Start = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
 
     const [
       professionals,
@@ -59,6 +60,7 @@ export async function GET() {
       professionalWaitlist,
       goalWindowRows,
       todayWaitlist,
+      last7Waitlist,
     ] = await Promise.all([
       admin.from('professionals').select('*', { count: 'exact', head: true }),
       admin.from('requests').select('*', { count: 'exact', head: true }),
@@ -120,9 +122,14 @@ export async function GET() {
         .from('pro_waitlist')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', dayStart.toISOString()),
+      admin
+        .from('pro_waitlist')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', last7Start.toISOString()),
     ])
 
-    const waitlistReadError = recentWaitlist.error ?? waitlist.error ?? todayWaitlist.error
+    const waitlistReadError =
+      recentWaitlist.error ?? waitlist.error ?? todayWaitlist.error ?? last7Waitlist.error
     if (waitlistReadError) {
       trackError(waitlistReadError, { route: 'GET /api/admin/stats' })
       return NextResponse.json({ error: 'טעינת רשימת ההמתנה נכשלה' }, { status: 500 })
@@ -131,6 +138,7 @@ export async function GET() {
     let waitlistRows = recentWaitlist.data ?? []
     let waitlistCount = waitlist.count ?? 0
     let waitlistToday = todayWaitlist.count ?? 0
+    let waitlistLast7Days = last7Waitlist.count ?? 0
     let storage: 'supabase' | 'memory' | 'mixed' = 'supabase'
 
     const memory = mapMemoryWaitlist()
@@ -138,6 +146,9 @@ export async function GET() {
       waitlistRows = memory
       waitlistCount = memory.length
       waitlistToday = memory.filter((row) => row.created_at >= dayStart.toISOString()).length
+      waitlistLast7Days = memory.filter(
+        (row) => row.created_at >= last7Start.toISOString(),
+      ).length
       storage = 'memory'
     }
 
@@ -156,6 +167,7 @@ export async function GET() {
         completedRequests: completedRequests.count ?? 0,
         waitlist: waitlistCount,
         waitlistToday,
+        waitlistLast7Days,
         waitlistCustomers: customerWaitlist.count ?? 0,
         waitlistProfessionals: professionalWaitlist.count ?? 0,
         reviews: reviews.count ?? 0,
@@ -167,12 +179,13 @@ export async function GET() {
       },
       signupGoal: {
         label: MONTHLY_SIGNUP_GOAL.labelHe,
-        start: MONTHLY_SIGNUP_GOAL.startIso,
-        end: MONTHLY_SIGNUP_GOAL.endIso,
+        start: start.toISOString(),
+        end: end.toISOString(),
         ...goalProgress,
         customers: goalCustomers,
         professionals: goalPros,
       },
+      waitlistLast7Days,
       recentWaitlist: waitlistRows,
       recentBilling: recentBilling.data ?? [],
     })
