@@ -152,7 +152,9 @@ export async function GET() {
       storage = 'memory'
     }
 
-    const goalRows = (goalWindowRows.data ?? []).filter(isCountableGoalSignup)
+    const goalRows = (goalWindowRows.data ?? []).filter((row) =>
+      isCountableGoalSignup(row),
+    )
     const goalCustomers = goalRows.filter((r) => r.audience === 'customer').length
     const goalPros = goalRows.filter((r) => r.audience === 'professional').length
     const goalProgress = summarizeGoalProgress(goalRows.length)
