@@ -83,6 +83,20 @@ export async function cityHasIndexablePair(cityQuery: string): Promise<boolean> 
   return false
 }
 
+/** Category hub: ≥1 approved pro in the trade, or any qualifying city×trade pair. */
+export async function categoryHasAnyProfessional(categorySlug: string): Promise<boolean> {
+  const pros = await listRealProfessionalsForSeo({ categorySlug })
+  if (pros.some((p) => p.isApproved)) return true
+  return categoryHasIndexablePair(categorySlug)
+}
+
+/** City hub: ≥1 approved pro in the city, or any qualifying city×trade pair. */
+export async function cityHasAnyProfessional(cityQuery: string): Promise<boolean> {
+  const pros = await listRealProfessionalsForSeo({ query: cityQuery })
+  if (pros.some((p) => p.isApproved)) return true
+  return cityHasIndexablePair(cityQuery)
+}
+
 const countCustomerWaitlistForCity = cache(async (cityQuery: string): Promise<number> => {
   const needle = cityQuery.trim()
   if (!needle || !isSupabaseEnabled()) return 0

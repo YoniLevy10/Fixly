@@ -13,7 +13,7 @@ import {
   locationHubPath,
   seoPagePath,
 } from '@/lib/seo/marketplace-pages'
-import { cityHasIndexablePair, resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
+import { cityHasAnyProfessional, resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
 import { routes } from '@/lib/routes'
 import { SITE_URL } from '@/lib/site-config'
 
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const path = locationHubPath(city.slug)
   const title = `בעלי מקצוע ב${city.nameHe}`
   const description = `בעלי מקצוע ב${city.nameHe} לפי תחום — אינסטלטור, חשמלאי, הנדימן ועוד. Fixly מציגה רק בעלי מקצוע אמיתיים.`
-  const indexable = await cityHasIndexablePair(city.query)
+  const indexable = await cityHasAnyProfessional(city.query)
   return {
     title,
     description,

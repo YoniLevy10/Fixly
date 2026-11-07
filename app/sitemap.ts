@@ -7,7 +7,11 @@ import {
   locationHubPath,
   seoPagePath,
 } from '@/lib/seo/marketplace-pages'
-import { SEO_WAITLIST_DEMAND_THRESHOLD } from '@/lib/seo/has-seo-value'
+import {
+  SEO_WAITLIST_DEMAND_THRESHOLD,
+  categoryHasAnyProfessional,
+  cityHasAnyProfessional,
+} from '@/lib/seo/has-seo-value'
 import { isSupabaseEnabled } from '@/lib/data/config'
 import { getAdminSupabaseClient } from '@/lib/supabase/admin'
 import { SITE_URL } from '@/lib/site-config'
@@ -42,8 +46,8 @@ async function customerDemandByCitySlug(): Promise<Map<string, number>> {
  * Marketing-domain sitemap (fixly.tech).
  * `/` is the professional registration page. `/waitlist` and `/pro/join`
  * render or redirect to that same screen, so they stay out of the sitemap.
- * City×trade URLs are included only when they have a real professional or
- * verified demand. Empty hubs are omitted.
+ * Hubs index when they have ≥1 approved pro or a qualifying pair.
+ * City×trade URLs stay out unless they have supply or verified demand.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE_URL
@@ -65,24 +69,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
   staticPages[0] = { ...staticPages[0], priority: 1 }
 
-  const [catalog, demandByCity] = await Promise.all([
+  const [catalog, demandByCity, categoryHubFlags, cityHubFlags] = await Promise.all([
     listRealProfessionalsForSeo(),
     customerDemandByCitySlug(),
+    Promise.all(
+      SEO_CATEGORIES.map(async (cat) => ({
+        slug: cat.slug,
+        include: await categoryHasAnyProfessional(cat.slug),
+      })),
+    ),
+    Promise.all(
+      SEO_CITIES.map(async (city) => ({
+        slug: city.slug,
+        include: await cityHasAnyProfessional(city.query),
+      })),
+    ),
   ])
 
   const indexablePairs: MetadataRoute.Sitemap = []
-  const categoriesWithValue = new Set<string>()
-  const citiesWithValue = new Set<string>()
   for (const city of SEO_CITIES) {
     for (const category of SEO_CATEGORIES) {
       const pros = filterSeoProfessionals(catalog, {
         query: city.query,
         categorySlug: category.slug,
-      })
+      }).filter((p) => p.isApproved)
       const demand = demandByCity.get(city.slug) ?? 0
       if (pros.length === 0 && demand < SEO_WAITLIST_DEMAND_THRESHOLD) continue
-      categoriesWithValue.add(category.slug)
-      citiesWithValue.add(city.slug)
       indexablePairs.push({
         url: `${base}${seoPagePath(category.slug, city.slug)}`,
         lastModified: now,
@@ -92,23 +104,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  const categoryHubs: MetadataRoute.Sitemap = SEO_CATEGORIES.filter((cat) =>
-    categoriesWithValue.has(cat.slug),
-  ).map((cat) => ({
-    url: `${base}${categoryHubPath(cat.slug)}`,
-    lastModified: now,
-    changeFrequency: 'weekly' as const,
-    priority: 0.75,
-  }))
+  const categoryHubs: MetadataRoute.Sitemap = categoryHubFlags
+    .filter((c) => c.include)
+    .map((cat) => ({
+      url: `${base}${categoryHubPath(cat.slug)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.75,
+    }))
 
-  const locationHubs: MetadataRoute.Sitemap = SEO_CITIES.filter((city) =>
-    citiesWithValue.has(city.slug),
-  ).map((city) => ({
-    url: `${base}${locationHubPath(city.slug)}`,
-    lastModified: now,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }))
+  const locationHubs: MetadataRoute.Sitemap = cityHubFlags
+    .filter((c) => c.include)
+    .map((city) => ({
+      url: `${base}${locationHubPath(city.slug)}`,
+      lastModified: now,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
 
   return [...staticPages, ...categoryHubs, ...locationHubs, ...indexablePairs]
 }

@@ -13,7 +13,7 @@ import {
   getCategoryBySlug,
   seoPagePath,
 } from '@/lib/seo/marketplace-pages'
-import { categoryHasIndexablePair, resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
+import { categoryHasAnyProfessional, resolveSeoIndexValue } from '@/lib/seo/has-seo-value'
 import { routes } from '@/lib/routes'
 import { SITE_URL } from '@/lib/site-config'
 
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const path = categoryHubPath(category.slug)
   const title = `${category.nameHe} בישראל`
   const description = `מצא ${category.nameHe} בערים ברחבי ישראל דרך Fixly. בקשה אחת, התאמה לפי אזור, ומעקב עד סיום.`
-  const indexable = await categoryHasIndexablePair(category.slug)
+  const indexable = await categoryHasAnyProfessional(category.slug)
   return {
     title,
     description,

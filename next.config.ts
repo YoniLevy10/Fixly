@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
       // Dead marketing stubs → waitlist (kept for old campaign URLs)
       { source: '/go', destination: '/waitlist', permanent: true },
       { source: '/go/:path*', destination: '/waitlist', permanent: true },
+      // Outreach / WhatsApp deep link → unified pro waitlist
+      {
+        source: '/pro/join',
+        destination: '/waitlist?audience=professional',
+        permanent: true,
+      },
     ]
   },
 }
