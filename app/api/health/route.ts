@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { isSupabaseEnabled } from '@/lib/data/config'
 import { resolveDataBackend } from '@/lib/data/resolve-backend'
 import { isDemoDataMode } from '@/lib/data/demo-mode'
+import { isIsraelOnlyGateEnabled } from '@/lib/geo/israel-access'
+import { SITE_URL, resolveProductUrl } from '@/lib/site-config'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { validateProductionEnv } from '@/lib/env/validate'
 
@@ -9,10 +11,29 @@ export const dynamic = 'force-dynamic'
 
 type Check = { ok: boolean; detail?: string }
 
+function resolveProductUrlSafe(): { productUrl: string | null; error?: string } {
+  try {
+    return { productUrl: resolveProductUrl() }
+  } catch (err) {
+    return {
+      productUrl: null,
+      error: err instanceof Error ? err.message : 'product url unresolved',
+    }
+  }
+}
+
+function productHostConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_PRODUCT_URL?.trim() ||
+      process.env.NEXT_PUBLIC_PRODUCT_HOST?.trim(),
+  )
+}
+
 export async function GET(request: Request) {
   const verbose = new URL(request.url).searchParams.get('verbose') === '1'
   const backend = resolveDataBackend()
   const envValidation = validateProductionEnv()
+  const product = resolveProductUrlSafe()
   const checks: Record<string, Check> = {
     env: {
       ok: isSupabaseEnabled(),
@@ -101,14 +122,26 @@ export async function GET(request: Request) {
     elevators_category: { ok: false, detail: 'skipped' },
   }
 
+  const productMeta = {
+    productUrl: product.productUrl,
+    productHostConfigured: productHostConfigured(),
+    siteUrl: SITE_URL,
+    geoGate: isIsraelOnlyGateEnabled(),
+    ...(product.error ? { productUrlError: product.error } : {}),
+  }
+
   if (backend !== 'supabase') {
     const status = backend === 'mock' ? 'degraded' : 'error'
     // Always include mode + checks (smoke / production health greps mode without ?verbose=1)
     return NextResponse.json(
       {
+        ok: false,
         status,
         mode: backend,
         demoMode: isDemoDataMode(),
+        ...productMeta,
+        supabase: checks.supabase,
+        upstash: checks.rate_limit,
         checks,
         warnings: envValidation.warnings,
       },
@@ -119,7 +152,15 @@ export async function GET(request: Request) {
   const supabase = await createServerSupabaseClient()
   if (!supabase) {
     return NextResponse.json(
-      { status: 'error', mode: 'none', checks },
+      {
+        ok: false,
+        status: 'error',
+        mode: 'none',
+        ...productMeta,
+        supabase: checks.supabase,
+        upstash: checks.rate_limit,
+        checks,
+      },
       { status: 500 },
     )
   }
@@ -192,10 +233,14 @@ export async function GET(request: Request) {
   const status = criticalOk ? (allOk ? 'ok' : 'degraded') : 'error'
 
   const body = {
+    ok: status === 'ok',
     status,
     mode: 'supabase' as const,
     backend,
     demoMode: isDemoDataMode(),
+    ...productMeta,
+    supabase: checks.supabase,
+    upstash: checks.rate_limit,
     checks,
     warnings: envValidation.warnings,
     ...(verbose

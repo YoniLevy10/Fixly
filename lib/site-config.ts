@@ -6,14 +6,41 @@ export const SITE_URL = (
 export const SITE_NAME = 'Fixly'
 export const SITE_DOMAIN = 'fixly.tech'
 
+type EnvLike = {
+  NEXT_PUBLIC_PRODUCT_URL?: string
+  NEXT_PUBLIC_PRODUCT_HOST?: string
+  NODE_ENV?: string
+}
+
 /**
- * Full product / marketplace URL (Vercel production alias by default).
- * Marketing domain (SITE_URL) stays registration-only; deep product links
- * and “כניסה למערכת” point here. Override with NEXT_PUBLIC_PRODUCT_URL.
+ * Resolve the product / marketplace origin.
+ * Never falls back to a hard-coded vercel.app alias (wrong host = different app).
  */
-export const PRODUCT_URL = (
-  process.env.NEXT_PUBLIC_PRODUCT_URL?.trim() || 'https://fixly.vercel.app'
-).replace(/\/$/, '')
+export function resolveProductUrl(env: EnvLike = process.env): string {
+  const fromUrl = env.NEXT_PUBLIC_PRODUCT_URL?.trim()
+  if (fromUrl) return fromUrl.replace(/\/$/, '')
+
+  const fromHost = env.NEXT_PUBLIC_PRODUCT_HOST?.trim()
+  if (fromHost) {
+    const host = fromHost.replace(/^https?:\/\//i, '').replace(/\/$/, '')
+    return `https://${host}`
+  }
+
+  if (env.NODE_ENV === 'production') {
+    throw new Error(
+      'NEXT_PUBLIC_PRODUCT_URL or NEXT_PUBLIC_PRODUCT_HOST must be set in production',
+    )
+  }
+
+  return 'http://localhost:3000'
+}
+
+/**
+ * Full product / marketplace URL.
+ * Marketing domain (SITE_URL) stays registration-only; deep product links
+ * and “כניסה למערכת” point here.
+ */
+export const PRODUCT_URL = resolveProductUrl()
 
 /** Marketplace homepage — matches live `/` on the product host. */
 export const DEFAULT_DESCRIPTION_HE =
