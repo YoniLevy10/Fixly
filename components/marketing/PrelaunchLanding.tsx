@@ -179,6 +179,7 @@ export default function PrelaunchLanding({
         audience,
         variant: VARIANT,
         reason: 'missing_profession',
+        stage: 'client_validation',
       })
       return
     }
@@ -202,13 +203,45 @@ export default function PrelaunchLanding({
         }),
       })
       const data = (await res.json().catch(() => null)) as
-        | { error?: string; id?: string; ok?: boolean; alreadyRegistered?: boolean }
+        | {
+            error?: string
+            code?: string
+            id?: string
+            ok?: boolean
+            alreadyRegistered?: boolean
+          }
         | null
       if (!res.ok) {
-        throw new Error(data?.error || 'לא הצלחנו לשמור את הפרטים')
+        const errorCode = data?.code
+        track('waitlist_form_error', {
+          audience,
+          variant: VARIANT,
+          reason: 'submit_failed',
+          stage: 'api',
+          status: res.status,
+          error_code: errorCode ?? 'unknown',
+        })
+        if (res.status === 429) {
+          setError('יותר מדי ניסיונות — נסו שוב בעוד דקה')
+        } else if (res.status === 403 && errorCode === 'GEO_BLOCKED') {
+          setError('השירות זמין בישראל בלבד')
+        } else if (res.status >= 500) {
+          setError('שגיאה זמנית בשמירה — נסו שוב')
+        } else {
+          setError(data?.error || 'לא הצלחנו לשמור את הפרטים')
+        }
+        return
       }
       if (!data?.id || !isUuid(data.id)) {
-        throw new Error('השמירה לא אושרה — נסו שוב')
+        track('waitlist_form_error', {
+          audience,
+          variant: VARIANT,
+          reason: 'missing_id',
+          stage: 'response_contract',
+          status: res.status,
+        })
+        setError('השמירה לא אושרה — נסו שוב')
+        return
       }
       const source = publicAttribution(attribution)
       if (!data.alreadyRegistered) {
@@ -229,6 +262,7 @@ export default function PrelaunchLanding({
         audience,
         variant: VARIANT,
         reason: 'submit_failed',
+        stage: 'api',
       })
     } finally {
       setLoading(false)

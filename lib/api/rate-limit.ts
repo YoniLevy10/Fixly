@@ -94,7 +94,7 @@ export async function checkRateLimit(key: string, limit = 30, windowMs = 60_000)
 
 export function rateLimitResponse(resetAt: number, message = 'יותר מדי בקשות — נסה שוב בעוד רגע') {
   return NextResponse.json(
-    { error: message },
+    { error: message, code: 'RATE_LIMITED' },
     {
       status: 429,
       headers: {

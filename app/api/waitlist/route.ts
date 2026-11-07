@@ -17,6 +17,10 @@ function compactAttribution(
   return Object.keys(cleaned).length ? cleaned : null
 }
 
+function errorCodeForSaveStatus(status: 400 | 503): 'INVALID_INPUT' | 'STORAGE_UNAVAILABLE' {
+  return status === 503 ? 'STORAGE_UNAVAILABLE' : 'INVALID_INPUT'
+}
+
 async function handleWaitlist(request: Request, route: string) {
   const limited = await enforceRateLimit(request, 'waitlist', 10, 60_000)
   if (limited) return limited
@@ -27,7 +31,10 @@ async function handleWaitlist(request: Request, route: string) {
     const body = parsed.data
     if (body.audience !== 'professional') {
       return NextResponse.json(
-        { error: 'כרגע ההרשמה פתוחה לבעלי מקצוע בלבד' },
+        {
+          error: 'כרגע ההרשמה פתוחה לבעלי מקצוע בלבד',
+          code: 'AUDIENCE_CLOSED',
+        },
         { status: 400 },
       )
     }
@@ -53,7 +60,10 @@ async function handleWaitlist(request: Request, route: string) {
     )
 
     if (!saved.ok) {
-      return NextResponse.json({ error: saved.error }, { status: saved.status })
+      return NextResponse.json(
+        { error: saved.error, code: errorCodeForSaveStatus(saved.status) },
+        { status: saved.status },
+      )
     }
 
     return NextResponse.json(
@@ -67,7 +77,10 @@ async function handleWaitlist(request: Request, route: string) {
     )
   } catch (error) {
     trackError(error, { route })
-    return NextResponse.json({ error: 'שגיאה בשליחת הטופס' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'שגיאה בשליחת הטופס', code: 'INTERNAL_ERROR' },
+      { status: 500 },
+    )
   }
 }
 
