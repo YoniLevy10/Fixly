@@ -50,15 +50,26 @@ export async function middleware(request: NextRequest) {
   }
 
   const country = resolveRequestCountry(request.headers)
+  const geoCookie = request.cookies.get(GEO_COOKIE_NAME)?.value
   const geoDecision = decideIsraelAccess({
     enabled: isIsraelOnlyGateEnabled(),
     country,
     userAgent: request.headers.get('user-agent'),
     pathname: request.nextUrl.pathname,
     host,
+    geoCookie,
   })
 
   if (geoDecision === 'block') {
+    // Never rewrite API requests to the HTML /il-only page.
+    if (pathname.startsWith('/api/')) {
+      const blocked = NextResponse.json(
+        { error: 'השירות זמין בישראל בלבד', code: 'GEO_BLOCKED' },
+        { status: 403, headers: { 'x-fixly-geo': GEO_COOKIE_BLOCKED } },
+      )
+      applyGeoCookie(blocked, GEO_COOKIE_BLOCKED)
+      return blocked
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/il-only'
     url.search = ''
@@ -70,6 +81,7 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request })
   if (country === 'IL') {
+    // Clear a stale blocked cookie when the request resolves to IL.
     applyGeoCookie(response, GEO_COOKIE_IL)
     response.headers.set('x-fixly-geo', GEO_COOKIE_IL)
   }
