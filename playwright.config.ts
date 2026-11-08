@@ -26,6 +26,8 @@ export default defineConfig({
     env: {
       ...process.env,
       NEXT_PUBLIC_FF_DEMO_DATA: 'true',
+      NEXT_PUBLIC_PRODUCT_URL:
+        process.env.NEXT_PUBLIC_PRODUCT_URL ?? 'http://localhost:3000',
     },
   },
 })

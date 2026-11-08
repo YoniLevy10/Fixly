@@ -1,16 +1,13 @@
 /**
- * Monthly public-signup goal (customers + professionals on pro_waitlist).
- * Window: next ~30 days from the lead-capture rebuild launch.
+ * Rolling 30-day public-signup goal (professionals on pro_waitlist).
  */
 
 export const MONTHLY_SIGNUP_GOAL = {
   target: 10,
-  /** Inclusive start (UTC date). */
-  startIso: '2026-09-29T00:00:00.000Z',
-  /** Inclusive end (UTC). */
-  endIso: '2026-10-29T23:59:59.999Z',
-  labelHe: 'יעד חודשי — 10 נרשמים אמיתיים',
-  labelEn: 'Monthly goal — 10 real signups',
+  /** Rolling window length in days. */
+  windowDays: 30,
+  labelHe: 'יעד 30 יום — 10 נרשמים אמיתיים',
+  labelEn: '30-day goal — 10 real signups',
 } as const
 
 const EXCLUDED_SOURCES = new Set([
@@ -20,11 +17,12 @@ const EXCLUDED_SOURCES = new Set([
   'e2e',
 ])
 
-export function getMonthlyGoalWindow(): { start: Date; end: Date } {
-  return {
-    start: new Date(MONTHLY_SIGNUP_GOAL.startIso),
-    end: new Date(MONTHLY_SIGNUP_GOAL.endIso),
-  }
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+export function getMonthlyGoalWindow(now = new Date()): { start: Date; end: Date } {
+  const end = new Date(now.getTime())
+  const start = new Date(end.getTime() - MONTHLY_SIGNUP_GOAL.windowDays * MS_PER_DAY)
+  return { start, end }
 }
 
 export function isExcludedSignupSource(source: string | null | undefined): boolean {
@@ -35,16 +33,19 @@ export function isExcludedSignupSource(source: string | null | undefined): boole
 }
 
 /** Count only rows that look like real people in the goal window. */
-export function isCountableGoalSignup(row: {
-  full_name?: string | null
-  phone?: string | null
-  source?: string | null
-  created_at?: string | null
-}): boolean {
+export function isCountableGoalSignup(
+  row: {
+    full_name?: string | null
+    phone?: string | null
+    source?: string | null
+    created_at?: string | null
+  },
+  now = new Date(),
+): boolean {
   if (isExcludedSignupSource(row.source)) return false
   const created = row.created_at ? new Date(row.created_at) : null
   if (!created || Number.isNaN(created.getTime())) return false
-  const { start, end } = getMonthlyGoalWindow()
+  const { start, end } = getMonthlyGoalWindow(now)
   if (created < start || created > end) return false
 
   const name = (row.full_name ?? '').trim()

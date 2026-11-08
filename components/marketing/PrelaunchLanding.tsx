@@ -29,8 +29,10 @@ import {
 } from '@/lib/marketing/waitlist-share'
 import { PRODUCT_URL } from '@/lib/site-config'
 import {
+  OTHER_PROFESSION,
   WAITLIST_MAX_PROFESSIONS,
   WAITLIST_PROFESSION_OPTIONS,
+  isOtherProfessionSelected,
 } from '@/lib/waitlist/profession-options'
 
 type FormState = {
@@ -38,6 +40,7 @@ type FormState = {
   phone: string
   city: string
   categories: string[]
+  otherProfession: string
 }
 
 const emptyForm: FormState = {
@@ -45,6 +48,7 @@ const emptyForm: FormState = {
   phone: '',
   city: '',
   categories: [],
+  otherProfession: '',
 }
 
 /** Bump when shipping measurable CRO changes — filter in GA4 / Meta */
@@ -179,6 +183,20 @@ export default function PrelaunchLanding({
         audience,
         variant: VARIANT,
         reason: 'missing_profession',
+        stage: 'client_validation',
+      })
+      return
+    }
+    if (
+      isOtherProfessionSelected(form.categories) &&
+      form.otherProfession.trim().length < 2
+    ) {
+      setError('נא לפרט את המקצוע')
+      track('waitlist_form_error', {
+        audience,
+        variant: VARIANT,
+        reason: 'missing_other_profession',
+        stage: 'client_validation',
       })
       return
     }
@@ -195,6 +213,10 @@ export default function PrelaunchLanding({
           phone: form.phone,
           city: form.city || undefined,
           categories: form.categories,
+          ...(isOtherProfessionSelected(form.categories) &&
+          form.otherProfession.trim()
+            ? { otherProfession: form.otherProfession.trim() }
+            : {}),
           audience: 'professional',
           source: 'waitlist_landing_v8_professional',
           ...(referralCode ? { referralCode } : {}),
@@ -202,13 +224,45 @@ export default function PrelaunchLanding({
         }),
       })
       const data = (await res.json().catch(() => null)) as
-        | { error?: string; id?: string; ok?: boolean; alreadyRegistered?: boolean }
+        | {
+            error?: string
+            code?: string
+            id?: string
+            ok?: boolean
+            alreadyRegistered?: boolean
+          }
         | null
       if (!res.ok) {
-        throw new Error(data?.error || 'לא הצלחנו לשמור את הפרטים')
+        const errorCode = data?.code
+        track('waitlist_form_error', {
+          audience,
+          variant: VARIANT,
+          reason: 'submit_failed',
+          stage: 'api',
+          status: res.status,
+          error_code: errorCode ?? 'unknown',
+        })
+        if (res.status === 429) {
+          setError('יותר מדי ניסיונות — נסו שוב בעוד דקה')
+        } else if (res.status === 403 && errorCode === 'GEO_BLOCKED') {
+          setError('השירות זמין בישראל בלבד')
+        } else if (res.status >= 500) {
+          setError('שגיאה זמנית בשמירה — נסו שוב')
+        } else {
+          setError(data?.error || 'לא הצלחנו לשמור את הפרטים')
+        }
+        return
       }
       if (!data?.id || !isUuid(data.id)) {
-        throw new Error('השמירה לא אושרה — נסו שוב')
+        track('waitlist_form_error', {
+          audience,
+          variant: VARIANT,
+          reason: 'missing_id',
+          stage: 'response_contract',
+          status: res.status,
+        })
+        setError('השמירה לא אושרה — נסו שוב')
+        return
       }
       const source = publicAttribution(attribution)
       if (!data.alreadyRegistered) {
@@ -229,6 +283,7 @@ export default function PrelaunchLanding({
         audience,
         variant: VARIANT,
         reason: 'submit_failed',
+        stage: 'api',
       })
     } finally {
       setLoading(false)
@@ -261,7 +316,6 @@ export default function PrelaunchLanding({
       dir="rtl"
       lang="he"
     >
-      <EntryNotice />
       <header className="sticky top-0 z-40 border-b border-border/70 bg-[color-mix(in_srgb,hsl(var(--background))_92%,transparent)] backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
         <div
           className="mx-auto flex items-center justify-between py-3"
@@ -352,6 +406,7 @@ export default function PrelaunchLanding({
             ref={waitlistRef}
             className={`order-1 scroll-mt-24 lg:order-2 ${mounted ? 'prelaunch-rise prelaunch-rise-delay' : 'opacity-0'}`}
           >
+            <EntryNotice />
             <div className="prelaunch-product overflow-hidden">
               <div className="prelaunch-product-head border-b border-border/80 bg-background/60 px-5 py-4 sm:px-6">
                 <div className="flex items-center justify-between gap-3">
@@ -636,7 +691,10 @@ function WaitlistFormCard({
   onShare,
   onResetDone,
 }: WaitlistFormProps) {
-  const setField = (key: 'fullName' | 'phone' | 'city', value: string) => {
+  const setField = (
+    key: 'fullName' | 'phone' | 'city' | 'otherProfession',
+    value: string,
+  ) => {
     onSignupStarted()
     onFormChange((f) => ({ ...f, [key]: value }))
   }
@@ -646,7 +704,13 @@ function WaitlistFormCard({
     onFormChange((f) => {
       const selected = f.categories.includes(name)
       if (selected) {
-        return { ...f, categories: f.categories.filter((c) => c !== name) }
+        const next = f.categories.filter((c) => c !== name)
+        return {
+          ...f,
+          categories: next,
+          otherProfession:
+            name === OTHER_PROFESSION ? '' : f.otherProfession,
+        }
       }
       if (f.categories.length >= WAITLIST_MAX_PROFESSIONS) return f
       return {
@@ -735,6 +799,16 @@ function WaitlistFormCard({
         onToggle={toggleCategory}
         onRemove={toggleCategory}
       />
+      {isOtherProfessionSelected(form.categories) ? (
+        <Field
+          label="איזה מקצוע?"
+          name="otherProfession"
+          required
+          placeholder="למשל התקנת פרגולות עץ"
+          value={form.otherProfession}
+          onChange={(v) => setField('otherProfession', v)}
+        />
+      ) : null}
       <Field
         label="עיר (אופציונלי)"
         name="city"
@@ -802,6 +876,7 @@ function ProfessionMultiSelect({
     : WAITLIST_PROFESSION_OPTIONS
 
   const atLimit = selected.length >= WAITLIST_MAX_PROFESSIONS
+  const otherSelected = selected.includes(OTHER_PROFESSION)
 
   return (
     <div ref={rootRef} className="block">
@@ -813,6 +888,22 @@ function ProfessionMultiSelect({
       </span>
 
       <div className="mb-2 flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          aria-pressed={otherSelected}
+          onClick={() => onToggle(OTHER_PROFESSION)}
+          className={`inline-flex min-h-11 items-center rounded-lg border px-2.5 text-xs font-bold transition ${
+            otherSelected
+              ? 'border-primary bg-primary/8 text-primary'
+              : 'border-border bg-card text-foreground/80 hover:border-primary/40'
+          }`}
+        >
+          {OTHER_PROFESSION}
+        </button>
+        <span
+          className="mx-0.5 inline-flex min-h-11 w-px self-stretch bg-border"
+          aria-hidden
+        />
         {copy.categories.map((category) => {
           const selectedChip = selected.includes(category.profession)
           return (
@@ -890,6 +981,39 @@ function ProfessionMultiSelect({
             aria-multiselectable="true"
             className="max-h-56 overflow-y-auto overscroll-contain p-1.5"
           >
+            {!query.trim() ? (
+              <>
+                <li role="option" aria-selected={otherSelected}>
+                  <button
+                    type="button"
+                    disabled={!otherSelected && atLimit}
+                    onClick={() => onToggle(OTHER_PROFESSION)}
+                    className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-start text-sm font-bold transition ${
+                      otherSelected
+                        ? 'bg-primary/8 text-primary'
+                        : !otherSelected && atLimit
+                          ? 'cursor-not-allowed text-muted-foreground/40'
+                          : 'text-foreground/80 hover:bg-background'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                        otherSelected
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-border bg-card'
+                      }`}
+                      aria-hidden
+                    >
+                      {otherSelected ? (
+                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                      ) : null}
+                    </span>
+                    {OTHER_PROFESSION}
+                  </button>
+                </li>
+                <li aria-hidden className="my-1 border-t border-border" />
+              </>
+            ) : null}
             {filtered.length === 0 ? (
               <li className="px-3 py-4 text-center text-sm font-medium text-muted-foreground">
                 לא נמצא תחום מתאים

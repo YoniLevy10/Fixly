@@ -17,9 +17,8 @@ export const MARKETING_HOSTS = ['fixly.tech', 'www.fixly.tech'] as const
  * (Historically redirected to fixly.tech — that bounce is intentionally removed.)
  */
 export const LEGACY_VERCEL_PRODUCTION_HOSTS = [
-  'fixly.vercel.app',
+  // Historical product preview alias only (do not list the wrong vercel.app host).
   'fixly-five.vercel.app',
-  'www.fixly.vercel.app',
 ] as const
 
 /** Exact paths allowed on marketing hosts (everything else → /waitlist). */

@@ -1,18 +1,7 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
 // Keep mocked API traffic in Playwright rather than the production PWA worker.
 test.use({ serviceWorkers: 'block' })
-
-async function dismissEntryNotice(page: Page) {
-  const dialog = page.getByRole('dialog')
-  try {
-    await dialog.waitFor({ state: 'visible', timeout: 4000 })
-  } catch {
-    return
-  }
-  await dialog.getByRole('button', { name: 'הבנתי' }).click()
-  await expect(dialog).toBeHidden()
-}
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
 
@@ -53,7 +42,6 @@ test.describe('public pages', () => {
     })
 
     await page.goto('/waitlist')
-    await dismissEntryNotice(page)
     await expect(page.getByRole('heading', { name: /יותר הזדמנויות עבודה|עבודות אמיתיות/i })).toBeVisible()
     await expect(page.locator('#waitlist').getByText(/הרשמה מוקדמת/i).first()).toBeVisible()
     const form = page.locator('#waitlist').first()
@@ -82,7 +70,6 @@ test.describe('public pages', () => {
     })
 
     await page.goto('/waitlist')
-    await dismissEntryNotice(page)
     const form = page.locator('#waitlist').first()
     await form.getByRole('button', { name: /בחרו תחומים/ }).click()
     await form.getByRole('button', { name: 'אינסטלטורים', exact: true }).click()
@@ -91,7 +78,7 @@ test.describe('public pages', () => {
     await page.locator('#waitlist').first().getByLabel(/טלפון/i).fill('0501234567')
     await page.locator('#waitlist').first().getByRole('button', { name: /הצטרפות|הצטרפו|שמרו לי מקום|שמרו אותי/i }).click()
     await expect(
-      page.locator('#waitlist').first().getByText(/שמירה נכשלה|מסד הנתונים לא מוגדר/i),
+      page.locator('#waitlist').first().getByText(/שגיאה זמנית בשמירה|שמירה נכשלה|מסד הנתונים לא מוגדר/i),
     ).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('נרשמתם', { exact: true })).toHaveCount(0)
   })

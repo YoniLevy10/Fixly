@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     if (!parsed.success) return parsed.response
     const body = parsed.data
     const category =
-      joinWaitlistProfessions(body.categories) ??
+      joinWaitlistProfessions(body.categories, body.otherProfession) ??
       body.category?.trim() ??
       undefined
 

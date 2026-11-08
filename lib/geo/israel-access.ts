@@ -11,7 +11,7 @@ export const GEO_COOKIE_IL = 'il'
 export const GEO_COOKIE_BLOCKED = 'blocked'
 
 const CRAWLER_UA =
-  /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|applebot|semrushbot|ahrefsbot|mj12bot|dotsbot|petalbot/i
+  /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|facebookexternalhit|twitterbot|linkedinbot|applebot|semrushbot|ahrefsbot|mj12bot|dotsbot|petalbot|adsbot-google|googleother|google-inspectiontool|mediapartners-google|whatsapp|telegrambot|tiktok|pinterest|taboola|outbrain/i
 
 /**
  * Default ON for Vercel production. Explicit env always wins.
@@ -45,9 +45,13 @@ export function isLocalDevHost(host: string | null | undefined): boolean {
   return h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0'
 }
 
-/** Paths that must never be geo-blocked (ops, payments, SEO files). */
+function normalizePath(pathname: string): string {
+  return pathname.split('?')[0]?.toLowerCase() || '/'
+}
+
+/** Paths that must never be geo-blocked (ops, payments, SEO files, waitlist API). */
 export function isGeoBypassPath(pathname: string): boolean {
-  const p = pathname.split('?')[0]?.toLowerCase() || '/'
+  const p = normalizePath(pathname)
   if (p === '/il-only' || p.startsWith('/il-only/')) return true
   if (p === '/robots.txt' || p === '/sitemap.xml') return true
   if (p === '/manifest.webmanifest' || p === '/manifest.json') return true
@@ -57,7 +61,26 @@ export function isGeoBypassPath(pathname: string): boolean {
   if (p.startsWith('/api/tranzila')) return true
   if (p.startsWith('/api/v1/')) return true
   if (p.startsWith('/api/billing/webhook')) return true
+  if (p === '/api/waitlist' || p.startsWith('/api/waitlist/')) return true
+  if (p === '/api/pro/waitlist' || p.startsWith('/api/pro/waitlist/')) return true
   if (p.startsWith('/auth/callback')) return true
+  return false
+}
+
+/** Marketing / registration surfaces reachable outside Israel. */
+export function isGeoPublicPath(pathname: string): boolean {
+  const p = normalizePath(pathname)
+  if (p === '/') return true
+  if (p === '/waitlist' || p.startsWith('/waitlist/')) return true
+  if (p === '/pro/join' || p.startsWith('/pro/join/')) return true
+  if (p === '/for-professionals' || p.startsWith('/for-professionals/')) return true
+  if (p === '/professionals' || p.startsWith('/professionals/')) return true
+  if (p === '/locations' || p.startsWith('/locations/')) return true
+  if (p === '/about' || p.startsWith('/about/')) return true
+  if (p === '/privacy' || p.startsWith('/privacy/')) return true
+  if (p === '/terms' || p.startsWith('/terms/')) return true
+  if (p === '/il-only' || p.startsWith('/il-only/')) return true
+  if (p === '/services' || p.startsWith('/services')) return true
   return false
 }
 
@@ -69,10 +92,13 @@ export function decideIsraelAccess(input: {
   userAgent: string | null | undefined
   pathname: string
   host?: string | null
+  geoCookie?: string | null
 }): GeoDecision {
   if (!input.enabled) return 'allow'
+  if (isGeoPublicPath(input.pathname)) return 'allow'
   if (isLocalDevHost(input.host)) return 'allow'
   if (isGeoBypassPath(input.pathname)) return 'allow'
+  if (input.geoCookie === GEO_COOKIE_IL) return 'allow'
   if (isSearchCrawler(input.userAgent)) return 'allow'
   // Missing geo (some edge / offline) — fail open to avoid locking Israelis
   if (!input.country) return 'allow'

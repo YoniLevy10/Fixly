@@ -2,16 +2,23 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import {
   MONTHLY_SIGNUP_GOAL,
+  getMonthlyGoalWindow,
   isCountableGoalSignup,
   isExcludedSignupSource,
   summarizeGoalProgress,
 } from '../../lib/growth/monthly-signup-goal'
 
 describe('monthly signup goal', () => {
-  it('targets 10 signups in the next-month window', () => {
+  it('uses a rolling 30-day window relative to now', () => {
     assert.equal(MONTHLY_SIGNUP_GOAL.target, 10)
-    assert.ok(MONTHLY_SIGNUP_GOAL.startIso.startsWith('2026-09-29'))
-    assert.ok(MONTHLY_SIGNUP_GOAL.endIso.startsWith('2026-10-29'))
+    assert.equal(MONTHLY_SIGNUP_GOAL.windowDays, 30)
+    const now = new Date('2026-11-07T12:00:00.000Z')
+    const { start, end } = getMonthlyGoalWindow(now)
+    assert.equal(end.toISOString(), now.toISOString())
+    assert.equal(
+      start.toISOString(),
+      new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    )
   })
 
   it('excludes smoke sources', () => {
@@ -19,35 +26,46 @@ describe('monthly signup goal', () => {
     assert.equal(isExcludedSignupSource('waitlist_landing_v5_customer'), false)
   })
 
-  it('counts real Hebrew signup inside the window', () => {
+  it('counts a row created today and rejects one 31 days old', () => {
+    const now = new Date('2026-11-07T12:00:00.000Z')
     assert.equal(
-      isCountableGoalSignup({
-        full_name: 'דני כהן',
-        phone: '0501234567',
-        source: 'waitlist_landing_v5_customer',
-        created_at: '2026-10-05T12:00:00.000Z',
-      }),
+      isCountableGoalSignup(
+        {
+          full_name: 'דני כהן',
+          phone: '0501234567',
+          source: 'waitlist_landing_v5_professional',
+          created_at: '2026-11-07T10:00:00.000Z',
+        },
+        now,
+      ),
       true,
+    )
+    assert.equal(
+      isCountableGoalSignup(
+        {
+          full_name: 'דני כהן',
+          phone: '0501234567',
+          source: 'waitlist_landing_v5_professional',
+          created_at: '2026-10-06T12:00:00.000Z',
+        },
+        now,
+      ),
+      false,
     )
   })
 
-  it('rejects spam and out-of-window rows', () => {
+  it('rejects spam rows inside the window', () => {
+    const now = new Date('2026-11-07T12:00:00.000Z')
     assert.equal(
-      isCountableGoalSignup({
-        full_name: 'pedwreFzMpiwUhuDpVLq',
-        phone: 'LIbsJgoQmFieDVKUV',
-        source: null,
-        created_at: '2026-10-05T12:00:00.000Z',
-      }),
-      false,
-    )
-    assert.equal(
-      isCountableGoalSignup({
-        full_name: 'דני כהן',
-        phone: '0501234567',
-        source: 'waitlist_landing_v5_customer',
-        created_at: '2026-08-01T12:00:00.000Z',
-      }),
+      isCountableGoalSignup(
+        {
+          full_name: 'pedwreFzMpiwUhuDpVLq',
+          phone: 'LIbsJgoQmFieDVKUV',
+          source: null,
+          created_at: '2026-11-05T12:00:00.000Z',
+        },
+        now,
+      ),
       false,
     )
   })

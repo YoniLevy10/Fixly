@@ -146,7 +146,7 @@ export default async function ProfessionalPage({ params }: ProfessionalPageProps
         pageType="pro_profile"
         category={categorySlug ?? undefined}
         city={citySlug}
-        indexable={!isDemo && pro.isApproved}
+        indexable={!isDemo && pro.isVerified}
       />
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={profileLd} />

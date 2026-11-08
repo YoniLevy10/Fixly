@@ -14,11 +14,14 @@ import {
  * - legacy vercel production hosts stay product (no bounce to fixly.tech)
  */
 describe('marketing host routing policy', () => {
-  it('does not treat legacy vercel production as marketing', () => {
+  it('does not treat vercel.app hosts as marketing', () => {
+    // fixly.vercel.app is not a Fixly product alias (different app); still
+    // counts as a generic *.vercel.app product host for routing tests.
     assert.equal(isMarketingHost('fixly.vercel.app'), false)
-    assert.equal(isLegacyVercelProductionHost('fixly.vercel.app'), true)
-    assert.equal(isProductHost('fixly.vercel.app'), true)
-    assert.equal(shouldShowPrelaunchLanding('fixly.vercel.app'), false)
+    assert.equal(isLegacyVercelProductionHost('fixly.vercel.app'), false)
+    assert.equal(isLegacyVercelProductionHost('fixly-five.vercel.app'), true)
+    assert.equal(isProductHost('fixly-five.vercel.app'), true)
+    assert.equal(shouldShowPrelaunchLanding('fixly-five.vercel.app'), false)
   })
 
   it('redirects true app paths off marketing hosts (allowlist miss)', () => {

@@ -18,7 +18,6 @@ export const APP_STORE_CONFIG = {
   allowedNavigationHosts: [
     'fixly.tech',
     'www.fixly.tech',
-    'fixly.vercel.app',
     'fixly-five.vercel.app',
     'vercel.app',
     'supabase.co',

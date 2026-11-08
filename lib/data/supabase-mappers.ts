@@ -22,6 +22,7 @@ type ProfessionalRow = {
   phone?: string | null
   whatsapp_number?: string | null
   is_verified?: boolean | null
+  is_active?: boolean | null
   avg_response_minutes?: number | null
   availability_summary?: string | null
   subscription_tier?: string | null
@@ -127,7 +128,7 @@ export function mapProfessionalRow(row: ProfessionalRow): Professional {
     reviewCount: row.reviews_count ?? 0,
     startingPrice: row.hourly_price ?? 0,
     isAvailable: row.available ?? false,
-    isApproved: true,
+    isApproved: row.is_active !== false && row.is_verified === true,
     isVerified: row.is_verified ?? false,
     isFeatured:
       isProTier ||
